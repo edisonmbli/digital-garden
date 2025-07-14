@@ -1,10 +1,10 @@
 /* app/globals.css */
-
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   :root {
-    /* 亮色模式变量 */
     --background: 210 40% 98%;
     --foreground: 224 71.4% 4.1%;
     --card: 210 40% 98%;
@@ -28,7 +28,6 @@
   }
 
   .dark {
-    /* 暗黑模式变量 */
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
