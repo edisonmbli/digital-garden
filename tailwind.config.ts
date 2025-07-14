@@ -1,10 +1,8 @@
-// tailwind.config.ts
-
 import type { Config } from 'tailwindcss'
 import animate from 'tailwindcss-animate'
 
 const config = {
-  darkMode: 'class', // 启用 class 策略以支持 next-themes
+  darkMode: 'class',
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
@@ -22,12 +20,10 @@ const config = {
     },
     extend: {
       fontFamily: {
-        // 让 tailwind 识别我们在 layout.tsx 中定义的 CSS 变量
         sans: ['var(--font-sans)', 'sans-serif'],
         serif: ['var(--font-serif)', 'serif'],
       },
       colors: {
-        // 这里是让 shadcn/ui 的颜色能与我们的 CSS 变量同步的关键
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
