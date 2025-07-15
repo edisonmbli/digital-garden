@@ -1,0 +1,152 @@
+// prisma/schema.prisma
+
+// 1. 生成 Prisma Client 的配置
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 2. 配置数据库数据源
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+// ================================================= //
+//                业务核心模型                       //
+// ================================================= //
+
+// 内容类型的枚举，用于在 Post 表中区分内容
+enum PostType {
+  LOG
+  PHOTO
+  VLOG
+}
+
+// “合集/系列”模型
+// 用于组织文章（一对多）和摄影作品（多对多）
+model Collection {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?  @db.Text
+
+  // 用于实现“图片与系列”的“多对多”关系
+  posts       PostsOnCollections[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 通用的“帖子”实体模型
+// 这是所有可被点赞、评论内容的抽象核心
+model Post {
+  id        String @id @default(cuid())
+
+  // 与具体内容模型的“一对一”关联
+  photo     Photo?
+  log       Log?
+
+  // 与用户的“多对一”关联
+  author    User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+
+  // 与交互模型的“一对多”关联
+  likes     Like[]
+  comments  Comment[]
+  
+  // 与合集模型的“多对多”关联
+  collections PostsOnCollections[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 专门存放“开发者日志”特有信息的表
+model Log {
+  id          String    @id @default(cuid()) // 对应 Sanity 中的 document ID
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId      String    @unique // 确保与 Post 是一对一关系
+  
+  // 日志特有的元数据，将从 Sanity 同步过来，用于筛选和排序
+  title       String
+  publishedAt DateTime?
+  tags        String[]
+}
+
+// 专门存放“摄影作品”特有信息的表
+model Photo {
+  id         String @id @default(cuid()) // 对应 Sanity 中的 document ID
+  post       Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId     String @unique // 确保与 Post 是一对一关系
+
+  // 照片特有的元数据，例如 Sanity 的 Asset ID，用于更高级的图片处理
+  sanityAssetId String? 
+}
+
+// ================================================= //
+//                用户与交互模型                     //
+// ================================================= //
+
+// 用户模型
+model User {
+  id        String    @id // 存储来自 Clerk 的 User ID
+  email     String    @unique
+  name      String?
+  avatarUrl String?   @db.Text
+
+  // 关联关系
+  posts     Post[]
+  likes     Like[]
+  comments  Comment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// “点赞”模型
+model Like {
+  id        String   @id @default(cuid())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId]) // 确保一个用户对一个帖子只能点赞一次
+}
+
+// “评论”模型
+model Comment {
+  id        String    @id @default(cuid())
+  content   String    @db.Text
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+
+  // 用于实现评论回复功能的自引用关系
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentId  String?
+  replies   Comment[] @relation("CommentReplies")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+
+// ================================================= //
+//                多对多关系表                       //
+// ================================================= //
+
+// Post 与 Collection 的多对多关系中间表
+model PostsOnCollections {
+  post         Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId       String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  collectionId String
+
+  assignedAt   DateTime   @default(now())
+  assignedBy   String     // 记录操作者（比如管理员ID）
+
+  @@id([postId, collectionId])
+}
