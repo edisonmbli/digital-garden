@@ -1,5 +1,5 @@
 PRD - “光影代码”数字花园 (Code in Light)
-version：2.1
+version：2.2
 
 1. 核心原则与技术理念 (Guiding Principles)
 - 为我所用，利于他人(Built for Self, Shared for Others): 项目必须首先解决我自己的展示与记录需求，同时其构建过程和最终产出，要能形成一套清晰、可复现、对其他独立开发者有价值的最佳实践教程。
