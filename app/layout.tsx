@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import { Figtree, Lora } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/ui/theme-provider'
-import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { ClerkProvider } from '@clerk/nextjs'
+import { Header } from '@/components/ui/header'
+import { Toaster } from '@/components/ui/sonner'
 
 const fontSans = Figtree({
   subsets: ['latin'],
@@ -27,20 +29,30 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${fontSans.variable} ${fontSerif.variable} font-sans`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body
+          className={`${fontSans.variable} ${fontSerif.variable} font-sans min-h-screen bg-background text-foreground antialiased`}
         >
-          <header className="p-4 flex justify-end">
-            <ThemeToggle /> {/* <-- 把它放在这里 */}
-          </header>
-          {children}
-        </ThemeProvider>
-      </body>
-    </html>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="flex flex-col min-h-screen">
+              {/* 2. 在这里直接使用 Header，干净利落 */}
+              <Header />
+
+              <main className="flex-grow">{children}</main>
+
+              {/* 预留 Footer 的位置 */}
+              {/* <Footer /> */}
+            </div>
+            <Toaster richColors />
+          </ThemeProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }

@@ -45,3 +45,6 @@ next-env.d.ts
 
 # Docker
 .postgres-data
+
+# ngrok
+ngrok*
