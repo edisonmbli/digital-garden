@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Figtree, Lora } from 'next/font/google'
-import './globals.css'
+import '@/app/ui/globals.css'
 import { ThemeProvider } from '@/components/ui/theme-provider'
 import { ClerkProvider } from '@clerk/nextjs'
 import { Header } from '@/components/ui/header'
