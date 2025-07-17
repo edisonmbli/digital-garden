@@ -6,7 +6,8 @@
   },
   "homepage": {
     "title": "Code in Light",
-    "enter_button": "Enter the Garden"
+    "enter_button": "Enter the Garden",
+    "sign_in": "Sign In"
   },
   "clerk": {
     "signIn": { "start": { "title": "Sign in" } },

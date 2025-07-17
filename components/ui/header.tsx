@@ -6,7 +6,7 @@ import { UserButton, SignInButton, SignedIn, SignedOut } from '@clerk/nextjs'
 import { Button } from './button'
 import { ThemeToggle } from './theme-toggle' // 导入我们之前创建的 ThemeToggle
 import { LanguageSwitcher } from './language-switcher' // 导入新的语言切换器
-import { Separator } from '@/components/ui/separator' // 导入分隔符组件
+// import { Separator } from '@/components/ui/separator' // 导入分隔符组件
 import { getDictionary } from '@/lib/dictionary' // 导入我们的字典函数
 import { type Locale, i18n } from '@/i18n-config'
 
@@ -33,14 +33,15 @@ export async function Header() {
 
           <SignedIn>
             {/*  视觉分隔符 */}
-            <Separator orientation="vertical" className="h-6 bg-border" />
+            {/* <Separator orientation="vertical" className="h-6 w-px bg-border" /> */}
+            <div className="h-6 w-px bg-border" />
             {/* “用户中心”组 */}
             <UserButton />
           </SignedIn>
 
           <SignedOut>
             <SignInButton mode="modal">
-              <Button variant="outline">Sign In</Button>
+              <Button variant="outline">{dictionary.homepage.sign_in}</Button>
             </SignInButton>
           </SignedOut>
         </div>
