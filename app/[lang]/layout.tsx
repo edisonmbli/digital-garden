@@ -27,12 +27,13 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-  params: { lang },
+  params,
 }: {
   children: React.ReactNode
   params: { lang: Locale }
 }) {
-  // 2. 在服务端获取所有需要的国际化资源
+  // 在服务端获取所有需要的国际化资源
+  const { lang } = await params
   const dictionary = await getDictionary(lang)
   const clerkLocalization = getClerkLocalization(lang)
 
@@ -50,7 +51,7 @@ export default async function RootLayout({
           >
             <div className="flex flex-col min-h-screen">
               {/* 2. 在这里直接使用 Header，干净利落 */}
-              <Header dictionary={dictionary} />
+              <Header />
 
               <main className="flex-grow">{children}</main>
 

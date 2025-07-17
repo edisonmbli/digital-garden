@@ -1,17 +1,20 @@
 // app/ui/header.tsx
-'use client'
 
 import Link from 'next/link'
+import { headers } from 'next/headers'
 import { UserButton, SignInButton, SignedIn, SignedOut } from '@clerk/nextjs'
 import { Button } from './button'
 import { ThemeToggle } from './theme-toggle' // 导入我们之前创建的 ThemeToggle
 import { LanguageSwitcher } from './language-switcher' // 导入新的语言切换器
 import { Separator } from '@/components/ui/separator' // 导入分隔符组件
 import { getDictionary } from '@/lib/dictionary' // 导入我们的字典函数
+import { type Locale, i18n } from '@/i18n-config'
 
-type DictionaryType = Awaited<ReturnType<typeof getDictionary>>
+export async function Header() {
+  const headersList = await headers()
+  const lang = (headersList.get('x-locale') as Locale) || i18n.defaultLocale
+  const dictionary = await getDictionary(lang)
 
-export function Header({ dictionary }: { dictionary: DictionaryType }) {
   return (
     <header className="py-4 border-b">
       <nav className="container mx-auto flex justify-between items-center">

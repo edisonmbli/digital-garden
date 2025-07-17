@@ -39,7 +39,6 @@ export default clerkMiddleware(async (auth, req) => {
 
   // --- 步骤二：处理国际化重定向 (Internationalization Next) ---
   // 这个逻辑只会在请求通过了上面的认证检查（或者本身就是公共路由）后才执行。
-
   const pathname = req.nextUrl.pathname
 
   // 检查请求路径是否已经包含了语言前缀 (e.g., /en/about)
@@ -50,9 +49,7 @@ export default clerkMiddleware(async (auth, req) => {
   // 如果路径缺少语言前缀，我们就为他重定向到一个带语言前缀的 URL
   if (pathnameIsMissingLocale) {
     const locale = getLocale(req) // 获取最匹配的语言
-
-    // 例如，如果用户访问 /gallery，而检测到的语言是 'zh'，
-    // 我们将他重定向到 /zh/gallery。
+    // 例如，如果用户访问 /gallery，而检测到的语言是 'zh'，我们将他重定向到 /zh/gallery。
     return NextResponse.redirect(
       new URL(
         `/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`,
@@ -60,6 +57,18 @@ export default clerkMiddleware(async (auth, req) => {
       )
     )
   }
+
+  // 为所有请求添加自定义请求头
+  const requestHeaders = new Headers(req.headers)
+  const localeInPath = i18n.locales.find((l) => pathname.startsWith(`/${l}`))
+  if (localeInPath) {
+    requestHeaders.set('x-locale', localeInPath)
+  }
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
 })
 
 export const config = {
