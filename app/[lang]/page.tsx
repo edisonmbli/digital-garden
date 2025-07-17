@@ -3,7 +3,11 @@ import { Button } from '@/components/ui/button'
 import { getDictionary } from '@/lib/dictionary'
 import { type Locale } from '@/i18n-config'
 
-export default async function Home({ params }: { params: { lang: Locale } }) {
+export default async function Home({
+  params,
+}: {
+  params: Promise<{ lang: Locale }>
+}) {
   const { lang } = await params
   const dict = await getDictionary(lang)
 

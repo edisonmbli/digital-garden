@@ -30,7 +30,7 @@ export default async function RootLayout({
   params,
 }: {
   children: React.ReactNode
-  params: { lang: Locale }
+  params: Promise<{ lang: Locale }>
 }) {
   // 在服务端获取所有需要的国际化资源
   const { lang } = await params
