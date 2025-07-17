@@ -7,5 +7,10 @@
   "homepage": {
     "title": "Code in Light",
     "enter_button": "Enter the Garden"
+  },
+  "clerk": {
+    "signIn": { "start": { "title": "Sign in" } },
+    "signUp": { "start": { "title": "Sign Up" } },
+    "userButton": { "action__manageAccount": "Manage Account" }
   }
 }

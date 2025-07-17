@@ -1,13 +1,21 @@
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
+import { getDictionary } from '@/lib/dictionary'
+import { type Locale } from '@/i18n-config'
 
-export default function Home() {
+export default async function Home({
+  params: { lang },
+}: {
+  params: { lang: Locale }
+}) {
+  const dict = await getDictionary(lang) // 获取字典
+
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
         <main className="flex min-h-screen flex-col items-center justify-center">
           <h1 className="text-4xl font-bold mb-8">光影代码 (Code in Light)</h1>
-          <Button>进入花园</Button>
+          <Button>{dict.homepage.enter_button}</Button>
         </main>
       </main>
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">

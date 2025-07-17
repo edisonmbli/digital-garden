@@ -7,5 +7,10 @@
   "homepage": {
     "title": "光影代码",
     "enter_button": "进入花园"
+  },
+  "clerk": {
+    "signIn": { "start": { "title": "登录" } },
+    "signUp": { "start": { "title": "注册" } },
+    "userButton": { "action__manageAccount": "管理账户" }
   }
 }

@@ -5,16 +5,19 @@ import Link from 'next/link'
 import { UserButton, SignInButton, SignedIn, SignedOut } from '@clerk/nextjs'
 import { Button } from './button'
 import { ThemeToggle } from './theme-toggle' // 导入我们之前创建的 ThemeToggle
-import { LanguageSwitcher } from './language-switcher' // 1. 导入新的语言切换器
-import { Separator } from '@/components/ui/separator' // 2. 导入分隔符组件 (需 pnpm dlx shadcn@latest add separator)
+import { LanguageSwitcher } from './language-switcher' // 导入新的语言切换器
+import { Separator } from '@/components/ui/separator' // 导入分隔符组件
+import { getDictionary } from '@/lib/dictionary' // 导入我们的字典函数
 
-export function Header() {
+type DictionaryType = Awaited<ReturnType<typeof getDictionary>>
+
+export function Header({ dictionary }: { dictionary: DictionaryType }) {
   return (
     <header className="py-4 border-b">
       <nav className="container mx-auto flex justify-between items-center">
         {/* Logo 和站点名称，链接到首页 */}
-        <Link href="/" className="font-bold text-xl tracking-tight">
-          光影代码
+        <Link href="`/${lang}`" className="font-bold text-xl tracking-tight">
+          {dictionary.homepage.title} {/* <-- 使用字典 */}
         </Link>
 
         {/* 右侧的工具栏 */}
@@ -27,7 +30,7 @@ export function Header() {
 
           <SignedIn>
             {/*  视觉分隔符 */}
-            <Separator orientation="vertical" className="h-6" />
+            <Separator orientation="vertical" className="h-6 bg-border" />
             {/* “用户中心”组 */}
             <UserButton />
           </SignedIn>
