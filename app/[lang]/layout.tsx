@@ -50,9 +50,9 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <div className="flex flex-col min-h-screen">
+            <div className="relative flex flex-col min-h-screen">
               <Header />
-              <main className="flex-grow">{children}</main>
+              <main className="flex-1">{children}</main>
               <Footer />
             </div>
             <Toaster richColors />
