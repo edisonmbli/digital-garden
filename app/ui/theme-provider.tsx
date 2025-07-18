@@ -1,4 +1,4 @@
-// components/theme-provider.tsx
+// app/ui/theme-provider.tsx
 'use client'
 
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
