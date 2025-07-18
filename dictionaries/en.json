@@ -4,6 +4,10 @@
     "log": "Develop",
     "about": "About"
   },
+  "footer": {
+    "built_in_public_by_": "Built-in-public by Edison.",
+    "source_code_available_on_": "The source code is available on "
+  },
   "homepage": {
     "title": "Code in Light",
     "enter_button": "Enter the Garden",

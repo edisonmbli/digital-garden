@@ -4,6 +4,10 @@
     "log": "开发者说",
     "about": "关于"
   },
+  "footer": {
+    "built_in_public_by_": "Built-in-public by Edison.",
+    "source_code_available_on_": "源代码请看这里 👉"
+  },
   "homepage": {
     "title": "光影代码",
     "enter_button": "进入花园",
