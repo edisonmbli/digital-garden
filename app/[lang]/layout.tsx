@@ -42,7 +42,7 @@ export default async function RootLayout({
     <ClerkProvider localization={{ ...clerkLocalization, ...dictionary.clerk }}>
       <html lang="en" suppressHydrationWarning>
         <body
-          className={`${fontSans.variable} ${fontSerif.variable} font-sans min-h-screen bg-background text-foreground antialiased`}
+          className={`${fontSans.variable} ${fontSerif.variable} font-sans min-h-screen w-full bg-background text-foreground antialiased`}
         >
           <ThemeProvider
             attribute="class"
@@ -50,9 +50,9 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <div className="relative flex flex-col min-h-screen">
+            <div className="relative flex flex-col min-h-screen w-full">
               <Header />
-              <main className="flex-1">{children}</main>
+              <main className="flex-1 w-full">{children}</main>
               <Footer />
             </div>
             <Toaster richColors />
