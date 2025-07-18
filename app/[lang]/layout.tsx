@@ -4,6 +4,7 @@ import '@/app/ui/globals.css'
 import { ThemeProvider } from '@/components/ui/theme-provider'
 import { ClerkProvider } from '@clerk/nextjs'
 import { Header } from '@/app/ui/header'
+import { Footer } from '@/app/ui/footer'
 import { Toaster } from '@/components/ui/sonner'
 import { type Locale } from '@/i18n-config'
 import { getDictionary, getClerkLocalization } from '@/lib/dictionary'
@@ -50,13 +51,9 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <div className="flex flex-col min-h-screen">
-              {/* 2. 在这里直接使用 Header，干净利落 */}
               <Header />
-
               <main className="flex-grow">{children}</main>
-
-              {/* 预留 Footer 的位置 */}
-              {/* <Footer /> */}
+              <Footer />
             </div>
             <Toaster richColors />
           </ThemeProvider>
