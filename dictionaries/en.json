@@ -10,8 +10,13 @@
   },
   "homepage": {
     "title": "Code in Light",
-    "enter_button": "Enter the Garden",
+    "description": "A personal online photography gallery, and a transparent project built-in-public.",
+    "enter_button": "View More",
     "sign_in": "Sign In"
+  },
+  "develop": {
+    "title": "Developer Log",
+    "description": "Here, we fully record the construction process of this website from zero to one."
   },
   "clerk": {
     "signIn": { "start": { "title": "Sign in" } },

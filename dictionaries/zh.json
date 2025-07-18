@@ -9,9 +9,14 @@
     "source_code_available_on_": "源代码请看这里 👉"
   },
   "homepage": {
-    "title": "光影代码",
-    "enter_button": "进入花园",
+    "title": "光影代码 (Code in Light)",
+    "description": "展示个人摄影作品的线上画廊，built-in-public",
+    "enter_button": "查看更多",
     "sign_in": "登录"
+  },
+  "develop": {
+    "title": "开发者日志",
+    "description": "在这里，我们完整地记录了这个网站从零到一的构建全过程。"
   },
   "clerk": {
     "signIn": {
