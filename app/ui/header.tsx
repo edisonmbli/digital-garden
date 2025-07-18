@@ -14,13 +14,34 @@ export async function Header() {
   const lang = (headersList.get('x-locale') as Locale) || i18n.defaultLocale
   const dictionary = await getDictionary(lang)
 
+  const navItems = [
+    { href: `/${lang}/about`, label: dictionary.header.about },
+    { href: `/${lang}/gallery`, label: dictionary.header.gallery },
+    { href: `/${lang}/log`, label: dictionary.header.log },
+  ]
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <nav className="container mx-auto flex h-14 max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href={`/${lang}`} className="font-bold text-xl tracking-tight">
-          {dictionary.homepage.title}
-        </Link>
+        {/* 导航栏 */}
+        <div className="flex items-center gap-6">
+          <Link href={`/${lang}`} className="font-bold text-xl tracking-tight">
+            {dictionary.header.title}
+          </Link>
+          <nav className="hidden md:flex items-center gap-4">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
 
+        {/* 登录按钮 */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
@@ -34,7 +55,7 @@ export async function Header() {
 
           <SignedOut>
             <SignInButton mode="modal">
-              <Button variant="outline">{dictionary.homepage.sign_in}</Button>
+              <Button variant="outline">{dictionary.header.signIn}</Button>
             </SignInButton>
           </SignedOut>
         </div>

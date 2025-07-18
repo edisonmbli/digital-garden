@@ -1,8 +1,10 @@
 {
   "header": {
+    "title": "光影代码",
     "gallery": "影像馆",
     "log": "开发者说",
-    "about": "关于"
+    "about": "关于",
+    "signIn": "登录"
   },
   "footer": {
     "built_in_public_by_": "Built-in-public by Edison.",

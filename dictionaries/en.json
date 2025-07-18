@@ -1,8 +1,10 @@
 {
   "header": {
+    "title": "Code in Light",
     "gallery": "Gallery",
     "log": "Develop",
-    "about": "About"
+    "about": "About",
+    "signIn": "Sign In"
   },
   "footer": {
     "built_in_public_by_": "Built-in-public by Edison.",
