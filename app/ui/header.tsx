@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/app/ui/theme-toggle'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
 import { getDictionary } from '@/lib/dictionary'
 import { type Locale, i18n } from '@/i18n-config'
+import { MobileNav } from '@/app/ui/mobile-nav'
 
 export async function Header() {
   const headersList = await headers()
@@ -25,7 +26,15 @@ export async function Header() {
       <nav className="container mx-auto flex h-14 max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* 导航栏 */}
         <div className="flex items-center gap-6">
-          <Link href={`/${lang}`} className="font-bold text-xl tracking-tight">
+          {/* 移动端导航：只在小于 md 断点时显示 */}
+          <div className="md:hidden">
+            <MobileNav navItems={navItems} dictionary={dictionary} />
+          </div>
+          {/* 桌面导航：只在大于 md 断点时显示 */}
+          <Link
+            href={`/${lang}`}
+            className="hidden font-bold text-xl tracking-tight md:block"
+          >
             {dictionary.header.title}
           </Link>
           <nav className="hidden md:flex items-center gap-4">
