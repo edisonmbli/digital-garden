@@ -1,14 +1,19 @@
-// app/ui/mobile-nav.tsx
 'use client'
 
 import * as React from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation' // 1. 导入 usePathname Hook
+import { usePathname } from 'next/navigation'
 import { Menu, Mountain } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { type NavItem } from '@/types/index' // 我们将创建一个类型文件来共享导航项
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import { type NavItem } from '@/types/index'
 import { getDictionary } from '@/lib/dictionary'
 
 type DictionaryType = Awaited<ReturnType<typeof getDictionary>>
@@ -21,9 +26,7 @@ export function MobileNav({
   dictionary: DictionaryType
 }) {
   const [open, setOpen] = React.useState(false)
-  const pathName = usePathname() // 2. 获取当前 URL 路径 (e.g., /en/gallery)
-
-  // 3. 从路径中，动态地、可靠地解析出当前的语言代码
+  const pathName = usePathname()
   const lang = pathName.split('/')[1]
 
   return (
@@ -38,16 +41,24 @@ export function MobileNav({
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="pr-0">
+        {/* 添加 SheetHeader 和 SheetTitle 来满足无障碍要求 */}
+        <SheetHeader>
+          <SheetTitle className="sr-only">
+            {dictionary.header.title} Navigation Menu
+          </SheetTitle>
+        </SheetHeader>
+
         <Link
-          href={`/${lang}`} // 4. 使用动态解析出的 lang，确保链接永远正确
+          href={`/${lang}`}
           className="mr-6 flex items-center space-x-2"
           onClick={() => setOpen(false)}
         >
           <Mountain className="h-6 w-6" />
           <span className="font-bold">{dictionary.header.title}</span>
         </Link>
+
         <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
-          <div className="flex flex-col space-y-3">
+          <nav className="flex flex-col space-y-3" role="navigation">
             {navItems?.map(
               (item) =>
                 item.href && (
@@ -55,12 +66,13 @@ export function MobileNav({
                     key={item.href}
                     href={item.href}
                     onClick={() => setOpen(false)}
+                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {item.label}
                   </Link>
                 )
             )}
-          </div>
+          </nav>
         </div>
       </SheetContent>
     </Sheet>
