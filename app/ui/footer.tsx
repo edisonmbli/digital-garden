@@ -1,14 +1,10 @@
 // app/ui/Footer.tsx
 import Link from 'next/link'
 import { getDictionary } from '@/lib/dictionary'
-import { headers } from 'next/headers'
-import { type Locale, i18n } from '@/i18n-config'
 
-export async function Footer() {
-  const headersList = await headers()
-  const lang = (headersList.get('x-locale') as Locale) || i18n.defaultLocale
-  const dictionary = await await getDictionary(lang)
+type DictionaryType = Awaited<ReturnType<typeof getDictionary>>
 
+export async function Footer({ dictionary }: { dictionary: DictionaryType }) {
   return (
     <footer className="w-full py-6 border-t">
       <div className="container mx-auto flex flex-col items-center justify-center gap-4 px-4 sm:px-6 lg:px-8 md:h-24">

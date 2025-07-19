@@ -1,13 +1,13 @@
-import { headers } from 'next/headers'
 import { Button } from '@/components/ui/button'
 import { getDictionary } from '@/lib/dictionary'
-import { type Locale, i18n } from '@/i18n-config'
 
-export async function HomePageShell() {
-  const headersList = await headers()
-  const lang = (headersList.get('x-locale') as Locale) || i18n.defaultLocale
-  const dictionary = await getDictionary(lang)
+type DictionaryType = Awaited<ReturnType<typeof getDictionary>>
 
+export async function HomePageShell({
+  dictionary,
+}: {
+  dictionary: DictionaryType
+}) {
   return (
     <div className="w-full py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">

@@ -57,18 +57,6 @@ export default clerkMiddleware(async (auth, req) => {
       )
     )
   }
-
-  // 为所有请求添加自定义请求头
-  const requestHeaders = new Headers(req.headers)
-  const localeInPath = i18n.locales.find((l) => pathname.startsWith(`/${l}`))
-  if (localeInPath) {
-    requestHeaders.set('x-locale', localeInPath)
-  }
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  })
 })
 
 export const config = {

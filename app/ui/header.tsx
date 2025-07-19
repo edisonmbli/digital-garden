@@ -1,20 +1,23 @@
 // app/ui/header.tsx
 
 import Link from 'next/link'
-import { headers } from 'next/headers'
 import { UserButton, SignInButton, SignedIn, SignedOut } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/app/ui/theme-toggle'
-import { LanguageSwitcher } from '@/components/ui/language-switcher'
+import { LanguageSwitcher } from '@/app/ui/language-switcher'
 import { getDictionary } from '@/lib/dictionary'
-import { type Locale, i18n } from '@/i18n-config'
+import { type Locale } from '@/i18n-config'
 import { MobileNav } from '@/app/ui/mobile-nav'
 
-export async function Header() {
-  const headersList = await headers()
-  const lang = (headersList.get('x-locale') as Locale) || i18n.defaultLocale
-  const dictionary = await getDictionary(lang)
+type DictionaryType = Awaited<ReturnType<typeof getDictionary>>
 
+export async function Header({
+  lang,
+  dictionary,
+}: {
+  lang: Locale
+  dictionary: DictionaryType
+}) {
   const navItems = [
     { href: `/${lang}/about`, label: dictionary.header.about },
     { href: `/${lang}/gallery`, label: dictionary.header.gallery },
@@ -53,6 +56,7 @@ export async function Header() {
         {/* 登录按钮 */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
+            {/* <LanguageSwitcher currentLocale={lang} /> */}
             <LanguageSwitcher />
             <ThemeToggle />
           </div>

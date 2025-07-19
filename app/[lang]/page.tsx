@@ -1,9 +1,15 @@
 // app/[lang]/page.tsx
-
 import { HomePageShell } from '@/app/ui/home-page-shell'
+import { generateStaticParams } from '@/i18n-config'
+import { getDictionary } from '@/lib/dictionary'
+import { Locale } from '@/i18n-config'
 
-// 注意：即使 HomePageShell 是一个服务端组件，
-// 我们的 Page 组件本身也可以是一个简单的同步组件，因为它不直接执行异步操作。
-export default function Home() {
-  return <HomePageShell />
+// 告诉 Next.js 为 'en' 和 'zh' 生成此页面的静态版本
+export { generateStaticParams }
+
+export default async function Home({ params }: { params: { lang: Locale } }) {
+  // const lang = params.lang
+  const { lang } = await params
+  const dictionary = await getDictionary(lang)
+  return <HomePageShell dictionary={dictionary} />
 }
