@@ -9,7 +9,7 @@ export { generateStaticParams }
 
 export default async function Home({ params }: { params: { lang: Locale } }) {
   // const lang = params.lang
-  const { lang } = await params
+  const { lang } = params
   const dictionary = await getDictionary(lang)
   return <HomePageShell dictionary={dictionary} />
 }
