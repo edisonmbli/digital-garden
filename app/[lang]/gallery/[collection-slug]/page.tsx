@@ -5,6 +5,7 @@ import { getGroupAndPhotosBySlug } from '@/lib/dal'
 import { notFound } from 'next/navigation'
 import { client as sanityClient } from '@/sanity/client'
 import { groq } from 'next-sanity'
+import { PhotoGrid } from '@/app/ui/photo-grid'
 
 // --- 静态路径生成 ---
 export async function generateStaticParams() {
@@ -33,24 +34,20 @@ export default async function CollectionPage({
   }
 
   return (
-    <div className="container py-12">
-      <header className="text-center mb-12">
-        <h1 className="text-4xl font-bold">{collection.name}</h1>
-        <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
-          {collection.description}
-        </p>
-      </header>
+    <div className="w-full py-12">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <header className="text-center mb-12">
+          <h1 className="text-4xl font-bold">{collection.name}</h1>
+          <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
+            {collection.description}
+          </p>
+        </header>
 
-      <main>
-        {/* 这里就是我们将在第七章，用瀑布流布局和无限滚动，来渲染 group.photos 的地方 */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {collection.photos.map((photo) => (
-            <div key={photo._id} className="aspect-square bg-muted rounded-lg">
-              {/* 临时占位符，我们会在后面用 <Image /> 替换 */}
-            </div>
-          ))}
-        </div>
-      </main>
+        <main>
+          {/* 使用 PhotoGrid 来渲染照片，并传入真实数据 */}
+          <PhotoGrid photos={collection.photos} />
+        </main>
+      </div>
     </div>
   )
 }
