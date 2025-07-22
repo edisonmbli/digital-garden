@@ -1,19 +1,22 @@
 // app/[lang]/log/page.tsx
 import { LogPageShell } from '@/app/ui/log-page-shell'
-import { generateStaticParams } from '@/i18n-config'
+import { Locale, generateStaticParams } from '@/i18n-config'
 import { getDictionary } from '@/lib/dictionary'
-import { Locale } from '@/i18n-config'
+import { getLogPosts } from '@/lib/dal'
 
 // 告诉 Next.js 为 'en' 和 'zh' 生成此页面的静态版本
 export { generateStaticParams }
 
-export default async function LogPage(
-  props: {
-    params: Promise<{ lang: Locale }>
-  }
-) {
-  const params = await props.params;
+export default async function LogPage(props: {
+  params: Promise<{ lang: Locale }>
+}) {
+  const params = await props.params
   const { lang } = params
+
+  // 在服务端并行获取数据
   const dictionary = await getDictionary(lang)
-  return <LogPageShell dictionary={dictionary} />
+  const posts = await getLogPosts(lang)
+
+  // 将获取到的所有日志，传递给 UI Shell 组件
+  return <LogPageShell dictionary={dictionary} posts={posts} />
 }

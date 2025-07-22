@@ -1,31 +1,177 @@
+'use client'
+
 import { Button } from '@/components/ui/button'
 import { getDictionary } from '@/lib/dictionary'
+import { FeaturedGroup } from '@/types/sanity'
+import { useEffect, useState } from 'react'
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
+import Image from 'next/image'
 
 type DictionaryType = Awaited<ReturnType<typeof getDictionary>>
 
-export async function HomePageShell({
-  dictionary,
-}: {
+interface HomePageShellProps {
   dictionary: DictionaryType
-}) {
+  collections: FeaturedGroup[]
+}
+
+export function HomePageShell({ dictionary, collections }: HomePageShellProps) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true)
+
+  // 自动轮播逻辑 - 延长到6秒
+  useEffect(() => {
+    if (!isAutoPlaying || collections.length <= 1) return
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prevIndex) =>
+        prevIndex === collections.length - 1 ? 0 : prevIndex + 1
+      )
+    }, 6000) // 每6秒切换一次
+
+    return () => clearInterval(interval)
+  }, [isAutoPlaying, collections.length])
+
+  // 手动切换到指定索引
+  const goToSlide = (index: number) => {
+    setCurrentIndex(index)
+    setIsAutoPlaying(false)
+    // 3秒后恢复自动播放
+    setTimeout(() => setIsAutoPlaying(true), 3000)
+  }
+
+  // 上一张
+  const goToPrevious = () => {
+    const newIndex =
+      currentIndex === 0 ? collections.length - 1 : currentIndex - 1
+    goToSlide(newIndex)
+  }
+
+  // 下一张
+  const goToNext = () => {
+    const newIndex =
+      currentIndex === collections.length - 1 ? 0 : currentIndex + 1
+    goToSlide(newIndex)
+  }
+
+  // 如果没有集合数据，显示默认背景
+  const currentCollection = collections[currentIndex]
+  const hasCollections = collections.length > 0
+
   return (
-    <div className="w-full py-12">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative h-[calc(100vh-16rem)] flex flex-col items-center justify-center text-center rounded-lg bg-muted/50">
-          {/* 背景效果 - 现在只应用在容器内 */}
-          {/* 在第六章，这里会变成一个背景图/视频 */}
-          <div className="absolute inset-0 bg-black/30 rounded-lg" />
-          <div className="relative max-w-4xl mx-auto px-4">
-            <h1 className="text-5xl font-bold tracking-tighter sm:text-7xl">
-              {dictionary.homepage.title}
-            </h1>
-            <p className="mx-auto mt-4 max-w-[700px] text-lg text-muted-foreground">
-              {dictionary.homepage.description}
-            </p>
-            <div className="mt-8">
-              <Button size="lg">{dictionary.homepage.enter_button}</Button>
+    <div className="w-full min-h-[calc(100vh-3.5rem)] flex flex-col">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex-1 flex flex-col">
+        {/* 轮播图区域 - 恢复上边距，包含按钮和指示器 */}
+        <div className="relative flex-1 mt-12 mb-8 rounded-lg overflow-hidden">
+          {/* 背景图片轮播 */}
+          {hasCollections ? (
+            <div className="absolute inset-0">
+              {collections.map((collection, index) => (
+                <div
+                  key={collection._id}
+                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                    index === currentIndex ? 'opacity-100' : 'opacity-0'
+                  }`}
+                >
+                  {collection.coverImageUrl && (
+                    <Image
+                      src={collection.coverImageUrl}
+                      alt={collection.name}
+                      fill
+                      sizes="100vw"
+                      priority={index === 0}
+                      className="object-cover dark:brightness-110"
+                      quality={90}
+                    />
+                  )}
+                </div>
+              ))}
             </div>
+          ) : (
+            // 默认背景（当没有集合时）
+            <div className="absolute inset-0 bg-muted/50" />
+          )}
+
+          {/* 深色遮罩层 - 减少深色模式下的遮罩透明度 */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40 dark:from-neutral-900/15 dark:to-neutral-900/25" />
+
+          {/* 轮播控制 */}
+          {hasCollections && collections.length > 1 && (
+            <>
+              {/* 导航按钮 */}
+              <button
+                onClick={goToPrevious}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors duration-200 dark:bg-neutral-800/30 dark:hover:bg-neutral-800/50"
+                aria-label="上一张图片"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+
+              <button
+                onClick={goToNext}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors duration-200 dark:bg-neutral-800/30 dark:hover:bg-neutral-800/50"
+                aria-label="下一张图片"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </>
+          )}
+
+          {/* 底部内容区域 - 在轮播图内部 */}
+          <div className="absolute bottom-0 left-0 right-0 z-20 pb-8 flex flex-col items-center">
+            {/* 当前集合信息和按钮 - 固定宽度 */}
+            {hasCollections && currentCollection && (
+              <div className="mb-4">
+                <Button
+                  size="lg"
+                  className="bg-white/90 text-black hover:bg-white dark:bg-neutral-200 dark:hover:bg-white dark:text-neutral-900 flex items-center gap-2 min-w-[240px] justify-center"
+                  onClick={goToNext}
+                >
+                  {currentCollection.name.length > 20
+                    ? `${currentCollection.name.substring(0, 17)}...`
+                    : currentCollection.name}
+                  <ArrowRight className="h-4 w-4 flex-shrink-0" />
+                </Button>
+              </div>
+            )}
+
+            {/* 指示器 - 位于按钮下方 */}
+            {hasCollections && collections.length > 1 && (
+              <div className="flex space-x-2">
+                {collections.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => goToSlide(index)}
+                    className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                      index === currentIndex
+                        ? 'bg-white scale-110 dark:bg-neutral-200'
+                        : 'bg-white/50 hover:bg-white/70 dark:bg-neutral-400 dark:hover:bg-neutral-300'
+                    }`}
+                    aria-label={`切换到第 ${index + 1} 张图片`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* 暂停/播放指示器 */}
+          {hasCollections && collections.length > 1 && (
+            <div className="absolute top-4 right-4 z-20">
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  isAutoPlaying
+                    ? 'bg-green-400 dark:bg-green-500'
+                    : 'bg-yellow-400 dark:bg-yellow-500'
+                }`}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* 描述文本 - 轮播图外部下方 */}
+        <div className="text-center pb-8">
+          <p className="mx-auto max-w-[700px] text-lg text-foreground/80">
+            {dictionary.homepage.description}
+          </p>
         </div>
       </div>
     </div>

@@ -14,6 +14,7 @@
     "title": "光影代码 (Code in Light)",
     "description": "展示个人摄影作品的线上画廊，built-in-public",
     "enter_button": "查看更多",
+    "featured_collection": "精选系列",
     "sign_in": "登录"
   },
   "develop": {
