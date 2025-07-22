@@ -17,6 +17,6 @@ export default async function LogPage(props: {
   const dictionary = await getDictionary(lang)
   const posts = await getLogPosts(lang)
 
-  // 将获取到的所有日志，传递给 UI Shell 组件
-  return <LogPageShell dictionary={dictionary} posts={posts} />
+  // 将获取到的所有日志和当前语言，传递给 UI Shell 组件
+  return <LogPageShell dictionary={dictionary} posts={posts} lang={lang} />
 }

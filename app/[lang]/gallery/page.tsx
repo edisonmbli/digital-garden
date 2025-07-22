@@ -15,6 +15,6 @@ export default async function GalleryPage(props: {
   // 在服务端并行获取数据
   const collections = await getAllCollections(lang)
 
-  // 将获取到的所有摄影集，传递给 UI Shell 组件
-  return <GalleryPageShell collections={collections} />
+  // 将获取到的所有摄影集和当前语言，传递给 UI Shell 组件
+  return <GalleryPageShell collections={collections} lang={lang} />
 }

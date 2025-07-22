@@ -181,85 +181,346 @@
 2. 创建 author.ts:
   ```
   // sanity-studio/schemaTypes/author.ts
-  import { defineField, defineType } from 'sanity'
+
+  import {defineField, defineType} from 'sanity'
+
   export default defineType({
     name: 'author',
     title: 'Author',
     type: 'document',
     fields: [
-      defineField({ name: 'name', title: 'Name', type: 'string', validation: (Rule) => Rule.required() }),
-      defineField({ name: 'slug', title: 'Slug', type: 'slug', options: { source: 'name' }, validation: (Rule) => Rule.required() }),
-      defineField({ name: 'image', title: 'Image', type: 'image', options: { hotspot: true } }),
-      defineField({ name: 'bio', title: 'Bio', type: 'text', rows: 3 }),
+      defineField({
+        name: 'name',
+        title: 'Name',
+        type: 'string',
+        validation: (Rule) => Rule.required(),
+      }),
+      defineField({
+        name: 'slug',
+        title: 'Slug',
+        type: 'slug',
+        options: {
+          source: 'name',
+          maxLength: 96,
+        },
+        validation: (Rule) => Rule.required(),
+      }),
+      defineField({
+        name: 'image',
+        title: 'Image',
+        type: 'image',
+        options: {
+          hotspot: true,
+        },
+      }),
+      defineField({
+        name: 'bio',
+        title: 'Bio',
+        type: 'text',
+        rows: 3,
+      }),
     ],
+    preview: {
+      select: {
+        title: 'name',
+        media: 'image',
+      },
+    },
   })
   ```
 3. 创建 collection.ts:
   ```
   // sanity-studio/schemaTypes/collection.ts
-  import { defineField, defineType } from 'sanity'
+
+  import {defineField, defineType} from 'sanity'
+
   export default defineType({
     name: 'collection',
-    title: 'Collection',
+    title: 'Collection', // 在 Studio 中显示为“合集/系列”
     type: 'document',
     fields: [
-      defineField({ name: 'language', type: 'string', readOnly: true, hidden: true }),
-      defineField({ name: 'name', title: 'Collection Name', type: 'string', validation: (Rule) => Rule.required() }),
-      defineField({ name: 'slug', title: 'Slug', type: 'slug', options: { source: 'name' }, validation: (Rule) => Rule.required() }),
-      defineField({ name: 'description', title: 'Description', type: 'text', rows: 4 }),
-      defineField({ name: 'coverImage', title: 'Cover Image', type: 'image', options: { hotspot: true } }),
+      // 为国际化插件预留的字段
+      defineField({
+        name: 'language',
+        type: 'string',
+        readOnly: true,
+        hidden: true,
+      }),
+      defineField({
+        name: 'name',
+        title: 'Collection Name',
+        type: 'string',
+        validation: (Rule) => Rule.required(),
+      }),
+      defineField({
+        name: 'slug',
+        title: 'Slug',
+        type: 'slug',
+        options: {
+          source: 'name',
+          maxLength: 96,
+        },
+        validation: (Rule) => Rule.required(),
+      }),
+      defineField({
+        name: 'description',
+        title: 'Description',
+        type: 'text',
+        rows: 4,
+      }),
+      defineField({
+        name: 'coverImage',
+        title: 'Cover Image',
+        type: 'image',
+        options: {
+          hotspot: true,
+        },
+      }),
+      // 精选开关
+      defineField({
+        name: 'isFeatured',
+        title: 'Featured on Homepage',
+        type: 'boolean',
+        description: 'Enable this to feature this collection in the homepage hero section.',
+        initialValue: false,
+      }),
+      // 照片关联
+      defineField({
+        name: 'photos',
+        title: 'Photos in this Collection',
+        type: 'array',
+        of: [{type: 'reference', to: {type: 'photo'}}],
+      }),
     ],
   })
   ```
 4. 创建 log.ts:
   ```
-  // sanity-studio/schemaTypes/log.ts
-  import { defineField, defineType } from 'sanity'
+  // sanity-studio/schemas/log.ts
+
+  import {defineField, defineType} from 'sanity'
+
   export default defineType({
     name: 'log',
     title: 'Developer Log',
     type: 'document',
     fields: [
-      defineField({ name: 'language', type: 'string', readOnly: true, hidden: true }),
-      defineField({ name: 'title', title: 'Title', type: 'string', validation: (Rule) => Rule.required() }),
-      defineField({ name: 'slug', type: 'slug', options: { source: 'title' }, validation: (Rule) => Rule.required() }),
-      defineField({ name: 'publishedAt', title: 'Published at', type: 'datetime' }),
-      defineField({ name: 'author', title: 'Author', type: 'reference', to: [{ type: 'author' }], validation: (Rule) => Rule.required() }),
-      defineField({ name: 'content', title: 'Content', type: 'array', of: [{ type: 'block' }, { type: 'image' }] }),
+      // 1. 语言字段 (由 i18n 插件自动管理)
+      // 这个字段虽然在这里定义，但通常是只读或隐藏的，由插件在后台控制
+      defineField({
+        name: 'language',
+        type: 'string',
+        readOnly: true,
+        hidden: true,
+      }),
+
+      // 2. 核心内容字段
+      defineField({
+        name: 'title',
+        title: 'Title',
+        type: 'string',
+        validation: (Rule) => Rule.required(),
+      }),
+      defineField({
+        name: 'slug',
+        title: 'Slug',
+        type: 'slug',
+        options: {
+          source: 'title',
+          maxLength: 96,
+        },
+        validation: (Rule) => Rule.required(),
+      }),
+      defineField({
+        name: 'publishedAt',
+        title: 'Published at',
+        type: 'datetime',
+        validation: (Rule) => Rule.required(),
+      }),
+      defineField({
+        name: 'mainImage',
+        title: 'Main image',
+        type: 'image',
+        options: {
+          hotspot: true, // 开启图片焦点功能
+        },
+      }),
+      defineField({
+        name: 'excerpt',
+        title: 'Excerpt',
+        type: 'text',
+        rows: 3,
+        description: 'A short summary of the post for social media and previews.',
+      }),
+      defineField({
+        name: 'content',
+        title: 'Content',
+        type: 'array', // 使用 Portable Text 来实现富文本
+        of: [
+          {
+            type: 'block', // 标准的文本块
+          },
+          {
+            type: 'image', // 允许在内容中插入图片
+          },
+          // {
+          //   type: 'code', // 允许插入代码块 (需要安装 @sanity/code-input 插件)
+          // },
+        ],
+      }),
+
+      // 3. 关联字段
+      // 这里的 author 指向的是 Sanity 中另一个 author 类型的文档
+      // 以便我们在文章中展示作者信息
+      defineField({
+        name: 'author',
+        title: 'Author',
+        type: 'reference', // 类型是“引用”
+        to: {type: 'author'},
+        validation: (Rule) => Rule.required(),
+      }),
     ],
+
+    // 4. 为 Studio 编辑界面提供更好的预览
+    preview: {
+      select: {
+        title: 'title',
+        author: 'author.name',
+        media: 'mainImage',
+      },
+      prepare(selection) {
+        const {author} = selection
+        return {...selection, subtitle: author && `by ${author}`}
+      },
+    },
   })
   ```
-5. 更新 index.ts:
+5. 创建photo.ts
+  ```
+  // sanity-studio/schemaTypes/photo.ts
+
+  import {defineField, defineType} from 'sanity'
+
+  export default defineType({
+    name: 'photo',
+    title: 'Photo',
+    type: 'document',
+    fields: [
+      // 移除language字段，不再需要
+      defineField({
+        name: 'imageFile',
+        title: 'Image File',
+        type: 'image',
+        options: {
+          hotspot: true,
+        },
+        validation: (Rule) => Rule.required(),
+      }),
+
+      // 多语言标题
+      defineField({
+        name: 'title',
+        title: 'Title',
+        type: 'object',
+        fields: [
+          {
+            name: 'zh',
+            title: '中文标题',
+            type: 'string',
+          },
+          {
+            name: 'en',
+            title: 'English Title',
+            type: 'string',
+          },
+        ],
+        validation: (Rule) => Rule.required(),
+      }),
+
+      // 多语言描述
+      defineField({
+        name: 'description',
+        title: 'Description',
+        type: 'object',
+        fields: [
+          {
+            name: 'zh',
+            title: '中文描述',
+            type: 'text',
+            rows: 3,
+          },
+          {
+            name: 'en',
+            title: 'English Description',
+            type: 'text',
+            rows: 3,
+          },
+        ],
+      }),
+    ],
+
+    preview: {
+      select: {
+        title_zh: 'title.zh',
+        title_en: 'title.en',
+        oldTitle: 'title', // 兼容旧格式
+        media: 'imageFile',
+      },
+      prepare(selection) {
+        const {title_zh, title_en, oldTitle, media} = selection
+        // 兼容新旧格式
+        const displayTitle = title_zh || title_en || oldTitle || 'Untitled Photo'
+        // const subtitle = title_zh && title_en ? `${title_en} / ${title_zh}` : ''
+        const subtitle = title_en
+
+        return {
+          title: displayTitle,
+          subtitle,
+          media,
+        }
+      },
+    },
+  })
+  ```
+6. 更新 index.ts:
   ```
   // sanity-studio/schemaTypes/index.ts
   import log from './log'
   import author from './author'
   import collection from './collection'
-  
-  export const schemaTypes = [log, author, collection]
+  import photo from './photo'
+
+  export const schemaTypes = [log, author, collection, photo]
   ```
-6. 配置 i18n 插件: 打开 sanity.config.ts，导入并配置 documentInternationalization 插件，确保 schemaTypes 数组中包含了 log 和 collection。
+7. 配置 i18n 插件: 打开 sanity.config.ts，导入并配置 documentInternationalization 插件，确保 schemaTypes 数组中包含了 log 和 collection。
   ```
   // sanity.config.ts
-  import { defineConfig } from 'sanity'
-  import { structureTool } from 'sanity/structure'
-  import { visionTool } from '@sanity/vision'
-  import { documentInternationalization } from '@sanity/document-internationalization'
-  import { schemaTypes } from './schemaTypes'
-  
+  import {defineConfig} from 'sanity'
+  import {structureTool} from 'sanity/structure'
+  import {visionTool} from '@sanity/vision'
+  import {schemaTypes} from './schemaTypes'
+  import {documentInternationalization} from '@sanity/document-internationalization'
+
   export default defineConfig({
-    // ...
+    name: 'default',
+    title: 'digital-garden-sanity',
+
+    projectId: 'rmgc6o8r',
+    dataset: 'development',
+
     plugins: [
       structureTool(),
       visionTool(),
       documentInternationalization({
         supportedLanguages: [
-          { id: 'en', title: 'English' },
-          { id: 'zh', title: 'Chinese' }
+          {id: 'en', title: 'English'},
+          {id: 'zh', title: 'Chinese'},
         ],
+        // 移除photo，只保留真正需要文档级国际化的类型
         schemaTypes: ['log', 'collection'],
       }),
     ],
+
     schema: {
       types: schemaTypes,
     },

@@ -67,6 +67,7 @@ export const getGroupAndPhotosBySlug = cache(
 
 export const getLogPostBySlug = cache(async (slug: string, lang: Locale) => {
   const query = groq`*[_type == "log" && slug.current == $slug && language == $lang][0] {
+    _id,
     title,
     content, // Portable Text
     publishedAt,

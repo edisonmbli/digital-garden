@@ -1,20 +1,24 @@
 // app/ui/gallery-page-shell.tsx
 import type { FeaturedGroup } from '@/types/sanity'
+import type { Locale } from '@/i18n-config'
 import Image from 'next/image'
+import Link from 'next/link'
 
 interface GalleryPageShellProps {
   collections: FeaturedGroup[]
+  lang: Locale
 }
 
-export function GalleryPageShell({ collections }: GalleryPageShellProps) {
+export function GalleryPageShell({ collections, lang }: GalleryPageShellProps) {
   return (
     <div className="w-full py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {collections.map((collection) => (
-            <div
+            <Link
               key={collection._id}
-              className="group relative h-80 rounded-lg overflow-hidden bg-muted cursor-pointer transition-transform duration-300 hover:scale-105"
+              href={`/${lang}/gallery/${collection.slug}`}
+              className="group relative h-80 rounded-lg overflow-hidden bg-muted cursor-pointer transition-transform duration-300 hover:scale-105 block"
             >
               {/* 背景图片 */}
               {collection.coverImageUrl ? (
@@ -38,7 +42,7 @@ export function GalleryPageShell({ collections }: GalleryPageShellProps) {
                   {collection.name}
                 </h2>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

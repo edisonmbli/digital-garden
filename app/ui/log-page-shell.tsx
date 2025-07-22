@@ -2,15 +2,17 @@
 import Link from 'next/link'
 import { getDictionary } from '@/lib/dictionary'
 import type { LogPost } from '@/types/sanity'
+import type { Locale } from '@/i18n-config'
 
 type DictionaryType = Awaited<ReturnType<typeof getDictionary>>
 
 interface LogPageShellProps {
   dictionary: DictionaryType
   posts: LogPost[]
+  lang: Locale
 }
 
-export function LogPageShell({ dictionary, posts }: LogPageShellProps) {
+export function LogPageShell({ dictionary, posts, lang }: LogPageShellProps) {
   // 格式化日期的辅助函数
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -40,7 +42,7 @@ export function LogPageShell({ dictionary, posts }: LogPageShellProps) {
               {posts.map((post) => (
                 <Link
                   key={post._id}
-                  href={`/log/${post.slug}`}
+                  href={`/${lang}/log/${post.slug}`}
                   className="group block"
                 >
                   <article className="p-6 border border-border rounded-lg transition-all duration-200 hover:border-border/80 hover:shadow-md hover:bg-muted/30">

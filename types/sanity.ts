@@ -28,6 +28,7 @@ export type GroupAndPhotos = {
 
 // 对应 getLogPostBySlug 查询返回的对象
 export type LogPostDetails = {
+  _id: string
   title: string
   content: PortableTextBlock[]
   publishedAt: string
