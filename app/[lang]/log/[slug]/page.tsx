@@ -1,9 +1,13 @@
 // app/[lang]/log/[slug]/page.tsx
 
 import { type Locale } from '@/i18n-config'
-import { getLogPostBySlug, getLikesAndCommentsForPost } from '@/lib/dal'
+import {
+  getLogPostBySlug,
+  getLikesAndCommentsForPost,
+  getTranslationsBySlug,
+} from '@/lib/dal'
 import { notFound } from 'next/navigation'
-import { client as sanityClient } from '@/sanity/client' // 需要 sanity client 来生成 static params
+import { client as sanityClient } from '@/sanity/client'
 import { groq } from 'next-sanity'
 
 export async function generateStaticParams() {
@@ -18,19 +22,30 @@ export async function generateStaticParams() {
   }))
 }
 
-// --- 步骤 3: 页面组件 ---
+// --- 页面组件 ---
 export default async function LogPostPage({
   params,
 }: {
   params: Promise<{ lang: Locale; slug: string }>
 }) {
   const { lang, slug } = await params
-  const postContent = await getLogPostBySlug(slug, lang)
+
+  // 并行获取所有需要的数据
+  const [translations, postContent] = await Promise.all([
+    getTranslationsBySlug(slug, lang, 'log'),
+    getLogPostBySlug(slug, lang),
+  ])
 
   // 如果文章不存在，显示 404 页面
   if (!postContent) {
     notFound()
   }
+
+  // 将翻译数组转换为映射对象
+  const translationMap = translations.reduce((acc, t) => {
+    acc[t.language] = t.slug
+    return acc
+  }, {} as Record<string, string>)
 
   // 2. 注意：这里我们通过 postContent._id 来获取关联的互动数据
   const interactions = await getLikesAndCommentsForPost(postContent._id)
@@ -62,6 +77,15 @@ export default async function LogPostPage({
         {/* 这同样将在第七章实现 */}
         <p>{interactions?.likes.length || 0} Likes</p>
       </section>
+
+      {/* 隐藏的翻译数据，供语言切换器使用 */}
+      <script
+        type="application/json"
+        id="translation-map"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(translationMap),
+        }}
+      />
     </article>
   )
 }

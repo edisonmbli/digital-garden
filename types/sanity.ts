@@ -67,3 +67,11 @@ export type MultilingualPhoto = {
     }
   }
 }
+
+// 翻译映射类型
+export type Translation = {
+  language: string
+  slug: string
+}
+
+export type TranslationMap = Record<string, string> // { 'en': 'norway_en', 'zh': 'norway_zh' }

@@ -6,6 +6,7 @@ import { useInView } from 'react-intersection-observer'
 import { PhotoGrid } from './photo-grid' // 我们复用之前的照片网格UI组件
 import { loadMorePhotosAction } from '@/lib/actions'
 import { type Locale } from '@/i18n-config'
+import { useI18n } from '@/app/context/i18n-provider'
 
 // 定义照片的类型
 type Photo = { _id: string; imageUrl: string /* ...其他字段... */ }
@@ -14,22 +15,19 @@ interface InfinitePhotoGridProps {
   initialPhotos: Photo[]
   collectionSlug: string
   lang: Locale
-  translations: {
-    loading: string
-    allPhotosLoaded: string
-  }
 }
 
 export function InfinitePhotoGrid({
   initialPhotos,
   collectionSlug,
   lang,
-  translations,
 }: InfinitePhotoGridProps) {
   const [photos, setPhotos] = useState(initialPhotos)
   const [page, setPage] = useState(2) // 我们从第二页开始加载
   const [hasMore, setHasMore] = useState(true) // 新增 state，默认认为还有更多
   const [isLoading, setIsLoading] = useState(false) // 新增 loading 状态，防止重复加载
+
+  const dictionary = useI18n() //在组件内部，直接获取字典
 
   const { ref, inView } = useInView()
 
@@ -57,9 +55,9 @@ export function InfinitePhotoGrid({
       <div ref={ref} className="mt-8 text-center">
         {hasMore
           ? isLoading
-            ? translations.loading
+            ? dictionary.gallery.loading
             : ''
-          : translations.allPhotosLoaded}
+          : dictionary.gallery.allPhotosLoaded}
       </div>
     </>
   )

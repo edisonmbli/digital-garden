@@ -2,7 +2,7 @@
 'use server'
 
 import { PHOTOS_PER_PAGE } from './dal'
-import { getGroupAndPhotosBySlug } from './dal'
+import { getGroupAndPhotosBySlug, getTranslationsBySlug } from './dal'
 import { type Locale } from '@/i18n-config'
 
 export async function loadMorePhotosAction(
@@ -20,9 +20,29 @@ export async function loadMorePhotosAction(
   // 那就说明这已经是最后一页了。
   const hasMore = newPhotos.length === PHOTOS_PER_PAGE
 
-  // 将照片和“是否还有更多”的标志，一并返回
+  // 将照片和"是否还有更多"的标志，一并返回
   return {
     photos: newPhotos,
     hasMore: hasMore,
+  }
+}
+
+// 获取翻译映射的 Server Action
+export async function getTranslationMapAction(
+  slug: string,
+  lang: Locale,
+  type: 'collection' | 'log'
+): Promise<Record<string, string>> {
+  try {
+    const translations = await getTranslationsBySlug({ slug, lang, type })
+
+    // 将翻译数组转换为映射对象
+    return translations.reduce((acc, t) => {
+      acc[t.language] = t.slug
+      return acc
+    }, {} as Record<string, string>)
+  } catch (error) {
+    console.error('Failed to fetch translation map:', error)
+    return {}
   }
 }

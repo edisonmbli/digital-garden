@@ -81,6 +81,75 @@ export const getLogPostBySlug = cache(async (slug: string, lang: Locale) => {
   return sanityClient.fetch<LogPostDetails>(query, { slug, lang })
 })
 
+// 根据当前文档的 slug 和 lang，获取其所有翻译版本的 slug
+export const getTranslationsBySlug = cache(
+  async ({
+    slug,
+    lang,
+    type,
+  }: {
+    slug: string
+    lang: Locale
+    type: string
+  }) => {
+    const query = groq`
+      *[_type == $type && slug.current == $slug && language == $lang][0] {
+        _id,
+        slug,
+        language,
+        // 获取所有翻译版本
+        "_translations": *[_type == "translation.metadata" && references(^._id)].translations[].value-> {
+          slug,
+          language,
+          _id
+        }
+      }
+    `
+
+    const params = {
+      type,
+      slug,
+      lang,
+    }
+
+    try {
+      const result = await sanityClient.fetch(query, params)
+
+      if (!result) {
+        return []
+      }
+
+      // 构建翻译数组
+      const translations: { language: Locale; slug: string }[] = []
+
+      // 添加当前文档
+      translations.push({
+        language: result.language,
+        slug: result.slug.current,
+      })
+
+      // 添加所有翻译版本
+      if (result._translations) {
+        result._translations.forEach(
+          (translation: { language: Locale; slug: { current: string } }) => {
+            if (translation.slug?.current) {
+              translations.push({
+                language: translation.language,
+                slug: translation.slug.current,
+              })
+            }
+          }
+        )
+      }
+
+      return translations
+    } catch (error) {
+      console.error('Error fetching translations:', error)
+      return []
+    }
+  }
+)
+
 // --- Prisma Queries ---
 
 export const getLikesAndCommentsForPost = cache(async (postId: string) => {

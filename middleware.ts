@@ -20,7 +20,7 @@ function getLocale(request: NextRequest): string | undefined {
   return matchLocale(languages, i18n.locales, i18n.defaultLocale)
 }
 
-// 定义哪些路由是受保护的。这是一个“黑名单”，所有匹配的路径都需要用户登录。
+// 定义哪些路由是受保护的。这是一个"黑名单"，所有匹配的路径都需要用户登录。
 const isProtectedRoute = createRouteMatcher([
   '/admin(.*)', // /admin 及其所有子路由
 ])
@@ -28,7 +28,7 @@ const isProtectedRoute = createRouteMatcher([
 // 导出我们的主中间件函数，由 Clerk 的 clerkMiddleware 进行包装
 export default clerkMiddleware(async (auth, req) => {
   // --- 步骤一：优先处理认证 (Authentication First) ---
-  // 检查当前请求的路径是否在我们定义的“受保护列表”中
+  // 检查当前请求的路径是否在我们定义的"受保护列表"中
   if (isProtectedRoute(req)) {
     // 如果是受保护的路由，则调用 auth.protect()。
     // 这个函数会检查用户是否登录：
