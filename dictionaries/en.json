@@ -25,5 +25,9 @@
     "signIn": { "start": { "title": "Sign in" } },
     "signUp": { "start": { "title": "Sign Up" } },
     "userButton": { "action__manageAccount": "Manage Account" }
+  },
+  "gallery": {
+    "loading": "Loading...",
+    "allPhotosLoaded": "All photos loaded."
   }
 }

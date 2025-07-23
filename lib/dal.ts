@@ -48,12 +48,17 @@ export const getLogPosts = cache(async (lang: Locale) => {
   return sanityClient.fetch<LogPost[]>(query, { lang })
 })
 
+export const PHOTOS_PER_PAGE = 12 // 定义每页加载的照片数量
+
 export const getGroupAndPhotosBySlug = cache(
-  async (slug: string, lang: Locale) => {
+  async (slug: string, lang: Locale, page: number = 1) => {
+    const start = (page - 1) * PHOTOS_PER_PAGE
+    const end = start + PHOTOS_PER_PAGE
+
     const query = groq`*[_type == "collection" && slug.current == $slug && language == $lang][0] {
       name,
       description,
-      "photos": photos[]->{
+      "photos": photos[${start}...${end}]-> {
         _id,
         "title": coalesce(title.${lang}, title.en, ""),
         "description": coalesce(description.${lang}, description.en, ""),

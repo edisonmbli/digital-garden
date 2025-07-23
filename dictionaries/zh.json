@@ -53,5 +53,9 @@
     "form_field_label__password": "密码",
     "form_field_label__firstName": "名",
     "form_field_label__lastName": "姓"
+  },
+  "gallery": {
+    "loading": "加载中...",
+    "allPhotosLoaded": "---- 还是有底线的 ----"
   }
 }
