@@ -9,7 +9,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { getDictionary, getClerkLocalization } from '@/lib/dictionary'
 import { type Locale, generateStaticParams } from '@/i18n-config'
 import { I18nProvider } from '@/app/context/i18n-provider'
-import { PageTransition } from '@/app/ui/page-transition'
+import { PageTransitionRecommended } from '@/app/ui/page-transition'
 
 const fontSans = Figtree({
   subsets: ['latin'],
@@ -59,7 +59,9 @@ export default async function RootLayout({
               <div className="relative flex flex-col min-h-screen w-full">
                 <Header lang={lang} dictionary={dictionary} />
                 <main className="flex-1 w-full">
-                  <PageTransition>{children}</PageTransition>
+                  <PageTransitionRecommended>
+                    {children}
+                  </PageTransitionRecommended>
                 </main>
                 <Footer dictionary={dictionary} />
               </div>
