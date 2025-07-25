@@ -7,12 +7,10 @@ import { PhotoGrid } from './photo-grid' // 我们复用之前的照片网格UI�
 import { loadMorePhotosAction } from '@/lib/actions'
 import { type Locale } from '@/i18n-config'
 import { useI18n } from '@/app/context/i18n-provider'
-
-// 定义照片的类型
-type Photo = { _id: string; imageUrl: string /* ...其他字段... */ }
+import { type EnrichedPhoto } from '@/types/sanity'
 
 interface InfinitePhotoGridProps {
-  initialPhotos: Photo[]
+  initialPhotos: EnrichedPhoto[]
   collectionSlug: string
   lang: Locale
 }

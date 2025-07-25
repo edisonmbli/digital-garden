@@ -46,7 +46,7 @@ export type Photo = {
   imageUrl: string
   metadata: {
     lqip: string
-    dimensions?: {
+    dimensions: {
       width: number
       height: number
     }
@@ -75,3 +75,25 @@ export type Translation = {
 }
 
 export type TranslationMap = Record<string, string> // { 'en': 'norway_en', 'zh': 'norway_zh' }
+
+// 扩展 Photo 类型，包含了Prisma Post数据、“扩充后”的照片类型
+export type EnrichedPhoto = {
+  _id: string
+  imageUrl: string
+  title?: string
+  description?: string
+  metadata?: {
+    lqip: string
+    dimensions: {
+      width: number
+      height: number
+    }
+  }
+  // 关联的 Prisma Post 数据
+  db: {
+    id: string
+    likesCount: number
+    isLikedByUser: boolean
+    commentsCount: number
+  } | null
+}

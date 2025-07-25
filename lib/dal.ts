@@ -1,5 +1,6 @@
 // app/lib/dal.ts
 import 'server-only'
+import { auth } from '@clerk/nextjs/server'
 import { cache } from 'react'
 import prisma from './prisma'
 import { client as sanityClient } from '@/sanity/client' // 假设你已创建 Sanity 客户端
@@ -8,9 +9,11 @@ import { type Locale } from '@/i18n-config'
 
 import type {
   FeaturedGroup,
+  Photo,
   LogPost,
   GroupAndPhotos,
   LogPostDetails,
+  EnrichedPhoto,
 } from '@/types/sanity'
 
 // --- Sanity Queries ---
@@ -48,28 +51,6 @@ export const getLogPosts = cache(async (lang: Locale) => {
   return sanityClient.fetch<LogPost[]>(query, { lang })
 })
 
-export const PHOTOS_PER_PAGE = 12 // 定义每页加载的照片数量
-
-export const getGroupAndPhotosBySlug = cache(
-  async (slug: string, lang: Locale, page: number = 1) => {
-    const start = (page - 1) * PHOTOS_PER_PAGE
-    const end = start + PHOTOS_PER_PAGE
-
-    const query = groq`*[_type == "collection" && slug.current == $slug && language == $lang][0] {
-      name,
-      description,
-      "photos": photos[${start}...${end}]-> {
-        _id,
-        "title": coalesce(title.${lang}, title.en, ""),
-        "description": coalesce(description.${lang}, description.en, ""),
-        "imageUrl": imageFile.asset->url,
-        "metadata": imageFile.asset->metadata { lqip, dimensions }
-      }
-    }`
-    return sanityClient.fetch<GroupAndPhotos>(query, { slug, lang })
-  }
-)
-
 export const getLogPostBySlug = cache(async (slug: string, lang: Locale) => {
   const query = groq`*[_type == "log" && slug.current == $slug && language == $lang][0] {
     _id,
@@ -106,12 +87,7 @@ export const getTranslationsBySlug = cache(
       }
     `
 
-    const params = {
-      type,
-      slug,
-      lang,
-    }
-
+    const params = { type, slug, lang }
     try {
       const result = await sanityClient.fetch(query, params)
 
@@ -174,3 +150,147 @@ export const getLikesAndCommentsForPost = cache(async (postId: string) => {
   })
   return post
 })
+
+export async function likePost(postId: string) {
+  const { userId } = await auth()
+  if (!userId) throw new Error('Unauthorized')
+
+  // 使用 upsert 实现“点赞/取消点赞”的切换逻辑
+  // 这是一个进阶技巧，我们暂时先实现简单的创建
+  return prisma.like.create({
+    data: {
+      postId,
+      userId,
+    },
+  })
+}
+
+export async function createComment(
+  postId: string,
+  content: string,
+  parentId?: string
+) {
+  const { userId } = await auth()
+  if (!userId) throw new Error('Unauthorized')
+
+  return prisma.comment.create({
+    data: {
+      content,
+      postId,
+      userId,
+      parentId,
+    },
+  })
+}
+
+export async function deleteComment(commentId: string) {
+  const { userId, sessionClaims } = await auth()
+  if (!userId) throw new Error('Unauthorized')
+
+  // 只有评论的创建者或管理员才能删除
+  const comment = await prisma.comment.findUnique({ where: { id: commentId } })
+
+  // 使用类型断言来访问 publicMetadata
+  const userRole = (sessionClaims?.publicMetadata as { role?: string })?.role
+
+  if (comment?.userId !== userId && userRole !== 'admin') {
+    throw new Error('Forbidden')
+  }
+
+  // 删除评论并返回其 postId
+  const deletedComment = await prisma.comment.delete({
+    where: { id: commentId },
+  })
+  return deletedComment.postId
+}
+
+// ---- Sanity x Prisma 数据合并 ----
+
+export const PHOTOS_PER_PAGE = 12 // 定义每页加载的照片数量
+
+export const getGroupAndPhotosBySlug = cache(
+  async (slug: string, lang: Locale, page: number = 1) => {
+    // 分页逻辑
+    const start = (page - 1) * PHOTOS_PER_PAGE
+    const end = start + PHOTOS_PER_PAGE
+
+    // 1. 从 Sanity 获取基础的照片内容数据
+    const query = groq`*[_type == "collection" && slug.current == $slug && language == $lang][0] {
+      name,
+      description,
+      "photos": photos[${start}...${end}]-> {
+        _id,
+        "title": coalesce(title.${lang}, title.en, ""),
+        "description": coalesce(description.${lang}, description.en, ""),
+        "imageUrl": imageFile.asset->url,
+        "metadata": imageFile.asset->metadata { lqip, dimensions }
+      }
+    }`
+
+    const collectionDataFromSanity = await sanityClient.fetch<GroupAndPhotos>(
+      query,
+      {
+        slug,
+        lang,
+      }
+    )
+
+    if (!collectionDataFromSanity || !collectionDataFromSanity.photos) {
+      return null
+    }
+
+    // 2. 准备从我们自己的数据库中，批量获取这些照片的交互数据
+    const photoContentIds = collectionDataFromSanity.photos.map(
+      (p: Photo) => p._id
+    )
+    const { userId } = await auth()
+
+    const photoesInfoFromDb = await prisma.post.findMany({
+      where: {
+        id: { in: photoContentIds },
+      },
+      select: {
+        id: true,
+        // 使用 _count 来获取总数
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
+        // 同时，单独查询当前用户是否点赞
+        likes: {
+          where: { userId: userId || undefined },
+          select: { userId: true },
+        },
+      },
+    })
+
+    // 3. 将 Prisma 数据，转换为一个易于查找的 Map
+    const photoesMap = new Map(photoesInfoFromDb.map((p) => [p.id, p]))
+
+    // 4. (关键) "扩充" Sanity 数据，将 Prisma 数据合并进去
+    const enrichedPhotos: EnrichedPhoto[] = collectionDataFromSanity.photos.map(
+      (photo: Photo) => {
+        const photoData = photoesMap.get(photo._id)
+        return {
+          ...photo,
+          db: photoData
+            ? {
+                id: photoData.id,
+                likesCount: photoData._count.likes,
+                commentsCount: photoData._count.comments,
+                // 在这里进行计算，直接返回布尔值
+                isLikedByUser: photoData.likes.length > 0,
+              }
+            : null,
+        }
+      }
+    )
+
+    return {
+      ...collectionDataFromSanity,
+      photos: enrichedPhotos,
+    }
+  }
+)

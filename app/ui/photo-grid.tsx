@@ -9,24 +9,12 @@ import {
   ResponsiveDialogContent,
 } from '@/app/ui/responsive-dialog'
 import Masonry from 'react-masonry-css'
+import { LikeButton } from '@/app/ui/like-button'
+import { CommentForm } from '@/app/ui/comment-form'
+import { type EnrichedPhoto } from '@/types/sanity'
 
-// 我们需要一个类型来描述单张照片的数据结构
-type Photo = {
-  _id: string
-  imageUrl: string
-  title?: string
-  description?: string
-  metadata?: {
-    lqip: string // 低质量图片占位符
-    dimensions: {
-      width: number
-      height: number
-    }
-  }
-}
-
-export function PhotoGrid({ photos }: { photos: Photo[] }) {
-  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
+export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
+  const [selectedPhoto, setSelectedPhoto] = useState<EnrichedPhoto | null>(null)
 
   // 定义断点
   const breakpointColumnsObj = {
@@ -103,8 +91,8 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
                 </div>
               </div>
 
-              {/* 信息与互动区域 */}
               <div className="p-4 md:p-6 bg-background border-t border-border/20">
+                {/* 照片信息区域 */}
                 {selectedPhoto.title && (
                   <h3 className="font-bold text-xl md:text-2xl mb-3 text-foreground tracking-tight">
                     {selectedPhoto.title}
@@ -115,8 +103,22 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
                     {selectedPhoto.description}
                   </p>
                 )}
-                {/* 在这里，为第八章的点赞/评论功能预留布局空间 */}
-                <div className="mt-6">{/* 评论区/点赞按钮等将在这里 */}</div>
+
+                {/* 互动区域 */}
+                <div className="mt-6">
+                  {selectedPhoto.db && (
+                    <div className="mt-4 flex flex-col gap-4">
+                      <LikeButton
+                        postId={selectedPhoto.db.id}
+                        initialLikes={selectedPhoto.db.likesCount}
+                        isLikedByUser={selectedPhoto.db.isLikedByUser}
+                      />
+                      <CommentForm postId={selectedPhoto.db.id} />
+                      <p>{selectedPhoto.db.commentsCount} Comments</p>
+                      {/* 这里未来会渲染评论列表 */}
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}

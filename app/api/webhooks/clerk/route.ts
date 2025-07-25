@@ -2,11 +2,9 @@
 
 import { Webhook } from 'svix'
 import { WebhookEvent } from '@clerk/nextjs/server'
+import { clerkClient } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma' // 修正了 Prisma Client 的导入路径
-
-// 注意：我们不再从 'next/headers' 导入 headers
-// import { headers } from 'next/headers';
+import prisma from '@/lib/prisma'
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
@@ -17,7 +15,7 @@ export async function POST(req: Request) {
     )
   }
 
-  // 1. 直接从传入的 `req` 对象中获取请求头
+  // 直接从传入的 `req` 对象中获取请求头
   const headerPayload = req.headers
   const svix_id = headerPayload.get('svix-id')
   const svix_timestamp = headerPayload.get('svix-timestamp')
@@ -47,6 +45,8 @@ export async function POST(req: Request) {
 
   if (eventType === 'user.created') {
     const { id, email_addresses, image_url, first_name, last_name } = evt.data
+
+    // 将用户数据写入到我们自己的数据库
     await prisma.user.create({
       data: {
         id: id,
@@ -55,6 +55,15 @@ export async function POST(req: Request) {
         avatarUrl: image_url,
       },
     })
+
+    // 通过 Clerk 后端 API，为新用户设置默认角色
+    const client = await clerkClient()
+    await client.users.updateUserMetadata(id, {
+      publicMetadata: {
+        role: 'user',
+      },
+    })
+
     return NextResponse.json({ message: 'User created' }, { status: 201 })
   }
 
