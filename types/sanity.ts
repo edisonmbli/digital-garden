@@ -90,7 +90,7 @@ export type EnrichedPhoto = {
     }
   }
   // 关联的 Prisma Post 数据
-  db: {
+  post: {
     id: string
     likesCount: number
     isLikedByUser: boolean

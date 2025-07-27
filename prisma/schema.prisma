@@ -15,72 +15,99 @@ datasource db {
 //                业务核心模型                       //
 // ================================================= //
 
-// 内容类型的枚举，用于在 Post 表中区分内容
-enum PostType {
-  LOG
-  PHOTO
-  VLOG
-}
-
-// “合集/系列”模型
+// "合集/系列"模型
 // 用于组织文章（一对多）和摄影作品（多对多）
 model Collection {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
-  description String?  @db.Text
+  id           String   @id @default(cuid())
+  // 使用 _i18n_id_ 作为国际化标识（国际化插件生成的共同ID）
+  sanityI18nId String   @map("sanity_i18n_id")
+  // 存储当前语言版本的 _id（用于调试和追踪）
+  sanityId     String   @map("sanity_id")
+  language     String   // 语言标识 (en, zh)
+  name         String
+  slug         String
+  description  String?  @db.Text
+  coverImageUrl String? @db.Text
+  isFeatured   Boolean  @default(false)
+  posts        PostsOnCollections[]
+  
+  // 软删除支持
+  isDeleted    Boolean  @default(false)
+  deletedAt    DateTime?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  // 用于实现“图片与系列”的“多对多”关系
-  posts       PostsOnCollections[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // 复合索引：确保同一个 i18n_id 下每种语言只有一条记录
+  @@unique([sanityI18nId, language])
+  @@index([language])
+  @@index([isFeatured])
+  @@index([isDeleted])
 }
 
-// 通用的“帖子”实体模型
+// 通用的"帖子"实体模型
 // 这是所有可被点赞、评论内容的抽象核心
 model Post {
-  id        String @id @default(cuid())
-
-  // 与具体内容模型的“一对一”关联
-  photo     Photo?
-  log       Log?
-
-  // 与用户的“多对一”关联
-  author    User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId  String
-
-  // 与交互模型的“一对多”关联
-  likes     Like[]
-  comments  Comment[]
+  id             String    @id @default(cuid())
+  // 存储 Sanity 文档的唯一标识
+  // - 对于 photo: 使用 _id（因为没有使用国际化插件）
+  // - 对于 log: 使用 _i18n_id_（因为使用了国际化插件）
+  sanityDocumentId String  @unique @map("sanity_document_id")
+  // 内容类型标识
+  contentType    String   // 'photo' | 'log'
   
-  // 与合集模型的“多对多”关联
-  collections PostsOnCollections[]
+  // 通过关联来判断类型
+  photo          Photo?   // 一对一关系（Photo 不支持国际化）
+  logs           Log[]    // 一对多关系（Log 支持国际化，一个 Post 可以有多个语言版本）
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  author         User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId       String
+  likes          Like[]
+  comments       Comment[]
+  collections    PostsOnCollections[]
+  
+  // 软删除支持
+  isDeleted      Boolean   @default(false)
+  deletedAt      DateTime?
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([contentType])
+  @@index([authorId])
+  @@index([isDeleted])
 }
 
-// 专门存放“开发者日志”特有信息的表
+// 专门存放"开发者日志"特有信息的表
 model Log {
-  id          String    @id @default(cuid()) // 对应 Sanity 中的 document ID
-  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId      String    @unique // 确保与 Post 是一对一关系
+  id            String    @id @default(cuid())
+  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId        String    // 移除 @unique，允许一个 Post 有多个 Log（不同语言）
   
   // 日志特有的元数据，将从 Sanity 同步过来，用于筛选和排序
-  title       String
-  publishedAt DateTime?
-  tags        String[]
+  title         String
+  slug          String
+  excerpt       String?   @db.Text
+  publishedAt   DateTime?
+  tags          String[]
+  language      String    // 语言标识 (en, zh)
+
+  @@unique([postId, language]) // 确保同一个 Post 下每种语言只有一条记录
+  @@index([language])
+  @@index([publishedAt])
 }
 
-// 专门存放“摄影作品”特有信息的表
+// 专门存放"摄影作品"特有信息的表
 model Photo {
-  id         String @id @default(cuid()) // 对应 Sanity 中的 document ID
-  post       Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId     String @unique // 确保与 Post 是一对一关系
+  id            String    @id @default(cuid())
+  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId        String    @unique
 
   // 照片特有的元数据，例如 Sanity 的 Asset ID，用于更高级的图片处理
-  sanityAssetId String? 
+  sanityAssetId String?
+  // 存储多语言标题和描述（JSON 格式）
+  titleJson     String?   @db.Text // {"zh": "中文标题", "en": "English Title"}
+  descriptionJson String? @db.Text // {"zh": "中文描述", "en": "English Description"}
 }
 
 // ================================================= //
@@ -149,4 +176,22 @@ model PostsOnCollections {
   assignedBy   String     // 记录操作者（比如管理员ID）
 
   @@id([postId, collectionId])
+}
+
+// ================================================= //
+//                系统管理模型                       //
+// ================================================= //
+
+// Webhook 调用记录表（用于限流）
+model WebhookCall {
+  id        String   @id @default(cuid())
+  operation String   // 'create' | 'update' | 'delete'
+  documentType String // 'collection' | 'photo' | 'log'
+  documentId String  // Sanity 文档 ID
+  success   Boolean  @default(true)
+  error     String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([operation, documentType])
 }

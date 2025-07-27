@@ -10,14 +10,25 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
  * @param request - Next.js 的请求对象。
  * @returns 匹配到的语言代码，如 'en' 或 'zh'。
  */
-function getLocale(request: NextRequest): string | undefined {
-  // 1. 从请求头中，解析出用户浏览器偏好的语言列表 (e.g., ['zh-CN', 'zh', 'en'])
-  const negotiatorHeaders: Record<string, string> = {}
-  request.headers.forEach((value, key) => (negotiatorHeaders[key] = value))
-  const languages = new Negotiator({ headers: negotiatorHeaders }).languages()
+function getLocale(request: NextRequest): string {
+  try {
+    // 1. 从请求头中，解析出用户浏览器偏好的语言列表 (e.g., ['zh-CN', 'zh', 'en'])
+    const negotiatorHeaders: Record<string, string> = {}
+    request.headers.forEach((value, key) => (negotiatorHeaders[key] = value))
+    const languages = new Negotiator({ headers: negotiatorHeaders }).languages()
 
-  // 2. 将用户偏好列表与我们支持的语言列表进行匹配，找出最佳选择
-  return matchLocale(languages, i18n.locales, i18n.defaultLocale)
+    // 2. 如果没有语言偏好或解析失败，返回默认语言
+    if (!languages || languages.length === 0) {
+      return i18n.defaultLocale
+    }
+
+    // 3. 将用户偏好列表与我们支持的语言列表进行匹配，找出最佳选择
+    return matchLocale(languages, i18n.locales, i18n.defaultLocale)
+  } catch (error) {
+    // 如果 locale 匹配失败，返回默认语言
+    console.warn('Locale matching failed, using default locale:', error)
+    return i18n.defaultLocale
+  }
 }
 
 // 定义哪些路由是受保护的。这是一个"黑名单"，所有匹配的路径都需要用户登录。
@@ -40,6 +51,11 @@ export default clerkMiddleware(async (auth, req) => {
   // --- 步骤二：处理国际化重定向 (Internationalization Next) ---
   // 这个逻辑只会在请求通过了上面的认证检查（或者本身就是公共路由）后才执行。
   const pathname = req.nextUrl.pathname
+
+  // 跳过 API 路由的国际化处理
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next()
+  }
 
   // 检查请求路径是否已经包含了语言前缀 (e.g., /en/about)
   const pathnameIsMissingLocale = i18n.locales.every(

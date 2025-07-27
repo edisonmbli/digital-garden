@@ -106,15 +106,15 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
 
                 {/* 互动区域 */}
                 <div className="mt-6">
-                  {selectedPhoto.db && (
+                  {selectedPhoto.post && (
                     <div className="mt-4 flex flex-col gap-4">
                       <LikeButton
-                        postId={selectedPhoto.db.id}
-                        initialLikes={selectedPhoto.db.likesCount}
-                        isLikedByUser={selectedPhoto.db.isLikedByUser}
+                        postId={selectedPhoto.post.id}
+                        initialLikes={selectedPhoto.post.likesCount}
+                        isLikedByUser={selectedPhoto.post.isLikedByUser}
                       />
-                      <CommentForm postId={selectedPhoto.db.id} />
-                      <p>{selectedPhoto.db.commentsCount} Comments</p>
+                      <CommentForm postId={selectedPhoto.post.id} />
+                      <p>{selectedPhoto.post.commentsCount} Comments</p>
                       {/* 这里未来会渲染评论列表 */}
                     </div>
                   )}

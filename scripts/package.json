@@ -1,0 +1,8 @@
+{
+  "name": "digital-garden-ai",
+  "type": "module",
+  "scripts": {
+    "backfill": "tsx scripts/backfill-sanity-data.ts",
+    "backfill:dev": "tsx scripts/backfill-sanity-data.ts"
+  }
+}

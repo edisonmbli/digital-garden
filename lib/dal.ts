@@ -245,43 +245,45 @@ export const getGroupAndPhotosBySlug = cache(
     )
     const { userId } = await auth()
 
+    // 简化查询，直接获取需要的数据
     const photoesInfoFromDb = await prisma.post.findMany({
       where: {
-        id: { in: photoContentIds },
+        sanityDocumentId: { in: photoContentIds },
+        contentType: 'photo',
+        isDeleted: false, // 过滤掉已软删除的记录
       },
       select: {
         id: true,
-        // 使用 _count 来获取总数
+        sanityDocumentId: true,
+        likes: userId ? {
+          where: { userId },
+          select: { id: true }
+        } : false,
         _count: {
           select: {
             likes: true,
             comments: true,
           },
         },
-        // 同时，单独查询当前用户是否点赞
-        likes: {
-          where: { userId: userId || undefined },
-          select: { userId: true },
-        },
       },
     })
 
-    // 3. 将 Prisma 数据，转换为一个易于查找的 Map
-    const photoesMap = new Map(photoesInfoFromDb.map((p) => [p.id, p]))
+    // 3. 将 Prisma 数据，转换为一个易于查找的 Map（使用 sanityDocumentId 作为 key）
+    const photoesMap = new Map(photoesInfoFromDb.map((p) => [p.sanityDocumentId, p]))
 
     // 4. (关键) "扩充" Sanity 数据，将 Prisma 数据合并进去
     const enrichedPhotos: EnrichedPhoto[] = collectionDataFromSanity.photos.map(
       (photo: Photo) => {
-        const photoData = photoesMap.get(photo._id)
+        const photoData = photoesMap.get(photo._id) // 使用 Sanity 的 _id 来查找对应的 Post 记录
         return {
           ...photo,
-          db: photoData
+          post: photoData
             ? {
                 id: photoData.id,
                 likesCount: photoData._count.likes,
                 commentsCount: photoData._count.comments,
-                // 在这里进行计算，直接返回布尔值
-                isLikedByUser: photoData.likes.length > 0,
+                // 检查用户是否点赞了这张照片
+                isLikedByUser: userId ? photoData.likes.length > 0 : false,
               }
             : null,
         }

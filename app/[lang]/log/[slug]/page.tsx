@@ -32,7 +32,7 @@ export default async function LogPostPage({
 
   // 并行获取所有需要的数据
   const [translations, postContent] = await Promise.all([
-    getTranslationsBySlug(slug, lang, 'log'),
+    getTranslationsBySlug({ slug, lang, type: 'log' }),
     getLogPostBySlug(slug, lang),
   ])
 
