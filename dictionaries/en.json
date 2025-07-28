@@ -22,12 +22,36 @@
     "description": "Here, we fully record the construction process of this website from zero to one."
   },
   "clerk": {
-    "signIn": { "start": { "title": "Sign in" } },
+    "signIn": { 
+      "start": { 
+        "title": "Sign in",
+        "subtitle": "Welcome back! Please sign in to continue"
+      } 
+    },
     "signUp": { "start": { "title": "Sign Up" } },
     "userButton": { "action__manageAccount": "Manage Account" }
+  },
+  "clerkContextual": {
+    "signIn": {
+      "likePhoto": {
+        "subtitle": "Sign in to continue liking photos"
+      }
+    }
   },
   "gallery": {
     "loading": "Loading...",
     "allPhotosLoaded": "All photos loaded."
+  },
+  "auth": {
+    "signInToLikePhotos": "Sign in to continue liking photos",
+    "signInPrompt": "Join our community to like photos and connect with other photography enthusiasts.",
+    "signInButton": "Sign In",
+    "maybeLater": "Maybe Later"
+  },
+  "interactions": {
+    "likes": "Likes",
+    "like": "Like",
+    "comments": "Comments",
+    "comment": "Comment"
   }
 }

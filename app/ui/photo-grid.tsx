@@ -2,19 +2,52 @@
 'use client'
 
 import { FadeIn } from '@/app/ui/fade-in'
-import { useState } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import clsx from 'clsx'
 import Image from 'next/image'
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
 } from '@/app/ui/responsive-dialog'
 import Masonry from 'react-masonry-css'
-import { LikeButton } from '@/app/ui/like-button'
-import { CommentForm } from '@/app/ui/comment-form'
+import { EnhancedLikeButton } from '@/app/ui/enhanced-like-button'
+import AuthModal from '@/app/ui/auth-modal'
+import { useI18n } from '@/app/context/i18n-provider'
 import { type EnrichedPhoto } from '@/types/sanity'
+import { MessageCircle } from 'lucide-react'
 
 export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
   const [selectedPhoto, setSelectedPhoto] = useState<EnrichedPhoto | null>(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [pendingPhoto, setPendingPhoto] = useState<EnrichedPhoto | null>(null)
+  const dict = useI18n()
+
+  // 检查URL参数中的照片ID，自动打开对应照片
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const photoId = urlParams.get('photo')
+      
+      if (photoId && photos.length > 0) {
+        const targetPhoto = photos.find(photo => photo._id === photoId)
+        if (targetPhoto) {
+          setSelectedPhoto(targetPhoto)
+          // 清理URL参数，避免刷新时重复打开
+          const newUrl = new URL(window.location.href)
+          newUrl.searchParams.delete('photo')
+          window.history.replaceState({}, '', newUrl.toString())
+        }
+      }
+    }
+  }, [photos])
+
+  const isLandscape =
+    selectedPhoto &&
+    selectedPhoto.metadata &&
+    selectedPhoto.metadata.dimensions &&
+    selectedPhoto.metadata.dimensions.width /
+      selectedPhoto.metadata.dimensions.height >
+      1
 
   // 定义断点
   const breakpointColumnsObj = {
@@ -23,6 +56,40 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
     700: 2,
     500: 1,
   }
+
+  // 使用 useCallback 优化回调函数，避免不必要的重新渲染
+  const handleAuthRequired = useCallback(() => {
+    console.log('🔐 handleAuthRequired called:', {
+      selectedPhoto: selectedPhoto?._id,
+      currentPendingPhoto: pendingPhoto?._id
+    })
+    // 实现模态框替换模式：关闭照片模态框，保存当前照片，显示认证模态框
+    setPendingPhoto(selectedPhoto)
+    setSelectedPhoto(null)
+    setShowAuthModal(true)
+    console.log('🔐 Auth modal opened, photo saved to pending')
+  }, [selectedPhoto, pendingPhoto])
+
+  const handleAuthSuccess = useCallback(() => {
+    console.log('🎉 handleAuthSuccess called:', {
+      pendingPhoto: pendingPhoto?._id,
+      currentSelectedPhoto: selectedPhoto?._id
+    })
+    // 认证成功后重新打开照片模态框
+    if (pendingPhoto) {
+      setSelectedPhoto(pendingPhoto)
+      setPendingPhoto(null)
+      console.log('🎉 Photo restored from pending, modal should reopen')
+    } else {
+      console.log('⚠️ No pending photo found!')
+    }
+  }, [pendingPhoto, selectedPhoto])
+
+  const handleAuthModalClose = useCallback(() => {
+    console.log('❌ handleAuthModalClose called')
+    setShowAuthModal(false)
+    setPendingPhoto(null)
+  }, [])
 
   return (
     <>
@@ -55,18 +122,104 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
       <ResponsiveDialog
         open={!!selectedPhoto}
         onOpenChange={() => setSelectedPhoto(null)}
+        onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <ResponsiveDialogContent className="p-0 md:max-w-6xl md:max-h-[95vh] bg-transparent md:bg-background border-0 md:border md:rounded-lg overflow-hidden">
+        <ResponsiveDialogContent className="p-0 md:max-w-7xl md:max-h-[95vh] bg-background border-0 md:border md:rounded-lg overflow-hidden">
           {selectedPhoto && (
             <>
-              {/* 图片展示区域 - 简洁画廊风格 */}
-              <div className="relative w-full md:h-[80vh] h-[70vh] p-2 md:p-4 bg-background">
-                {/* 相框展示区域 */}
-                <div className="relative w-full h-full flex items-center justify-center">
-                  {/* 简洁相框容器 */}
-                  <div className="relative bg-white dark:bg-white p-2 md:p-3 shadow-2xl">
+              {/* 桌面端：左右分栏布局 */}
+              <div className="hidden md:flex md:h-[90vh]">
+                {/* 左侧：照片展示区域 */}
+                <div className="flex-1 relative bg-neutral-50 dark:bg-neutral-900 flex p-6 overflow-hidden">
+                  <div className="m-auto">
+                    {/* 动态相框容器 - 贴合照片尺寸 */}
+                    <div className="relative inline-block bg-white dark:bg-white p-3 shadow-2xl">
+                      {/* 照片本体 */}
+                      <div className="relative">
+                        <Image
+                          src={selectedPhoto.imageUrl}
+                          alt={
+                            selectedPhoto.title || 'A photo from the collection'
+                          }
+                          width={
+                            selectedPhoto.metadata?.dimensions.width || 800
+                          }
+                          height={
+                            selectedPhoto.metadata?.dimensions.height || 600
+                          }
+                          className="max-w-full max-h-[calc(90vh-6rem)] object-contain"
+                          sizes="(min-width: 768px) 60vw, 90vw"
+                          priority
+                        />
+                        {/* 照片表面的微妙光泽效果 */}
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/3 to-transparent pointer-events-none"></div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* 相框投影 - 动态适应 */}
+                  <div className="absolute inset-8 -z-10 bg-black/20 dark:bg-black/40 blur-xl transform-gpu"></div>
+                </div>
+
+                {/* 右侧：信息和互动区域 */}
+                <div className="w-80 flex flex-col bg-background border-l border-border/20">
+                  {/* 内容区域 - 增加垂直内边距以实现视觉平衡 */}
+                  <div
+                    className={clsx(
+                      'p-6 overflow-y-auto flex flex-1 flex-col',
+                      isLandscape ? 'justify-center' : 'pt-[30%]'
+                    )}
+                  >
+                    {selectedPhoto.title && (
+                      <h3 className="font-bold text-2xl mb-4 text-foreground tracking-tight leading-tight">
+                        {selectedPhoto.title}
+                      </h3>
+                    )}
+                    {selectedPhoto.description && (
+                      <p className="text-base text-muted-foreground leading-relaxed">
+                        {selectedPhoto.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* 底部固定的互动区域 */}
+                  {selectedPhoto.post && (
+                    <div className="p-6 border-t border-border/10 bg-background/80 backdrop-blur-sm">
+                      <div className="space-y-3">
+                        {/* 点赞按钮 */}
+                        <EnhancedLikeButton
+                          postId={selectedPhoto.post.id}
+                          initialLikes={selectedPhoto.post.likesCount}
+                          isLikedByUser={selectedPhoto.post.isLikedByUser}
+                          onAuthRequired={handleAuthRequired}
+                          variant="default"
+                          className="w-full justify-center"
+                        />
+
+                        {/* 评论统计 */}
+                        <div className="flex items-center justify-center text-muted-foreground text-sm">
+                          <MessageCircle className="mr-2 h-5 w-5" />
+                          <span>
+                            {selectedPhoto.post.commentsCount} {dict.interactions.comments}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 移动端：优化的垂直布局 */}
+              <div
+                className={clsx('md:hidden flex flex-col', {
+                  'min-h-[50vh]': isLandscape,
+                })}
+              >
+                {/* 照片展示区域 - 动态高度 */}
+                <div className="relative bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center p-3 overflow-hidden">
+                  {/* 动态相框容器 - 贴合照片尺寸 */}
+                  <div className="relative inline-block bg-white dark:bg-white p-2 shadow-2xl">
                     {/* 照片本体 */}
-                    <div className="relative bg-black">
+                    <div className="relative">
                       <Image
                         src={selectedPhoto.imageUrl}
                         alt={
@@ -76,54 +229,75 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                         height={
                           selectedPhoto.metadata?.dimensions.height || 600
                         }
-                        className="max-w-full max-h-[65vh] md:max-h-[70vh] w-auto h-auto object-contain"
-                        sizes="(max-width: 768px) 95vw, 85vw"
+                        className="max-w-full max-h-[calc(95vh-12rem)] object-contain"
+                        sizes="(min-width: 768px) 60vw, 90vw"
                         priority
                       />
-
                       {/* 照片表面的微妙光泽效果 */}
                       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/3 to-transparent pointer-events-none"></div>
                     </div>
                   </div>
-
-                  {/* 相框投影 */}
-                  <div className="absolute inset-4 md:inset-6 -z-10 bg-black/20 dark:bg-black/40 blur-xl transform translate-y-4 scale-105"></div>
+                  {/* 相框投影 - 动态适应 */}
+                  <div className="absolute inset-4 -z-10 bg-black/20 dark:bg-black/40 blur-xl transform-gpu"></div>
                 </div>
-              </div>
 
-              <div className="p-4 md:p-6 bg-background border-t border-border/20">
-                {/* 照片信息区域 */}
-                {selectedPhoto.title && (
-                  <h3 className="font-bold text-xl md:text-2xl mb-3 text-foreground tracking-tight">
-                    {selectedPhoto.title}
-                  </h3>
-                )}
-                {selectedPhoto.description && (
-                  <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                    {selectedPhoto.description}
-                  </p>
-                )}
+                {/* 信息区域 - 紧凑布局 */}
+                <div className="bg-background border-t border-border/20 p-4 space-y-3">
+                  {selectedPhoto.title && (
+                    <h3 className="font-bold text-lg text-foreground tracking-tight leading-tight">
+                      {selectedPhoto.title}
+                    </h3>
+                  )}
+                  {selectedPhoto.description && (
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {selectedPhoto.description}
+                    </p>
+                  )}
+                </div>
 
-                {/* 互动区域 */}
-                <div className="mt-6">
-                  {selectedPhoto.post && (
-                    <div className="mt-4 flex flex-col gap-4">
-                      <LikeButton
+                {/* 底部固定的互动栏 - 现代移动端设计 */}
+                {selectedPhoto.post && (
+                  <div className="bg-background border-t border-border/20 p-4 pb-6 safe-area-pb">
+                    <div className="flex items-center justify-center space-x-10">
+                      {/* 点赞按钮 */}
+                      <EnhancedLikeButton
                         postId={selectedPhoto.post.id}
                         initialLikes={selectedPhoto.post.likesCount}
                         isLikedByUser={selectedPhoto.post.isLikedByUser}
+                        onAuthRequired={handleAuthRequired}
+                        variant="compact"
                       />
-                      <CommentForm postId={selectedPhoto.post.id} />
-                      <p>{selectedPhoto.post.commentsCount} Comments</p>
-                      {/* 这里未来会渲染评论列表 */}
+
+                      {/* 评论按钮 */}
+                      <div className="flex items-center text-muted-foreground text-sm">
+                        <MessageCircle className="mr-2 h-6 w-6" />
+                        <span>{selectedPhoto.post.commentsCount}</span>
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </>
           )}
         </ResponsiveDialogContent>
       </ResponsiveDialog>
+
+      {/* 认证模态框 */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={handleAuthModalClose}
+        onAuthSuccess={handleAuthSuccess}
+        action="like"
+        redirectUrl={
+          typeof window !== 'undefined' 
+            ? `${window.location.pathname}${window.location.search}${
+                pendingPhoto 
+                  ? (window.location.search ? '&' : '?') + `photo=${pendingPhoto._id}`
+                  : ''
+              }`
+            : undefined
+        }
+      />
     </>
   )
 }

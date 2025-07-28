@@ -6,6 +6,8 @@ import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import * as dal from './dal'
 import { type Locale } from '@/i18n-config'
+import { checkRateLimit } from './rate-limit'
+import { auth } from '@clerk/nextjs/server'
 
 // 加载更多照片的 Server Action
 export async function loadMorePhotosAction(
@@ -50,6 +52,64 @@ export async function getTranslationMapAction(
   }
 }
 
+// 点赞/取消点赞的 Server Action
+export async function toggleLikeAction(postId: string) {
+  try {
+    // 验证用户身份
+    const { userId } = await auth()
+    if (!userId) {
+      return {
+        success: false,
+        error: '请先登录后再进行点赞操作',
+        code: 'UNAUTHORIZED'
+      }
+    }
+
+    // 基础验证
+    if (!postId || typeof postId !== 'string') {
+      return {
+        success: false,
+        error: '无效的帖子ID',
+        code: 'INVALID_INPUT'
+      }
+    }
+
+    // Rate limiting 检查
+    const rateLimitResult = await checkRateLimit('like', {
+      maxRequests: 30, // 1分钟内最多30次点赞操作
+      windowMs: 60000
+    })
+    
+    if (!rateLimitResult.allowed) {
+      const resetTimeMinutes = Math.ceil((rateLimitResult.resetTime - Date.now()) / 60000)
+      return {
+        success: false,
+        error: `操作过于频繁，请 ${resetTimeMinutes} 分钟后再试`,
+        code: 'RATE_LIMITED'
+      }
+    }
+    
+    // 执行点赞/取消点赞操作
+    const result = await dal.toggleLikePost(postId)
+    
+    // 重新验证相关的缓存标签
+    revalidateTag(`post-interactions:${postId}`)
+    
+    return {
+      success: true,
+      data: result,
+      message: result.action === 'liked' ? '点赞成功' : '取消点赞成功'
+    }
+  } catch (error) {
+    console.error('Toggle like action error:', error)
+    return {
+      success: false,
+      error: '操作失败，请稍后重试',
+      code: 'INTERNAL_ERROR'
+    }
+  }
+}
+
 const commentSchema = z.string().min(1, 'Comment cannot be empty.').max(500)
 
 // 评论提交的 Server Action
@@ -71,18 +131,6 @@ export async function commentAction(postId: string, formData: FormData) {
   } catch (error) {
     console.error('Failed to create comment:', error)
     return { error: 'Failed to create comment.' }
-  }
-}
-
-// 点赞的 Server Action
-export async function likeAction(postId: string) {
-  try {
-    await dal.likePost(postId)
-    revalidateTag(`post-interactions:${postId}`)
-    return { success: true }
-  } catch (error) {
-    console.error('Failed to like post:', error)
-    return { error: 'Failed to like post.' }
   }
 }
 

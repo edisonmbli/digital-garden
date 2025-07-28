@@ -9,27 +9,36 @@ interface ResponsiveDialogProps {
   children: React.ReactNode
   open: boolean
   onOpenChange: (open: boolean) => void
+  onOpenAutoFocus?: (event: Event) => void
 }
 
 interface ResponsiveDialogContentProps {
   children: React.ReactNode
   className?: string
+  onOpenAutoFocus?: (event: Event) => void
 }
 
 export function ResponsiveDialog({
   children,
   open,
   onOpenChange,
+  onOpenAutoFocus,
 }: ResponsiveDialogProps) {
   const isDesktop = useMediaQuery('(min-width: 768px)')
 
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        {children}
+        {React.Children.map(children, (child) => {
+          if (React.isValidElement(child) && child.type === ResponsiveDialogContent) {
+            return React.cloneElement(child as React.ReactElement<ResponsiveDialogContentProps>, { onOpenAutoFocus });
+          }
+          return child;
+        })}
       </Dialog>
     )
   }
+
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -41,12 +50,13 @@ export function ResponsiveDialog({
 export function ResponsiveDialogContent({
   children,
   className,
+  onOpenAutoFocus,
 }: ResponsiveDialogContentProps) {
   const isDesktop = useMediaQuery('(min-width: 768px)')
 
   if (isDesktop) {
     return (
-      <DialogContent className={className} showCloseButton={true}>
+      <DialogContent className={className} showCloseButton={true} onOpenAutoFocus={onOpenAutoFocus}>
         <DialogTitle className="sr-only">Photo Details</DialogTitle>
         {children}
       </DialogContent>

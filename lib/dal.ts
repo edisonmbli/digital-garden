@@ -151,18 +151,62 @@ export const getLikesAndCommentsForPost = cache(async (postId: string) => {
   return post
 })
 
-export async function likePost(postId: string) {
+export async function toggleLikePost(postId: string) {
   const { userId } = await auth()
   if (!userId) throw new Error('Unauthorized')
 
-  // 使用 upsert 实现“点赞/取消点赞”的切换逻辑
-  // 这是一个进阶技巧，我们暂时先实现简单的创建
-  return prisma.like.create({
-    data: {
-      postId,
-      userId,
+  // 检查用户是否已经点赞过这个帖子
+  const existingLike = await prisma.like.findUnique({
+    where: {
+      postId_userId: {
+        postId,
+        userId,
+      },
     },
   })
+
+  if (existingLike) {
+    // 如果已经点赞，则取消点赞
+    await prisma.like.delete({
+      where: {
+        id: existingLike.id,
+      },
+    })
+    return { action: 'unliked' as const, success: true }
+  } else {
+    // 如果没有点赞，则创建点赞
+    await prisma.like.create({
+      data: {
+        postId,
+        userId,
+      },
+    })
+    return { action: 'liked' as const, success: true }
+  }
+}
+
+// 获取帖子的点赞统计信息
+export async function getPostLikeStats(postId: string) {
+  const { userId } = await auth()
+  
+  const [likesCount, userLike] = await Promise.all([
+    prisma.like.count({
+      where: { postId },
+    }),
+    userId ? prisma.like.findUnique({
+      where: {
+        postId_userId: {
+          postId,
+          userId,
+        },
+      },
+    }) : null,
+  ])
+
+  return {
+    likesCount,
+    isLikedByUser: !!userLike,
+  }
 }
 
 export async function createComment(
@@ -255,10 +299,12 @@ export const getGroupAndPhotosBySlug = cache(
       select: {
         id: true,
         sanityDocumentId: true,
-        likes: userId ? {
-          where: { userId },
-          select: { id: true }
-        } : false,
+        likes: userId
+          ? {
+              where: { userId },
+              select: { id: true },
+            }
+          : false,
         _count: {
           select: {
             likes: true,
@@ -269,7 +315,9 @@ export const getGroupAndPhotosBySlug = cache(
     })
 
     // 3. 将 Prisma 数据，转换为一个易于查找的 Map（使用 sanityDocumentId 作为 key）
-    const photoesMap = new Map(photoesInfoFromDb.map((p) => [p.sanityDocumentId, p]))
+    const photoesMap = new Map(
+      photoesInfoFromDb.map((p) => [p.sanityDocumentId, p])
+    )
 
     // 4. (关键) "扩充" Sanity 数据，将 Prisma 数据合并进去
     const enrichedPhotos: EnrichedPhoto[] = collectionDataFromSanity.photos.map(

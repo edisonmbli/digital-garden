@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Figtree, Lora } from 'next/font/google'
 import '@/app/ui/globals.css'
 import { ThemeProvider } from '@/app/ui/theme-provider'
-import { ClerkProvider } from '@clerk/nextjs'
+import { DynamicClerkProvider } from '@/components/dynamic-clerk-provider'
 import { Header } from '@/app/ui/header'
 import { Footer } from '@/app/ui/footer'
 import { Toaster } from '@/components/ui/sonner'
@@ -44,7 +44,10 @@ export default async function RootLayout({
   const clerkLocalization = getClerkLocalization(lang)
 
   return (
-    <ClerkProvider localization={{ ...clerkLocalization, ...dictionary.clerk }}>
+    <DynamicClerkProvider 
+      baseLocalization={{ ...clerkLocalization, ...dictionary.clerk }}
+      contextualLocalization={dictionary}
+    >
       <html lang="en" suppressHydrationWarning>
         <body
           className={`${fontSans.variable} ${fontSerif.variable} font-sans min-h-screen w-full bg-background text-foreground antialiased`}
@@ -70,6 +73,6 @@ export default async function RootLayout({
           </ThemeProvider>
         </body>
       </html>
-    </ClerkProvider>
+    </DynamicClerkProvider>
   )
 }
