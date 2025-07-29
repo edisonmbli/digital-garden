@@ -17,31 +17,9 @@ interface AuthModalProps {
   redirectUrl?: string
 }
 
-export default function AuthModal({
-  isOpen,
-  onClose,
-  onAuthSuccess,
-  action = 'default',
-  redirectUrl,
-}: AuthModalProps) {
-  // 早期返回：如果模态框未打开，不执行任何逻辑
-  if (!isOpen) {
-    return null
-  }
-
-  return <AuthModalContent 
-    isOpen={isOpen}
-    onClose={onClose}
-    onAuthSuccess={onAuthSuccess}
-    action={action}
-    redirectUrl={redirectUrl}
-  />
-}
-
-// 将实际的模态框逻辑分离到单独的组件中
-function AuthModalContent({
-  isOpen,
-  onClose,
+export default function AuthModal({ 
+  isOpen, 
+  onClose, 
   onAuthSuccess,
   action = 'default',
   redirectUrl,
@@ -54,38 +32,17 @@ function AuthModalContent({
   const prevUserRef = useRef<typeof user>(null)
   const hasTriggeredCallbackRef = useRef(false)
 
-  console.log('🔄 AuthModal render:', {
-    isOpen,
-    hasOnAuthSuccess: !!onAuthSuccess,
-    action,
-    isLoaded,
-    hasUser: !!user,
-    userId: user?.id,
-    redirectUrl
-  })
-
   // 使用 useCallback 来稳定化回调函数
   const handleAuthSuccess = useCallback(() => {
     if (onAuthSuccess && !hasTriggeredCallbackRef.current) {
-      console.log('✅ User logged in successfully, executing callbacks...')
       hasTriggeredCallbackRef.current = true
       onAuthSuccess()
       onClose()
-      console.log('✅ Callbacks executed: onAuthSuccess() and onClose()')
     }
   }, [onAuthSuccess, onClose])
 
   // 监听用户登录状态变化 - 优化依赖项
   useEffect(() => {
-    console.log('🔍 AuthModal useEffect triggered:', {
-      isLoaded,
-      hasUser: !!user,
-      hasOnAuthSuccess: !!onAuthSuccess,
-      isOpen,
-      action,
-      hasTriggeredCallback: hasTriggeredCallbackRef.current
-    })
-    
     // 只有当用户从未登录变为已登录时才触发回调
     if (isLoaded && user && !prevUserRef.current && !hasTriggeredCallbackRef.current) {
       handleAuthSuccess()

@@ -7,16 +7,23 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 
 // 定义 commentAction 的返回类型
-type CommentActionState = { success: boolean } | { error: string } | null
+type CommentActionState = { success: true } | { error: string } | null
 
 export function CommentForm({ postId }: { postId: string }) {
   // 1. 我们为 useActionState 传入一个符合其期望的、新的 action 函数
   //    这个函数接收 prevState 和 formData
   const [state, formAction] = useActionState<CommentActionState, FormData>(
-    async (prevState, formData) => {
+    async (prevState, formData): Promise<CommentActionState> => {
       // 2. 在这个函数内部，我们再调用我们真正的 Server Action，
       //    并清晰地传入 postId 和 formData
-      return commentAction(postId, formData)
+      const result = await commentAction(postId, formData)
+      
+      // 确保返回类型匹配
+       if ('success' in result) {
+         return { success: true }
+       } else {
+         return { error: result.error || '操作失败' }
+       }
     },
 
     null // 初始状态

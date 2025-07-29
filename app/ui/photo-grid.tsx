@@ -59,34 +59,21 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
 
   // 使用 useCallback 优化回调函数，避免不必要的重新渲染
   const handleAuthRequired = useCallback(() => {
-    console.log('🔐 handleAuthRequired called:', {
-      selectedPhoto: selectedPhoto?._id,
-      currentPendingPhoto: pendingPhoto?._id
-    })
     // 实现模态框替换模式：关闭照片模态框，保存当前照片，显示认证模态框
     setPendingPhoto(selectedPhoto)
     setSelectedPhoto(null)
     setShowAuthModal(true)
-    console.log('🔐 Auth modal opened, photo saved to pending')
   }, [selectedPhoto, pendingPhoto])
 
   const handleAuthSuccess = useCallback(() => {
-    console.log('🎉 handleAuthSuccess called:', {
-      pendingPhoto: pendingPhoto?._id,
-      currentSelectedPhoto: selectedPhoto?._id
-    })
-    // 认证成功后重新打开照片模态框
     if (pendingPhoto) {
       setSelectedPhoto(pendingPhoto)
       setPendingPhoto(null)
-      console.log('🎉 Photo restored from pending, modal should reopen')
-    } else {
-      console.log('⚠️ No pending photo found!')
     }
-  }, [pendingPhoto, selectedPhoto])
+    setShowAuthModal(false)
+  }, [pendingPhoto])
 
   const handleAuthModalClose = useCallback(() => {
-    console.log('❌ handleAuthModalClose called')
     setShowAuthModal(false)
     setPendingPhoto(null)
   }, [])

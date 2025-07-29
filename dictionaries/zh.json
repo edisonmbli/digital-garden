@@ -62,6 +62,7 @@
     }
   },
   "gallery": {
+    "loading": "加载中...",
     "allPhotosLoaded": "---- 还是有底线的 ----"
   },
   "auth": {

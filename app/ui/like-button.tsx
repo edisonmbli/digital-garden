@@ -4,7 +4,7 @@
 import { useTransition } from 'react'
 import { Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { likeAction } from '@/lib/actions' // 导入我们创建的 Server Action
+import { toggleLikeAction } from '@/lib/actions' // 导入我们创建的 Server Action
 
 export function LikeButton({
   postId,
@@ -22,7 +22,7 @@ export function LikeButton({
     // 使用 startTransition 包裹我们的 Server Action 调用
     startTransition(() => {
       // 调用 Action，并传入需要的 postId
-      likeAction(postId)
+      toggleLikeAction(postId)
     })
   }
 

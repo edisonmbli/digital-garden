@@ -1,197 +1,207 @@
-// prisma/schema.prisma
-
-// 1. 生成 Prisma Client 的配置
 generator client {
   provider = "prisma-client-js"
 }
 
-// 2. 配置数据库数据源
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-// ================================================= //
-//                业务核心模型                       //
-// ================================================= //
-
-// "合集/系列"模型
-// 用于组织文章（一对多）和摄影作品（多对多）
 model Collection {
-  id           String   @id @default(cuid())
-  // 使用 _i18n_id_ 作为国际化标识（国际化插件生成的共同ID）
-  sanityI18nId String   @map("sanity_i18n_id")
-  // 存储当前语言版本的 _id（用于调试和追踪）
-  sanityId     String   @map("sanity_id")
-  language     String   // 语言标识 (en, zh)
-  name         String
-  slug         String
-  description  String?  @db.Text
-  coverImageUrl String? @db.Text
-  isFeatured   Boolean  @default(false)
-  posts        PostsOnCollections[]
-  
-  // 软删除支持
-  isDeleted    Boolean  @default(false)
-  deletedAt    DateTime?
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String               @id @default(cuid())
+  name          String
+  slug          String
+  description   String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  coverImageUrl String?
+  isFeatured    Boolean              @default(false)
+  language      String
+  sanityI18nId  String               @map("sanity_i18n_id")
+  sanityId      String               @map("sanity_id")
+  deletedAt     DateTime?
+  isDeleted     Boolean              @default(false)
+  posts         PostsOnCollections[]
 
-  // 复合索引：确保同一个 i18n_id 下每种语言只有一条记录
   @@unique([sanityI18nId, language])
   @@index([language])
   @@index([isFeatured])
   @@index([isDeleted])
 }
 
-// 通用的"帖子"实体模型
-// 这是所有可被点赞、评论内容的抽象核心
 model Post {
-  id             String    @id @default(cuid())
-  // 存储 Sanity 文档的唯一标识
-  // - 对于 photo: 使用 _id（因为没有使用国际化插件）
-  // - 对于 log: 使用 _i18n_id_（因为使用了国际化插件）
-  sanityDocumentId String  @unique @map("sanity_document_id")
-  // 内容类型标识
-  contentType    String   // 'photo' | 'log'
-  
-  // 通过关联来判断类型
-  photo          Photo?   // 一对一关系（Photo 不支持国际化）
-  logs           Log[]    // 一对多关系（Log 支持国际化，一个 Post 可以有多个语言版本）
-
-  author         User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId       String
-  likes          Like[]
-  comments       Comment[]
-  collections    PostsOnCollections[]
-  
-  // 软删除支持
-  isDeleted      Boolean   @default(false)
-  deletedAt      DateTime?
-  
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id               String               @id @default(cuid())
+  authorId         String
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  contentType      String
+  sanityDocumentId String               @unique @map("sanity_document_id")
+  deletedAt        DateTime?
+  isDeleted        Boolean              @default(false)
+  comments         Comment[]
+  likes            Like[]
+  logs             Log[]
+  photo            Photo?
+  author           User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  collections      PostsOnCollections[]
 
   @@index([contentType])
   @@index([authorId])
   @@index([isDeleted])
 }
 
-// 专门存放"开发者日志"特有信息的表
 model Log {
-  id            String    @id @default(cuid())
-  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId        String    // 移除 @unique，允许一个 Post 有多个 Log（不同语言）
-  
-  // 日志特有的元数据，将从 Sanity 同步过来，用于筛选和排序
-  title         String
-  slug          String
-  excerpt       String?   @db.Text
-  publishedAt   DateTime?
-  tags          String[]
-  language      String    // 语言标识 (en, zh)
+  id          String    @id @default(cuid())
+  postId      String
+  title       String
+  publishedAt DateTime?
+  tags        String[]
+  excerpt     String?
+  language    String
+  slug        String
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  @@unique([postId, language]) // 确保同一个 Post 下每种语言只有一条记录
+  @@unique([postId, language])
   @@index([language])
   @@index([publishedAt])
 }
 
-// 专门存放"摄影作品"特有信息的表
 model Photo {
-  id            String    @id @default(cuid())
-  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId        String    @unique
-
-  // 照片特有的元数据，例如 Sanity 的 Asset ID，用于更高级的图片处理
-  sanityAssetId String?
-  // 存储多语言标题和描述（JSON 格式）
-  titleJson     String?   @db.Text // {"zh": "中文标题", "en": "English Title"}
-  descriptionJson String? @db.Text // {"zh": "中文描述", "en": "English Description"}
+  id              String  @id @default(cuid())
+  postId          String  @unique
+  sanityAssetId   String?
+  descriptionJson String?
+  titleJson       String?
+  post            Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
-// ================================================= //
-//                用户与交互模型                     //
-// ================================================= //
-
-// 用户模型
 model User {
-  id        String    @id // 存储来自 Clerk 的 User ID
+  id        String    @id
   email     String    @unique
   name      String?
-  avatarUrl String?   @db.Text
-
-  // 关联关系
-  posts     Post[]
-  likes     Like[]
-  comments  Comment[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// “点赞”模型
-model Like {
-  id        String   @id @default(cuid())
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  createdAt DateTime @default(now())
-
-  @@unique([postId, userId]) // 确保一个用户对一个帖子只能点赞一次
-}
-
-// “评论”模型
-model Comment {
-  id        String    @id @default(cuid())
-  content   String    @db.Text
-  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-
-  // 用于实现评论回复功能的自引用关系
-  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  parentId  String?
-  replies   Comment[] @relation("CommentReplies")
-
+  avatarUrl String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  comments  Comment[]
+  likes     Like[]
+  posts     Post[]
 }
 
+model Like {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-// ================================================= //
-//                多对多关系表                       //
-// ================================================= //
+  @@unique([postId, userId])
+}
 
-// Post 与 Collection 的多对多关系中间表
+model Comment {
+  id             String                 @id @default(cuid())
+  content        String
+  postId         String
+  userId         String
+  parentId       String?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  deletedAt      DateTime?
+  ipAddress      String?
+  isDeleted      Boolean                @default(false)
+  isPinned       Boolean                @default(false)
+  userAgent      String?
+  deletedBy      String?
+  isAuthorReply  Boolean                @default(false)
+  moderatedAt    DateTime?
+  moderatedBy    String?
+  pinnedAt       DateTime?
+  pinnedBy       String?
+  status         CommentStatus          @default(PENDING)
+  parent         Comment?               @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies        Comment[]              @relation("CommentReplies")
+  post           Post                   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  moderationLogs CommentModerationLog[]
+
+  @@index([postId, status])
+  @@index([status])
+  @@index([isPinned])
+  @@index([isDeleted])
+  @@index([createdAt])
+  @@index([ipAddress])
+}
+
 model PostsOnCollections {
-  post         Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId       String
-  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   collectionId String
-
   assignedAt   DateTime   @default(now())
-  assignedBy   String     // 记录操作者（比如管理员ID）
+  assignedBy   String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  post         Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@id([postId, collectionId])
 }
 
-// ================================================= //
-//                系统管理模型                       //
-// ================================================= //
-
-// Webhook 调用记录表（用于限流）
 model WebhookCall {
-  id        String   @id @default(cuid())
-  operation String   // 'create' | 'update' | 'delete'
-  documentType String // 'collection' | 'photo' | 'log'
-  documentId String  // Sanity 文档 ID
-  success   Boolean  @default(true)
-  error     String?  @db.Text
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  operation    String
+  documentType String
+  documentId   String
+  success      Boolean  @default(true)
+  error        String?
+  createdAt    DateTime @default(now())
 
   @@index([createdAt])
   @@index([operation, documentType])
+}
+
+model CommentModerationLog {
+  id              String        @id @default(cuid())
+  commentId       String
+  moderatorId     String
+  createdAt       DateTime      @default(now())
+  contentSnapshot String
+  moderatorName   String?
+  reason          String?
+  action          CommentStatus
+  comment         Comment       @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+  @@index([moderatorId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model SpamDetectionLog {
+  id           String   @id @default(cuid())
+  ipAddress    String?
+  userId       String?
+  content      String
+  createdAt    DateTime @default(now())
+  confidence   Float?
+  isSpam       Boolean
+  reason       String?
+  triggerRules String[]
+  userAgent    String?
+
+  @@index([isSpam])
+  @@index([ipAddress])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model SensitiveWord {
+  id        String   @id @default(cuid())
+  word      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([word])
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
