@@ -47,6 +47,7 @@ export default async function CollectionPage({
             {initialGroupData.description}
           </p>
         </header>
+        
         <main>
           <InfinitePhotoGrid
             initialPhotos={initialGroupData.photos}

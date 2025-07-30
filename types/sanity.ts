@@ -76,7 +76,7 @@ export type Translation = {
 
 export type TranslationMap = Record<string, string> // { 'en': 'norway_en', 'zh': 'norway_zh' }
 
-// 扩展 Photo 类型，包含了Prisma Post数据、“扩充后”的照片类型
+// 扩展 Photo 类型，包含了Prisma Post数据、"扩充后"的照片类型
 export type EnrichedPhoto = {
   _id: string
   imageUrl: string
@@ -95,5 +95,6 @@ export type EnrichedPhoto = {
     likesCount: number
     isLikedByUser: boolean
     commentsCount: number
+    hasUserCommented?: boolean
   } | null
 }

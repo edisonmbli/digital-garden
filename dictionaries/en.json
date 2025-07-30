@@ -44,14 +44,50 @@
   },
   "auth": {
     "signInToLikePhotos": "Sign in to continue liking photos",
+    "signInToComment": "Please sign in to leave a comment",
     "signInPrompt": "Join our community to like photos and connect with other photography enthusiasts.",
     "signInButton": "Sign In",
-    "maybeLater": "Maybe Later"
+    "maybeLater": "Maybe Later",
+    "signIn": "Sign In"
   },
   "interactions": {
     "likes": "Likes",
     "like": "Like",
     "comments": "Comments",
     "comment": "Comment"
+  },
+  "comments": {
+    "placeholder": "Share your thoughts...",
+    "submit": "Submit",
+    "writeComment": "Write a comment",
+    "submitComment": "Submit Comment",
+    "commentPlaceholder": "Share your thoughts...",
+    "reply": "Reply",
+    "replyTo": "Reply to",
+    "showReplies": "Show replies",
+    "hideReplies": "Hide replies",
+    "moreActions": "More actions",
+    "edit": "Edit",
+    "delete": "Delete",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "approve": "Approve",
+    "reject": "Reject",
+    "authorReply": "Author",
+    "pinned": "Pinned",
+    "pending": "Pending approval",
+    "rejected": "Rejected",
+    "noComments": "No comments yet",
+    "beFirstToComment": "Be the first to share your thoughts!",
+    "loadMore": "Load more comments",
+    "signInToComment": "Please sign in to leave a comment",
+    "commentSubmitted": "Comment submitted, will be displayed after review",
+    "commentSubmittedSuccess": "Comment submitted, will be displayed after review"
+  },
+  "common": {
+    "submitting": "Submitting...",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
   }
 }

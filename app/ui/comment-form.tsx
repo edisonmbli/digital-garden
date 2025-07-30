@@ -1,44 +1,182 @@
 // app/ui/comment-form.tsx
 'use client'
 
-import { useActionState } from 'react'
-import { commentAction } from '@/lib/actions'
+import { useState, useTransition } from 'react'
+import { createCommentAction } from '@/lib/actions'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Loader2, Send } from 'lucide-react'
+import { useI18n } from '@/app/context/i18n-provider'
+import { useAuth } from '@clerk/nextjs'
 
-// 定义 commentAction 的返回类型
-type CommentActionState = { success: true } | { error: string } | null
+interface CommentFormProps {
+  postId: string
+  parentId?: string
+  placeholder?: string
+  onSubmit?: (content: string) => Promise<void>
+  onSubmitSuccess?: () => void
+  onAuthRequired?: () => void
+  isSubmitting?: boolean
+  compact?: boolean
+  className?: string
+}
 
-export function CommentForm({ postId }: { postId: string }) {
-  // 1. 我们为 useActionState 传入一个符合其期望的、新的 action 函数
-  //    这个函数接收 prevState 和 formData
-  const [state, formAction] = useActionState<CommentActionState, FormData>(
-    async (prevState, formData): Promise<CommentActionState> => {
-      // 2. 在这个函数内部，我们再调用我们真正的 Server Action，
-      //    并清晰地传入 postId 和 formData
-      const result = await commentAction(postId, formData)
+export default function CommentForm({ 
+  postId, 
+  parentId, 
+  placeholder, 
+  onSubmit, 
+  onSubmitSuccess,
+  onAuthRequired,
+  isSubmitting: externalIsSubmitting = false,
+  compact = false,
+  className = ''
+}: CommentFormProps) {
+  const [content, setContent] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+  const { isSignedIn } = useAuth()
+  const dict = useI18n()
+
+  const isLoading = isPending || externalIsSubmitting
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!content.trim()) {
+      setError(dict.comments?.placeholder || 'Comment cannot be empty')
+      return
+    }
+
+    if (!isSignedIn) {
+      setError(dict.auth?.signInToComment || 'Please sign in to comment')
+      return
+    }
+
+    setError(null)
+
+    if (onSubmit) {
+      // 使用自定义提交处理器（用于回复）
+      try {
+        await onSubmit(content.trim())
+        setContent('')
+      } catch {
+        setError('Failed to submit comment')
+      }
+    } else {
+      // 使用默认的Server Action
+      startTransition(async () => {
+        try {
+          const result = await createCommentAction({
+            content: content.trim(),
+            postId,
+            parentId
+          })
+
+          if (result.success) {
+            setContent('')
+            // 不再显示toast，改为通过回调处理
+            // 调用成功回调
+            if (onSubmitSuccess) {
+              onSubmitSuccess()
+            }
+          } else {
+            setError(result.error || 'Failed to submit comment')
+          }
+        } catch {
+          setError('An unexpected error occurred')
+        }
+      })
+    }
+  }
+
+  if (!isSignedIn) {
+    return (
+      <Card className={className}>
+        <CardContent className="p-4 md:p-6 flex flex-col h-full min-h-[120px]">
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-muted-foreground text-center">
+              {dict.auth?.signInToComment || 'Please sign in to leave a comment'}
+            </p>
+          </div>
+          <div className="mt-auto flex justify-center">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                if (onAuthRequired) {
+                  onAuthRequired()
+                } else {
+                  // 如果没有提供回调，则跳转到登录页
+                  window.location.href = '/sign-in'
+                }
+              }}
+            >
+              {dict.auth?.signIn || 'Sign In'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const formContent = (
+    <div className="flex flex-col h-full">
+      <Textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder={placeholder || dict.comments?.placeholder || 'Share your thoughts...'}
+        className={`resize-none flex-1 ${compact ? 'min-h-[80px]' : 'min-h-[120px]'}`}
+        disabled={isLoading}
+      />
       
-      // 确保返回类型匹配
-       if ('success' in result) {
-         return { success: true }
-       } else {
-         return { error: result.error || '操作失败' }
-       }
-    },
+      {error && (
+        <Alert variant="destructive" className="mt-3">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-    null // 初始状态
+      <div className="flex justify-between items-center mt-3">
+        <div className="text-xs text-muted-foreground">
+          {content.length}/2000
+        </div>
+        <Button 
+          type="submit" 
+          disabled={isLoading || !content.trim() || content.length > 2000}
+          size={compact ? "sm" : "default"}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {dict.common?.submitting || 'Submitting...'}
+            </>
+          ) : (
+            <>
+              <Send className="mr-2 h-4 w-4" />
+              {parentId ? (dict.comments?.reply || 'Reply') : (dict.comments?.submit || 'Submit')}
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
   )
 
+  if (compact) {
+    return (
+      <form onSubmit={handleSubmit} className={`flex flex-col h-full ${className}`}>
+        {formContent}
+      </form>
+    )
+  }
+
   return (
-    // 3. 将这个新的 formAction，直接传递给 form
-    <form action={formAction}>
-      <Textarea name="comment" placeholder="Add a comment..." />
-      <Button type="submit" className="mt-2">
-        Submit
-      </Button>
-      {state && 'error' in state && (
-        <p className="text-red-500 text-sm mt-2">{state.error}</p>
-      )}
-    </form>
+    <Card className={className}>
+      <CardContent className="p-4 md:p-6 flex flex-col h-full min-h-[200px]">
+        <form onSubmit={handleSubmit} className="flex flex-col h-full">
+          {formContent}
+        </form>
+      </CardContent>
+    </Card>
   )
 }

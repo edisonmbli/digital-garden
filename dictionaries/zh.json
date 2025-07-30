@@ -58,6 +58,9 @@
     "signIn": {
       "likePhoto": {
         "subtitle": "登录后继续点赞照片"
+      },
+      "commentPhoto": {
+        "subtitle": "登录后继续评论照片"
       }
     }
   },
@@ -67,14 +70,48 @@
   },
   "auth": {
     "signInToLikePhotos": "登录后继续点赞照片",
+    "signInToComment": "请登录后发表评论",
     "signInPrompt": "加入我们的社区，为照片点赞并与其他摄影爱好者交流。",
     "signInButton": "登录",
-    "maybeLater": "稍后再说"
+    "maybeLater": "稍后再说",
+    "signIn": "登录"
   },
   "interactions": {
-    "likes": "个赞",
-    "like": "点赞",
-    "comments": "条评论",
+    "likes": "赞",
+    "like": "赞",
+    "comments": "评论",
     "comment": "评论"
+  },
+  "comments": {
+    "placeholder": "分享你的想法...",
+    "submit": "提交",
+    "writeComment": "我要评论",
+    "reply": "回复",
+    "replyTo": "回复",
+    "showReplies": "显示回复",
+    "hideReplies": "隐藏回复",
+    "moreActions": "更多操作",
+    "edit": "编辑",
+    "delete": "删除",
+    "pin": "置顶",
+    "unpin": "取消置顶",
+    "approve": "通过",
+    "reject": "拒绝",
+    "authorReply": "作者",
+    "pinned": "置顶",
+    "pending": "待审核",
+    "rejected": "已拒绝",
+    "noComments": "暂无评论",
+    "beFirstToComment": "成为第一个分享想法的人！",
+    "loadMore": "加载更多评论",
+    "signInToComment": "请登录后发表评论",
+    "commentSubmitted": "评论已提交，审核后可对外展示",
+    "commentSubmittedSuccess": "评论已提交，审核后可对外展示"
+  },
+  "common": {
+    "submitting": "提交中...",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功"
   }
 }

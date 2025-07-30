@@ -3,7 +3,6 @@
 
 import { z } from 'zod'
 import * as commentsDal from '@/lib/dal-comments'
-import { checkSpam } from './anti-spam'
 import type { CreateCommentInput, UpdateCommentInput } from '@/types'
 
 // 测试用的创建评论Action（跳过身份验证）

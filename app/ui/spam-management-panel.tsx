@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   getSpamManagementDataAction,
@@ -52,7 +52,7 @@ export default function SpamManagementPanel() {
     }
   }
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true)
       const result = await runServerAction(getSpamManagementDataAction)
@@ -64,7 +64,7 @@ export default function SpamManagementPanel() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   const unblockIP = async (ipAddress: string) => {
     try {
@@ -94,7 +94,7 @@ export default function SpamManagementPanel() {
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [fetchData])
 
   if (loading) {
     return (

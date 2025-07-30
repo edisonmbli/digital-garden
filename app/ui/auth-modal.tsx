@@ -13,7 +13,7 @@ interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
   onAuthSuccess?: () => void
-  action?: 'default' | 'like'
+  action?: 'default' | 'like' | 'comment'
   redirectUrl?: string
 }
 
@@ -36,21 +36,35 @@ export default function AuthModal({
   const handleAuthSuccess = useCallback(() => {
     if (onAuthSuccess && !hasTriggeredCallbackRef.current) {
       hasTriggeredCallbackRef.current = true
-      onAuthSuccess()
+      
+      // 关闭模态框
       onClose()
+      
+      // 延迟执行回调，确保模态框关闭动画完成
+      // 不再使用页面刷新，完全依赖 Clerk 的状态管理
+      setTimeout(() => {
+        onAuthSuccess()
+      }, 150)
     }
   }, [onAuthSuccess, onClose])
 
-  // 监听用户登录状态变化 - 优化依赖项
+  // 监听用户登录状态变化 - 使用更精确的状态检测
   useEffect(() => {
-    // 只有当用户从未登录变为已登录时才触发回调
-    if (isLoaded && user && !prevUserRef.current && !hasTriggeredCallbackRef.current) {
+    // 确保 Clerk 已加载且模态框打开
+    if (!isLoaded || !isOpen) return
+    
+    // 检测用户从未登录变为已登录的状态变化
+    const wasNotSignedIn = !prevUserRef.current
+    const isNowSignedIn = !!user
+    
+    // 只有当用户状态从未登录变为已登录，且回调未被触发时才执行
+    if (wasNotSignedIn && isNowSignedIn && !hasTriggeredCallbackRef.current) {
       handleAuthSuccess()
     }
     
     // 更新 ref
     prevUserRef.current = user
-  }, [isLoaded, user, handleAuthSuccess])
+  }, [isOpen, isLoaded, user, handleAuthSuccess])
 
   // 重置回调标志当模态框重新打开时
   useEffect(() => {
@@ -61,18 +75,38 @@ export default function AuthModal({
 
   // 设置动态文案 - 优化依赖项
   useEffect(() => {
-    if (
-      isOpen &&
-      action === 'like' &&
-      dictionary.clerkContextual?.signIn?.likePhoto?.subtitle
-    ) {
-      setContextualConfig({
-        signIn: {
-          start: {
-            subtitle: dictionary.clerkContextual.signIn.likePhoto.subtitle,
+    if (isOpen) {
+      // 使用类型断言来解决 TypeScript 推断问题
+      const clerkContextual = dictionary.clerkContextual as {
+        signIn?: {
+          likePhoto?: { subtitle?: string }
+          commentPhoto?: { subtitle?: string }
+        }
+      }
+      
+      if (
+        action === 'like' &&
+        clerkContextual?.signIn?.likePhoto?.subtitle
+      ) {
+        setContextualConfig({
+          signIn: {
+            start: {
+              subtitle: clerkContextual.signIn.likePhoto.subtitle,
+            },
           },
-        },
-      })
+        })
+      } else if (
+        action === 'comment' &&
+        clerkContextual?.signIn?.commentPhoto?.subtitle
+      ) {
+        setContextualConfig({
+          signIn: {
+            start: {
+              subtitle: clerkContextual.signIn.commentPhoto.subtitle,
+            },
+          },
+        })
+      }
     }
 
     // 清理：当模态框关闭时重置配置
@@ -84,7 +118,7 @@ export default function AuthModal({
   }, [
     isOpen,
     action,
-    dictionary.clerkContextual?.signIn?.likePhoto?.subtitle,
+    dictionary.clerkContextual,
     setContextualConfig,
   ])
 
@@ -96,7 +130,7 @@ export default function AuthModal({
       >
         {/* 隐藏的DialogTitle，用于无障碍访问 */}
         <DialogTitle className="sr-only">
-          {action === 'like' ? '登录后继续点赞' : '登录'}
+          {action === 'like' ? '登录后继续点赞' : action === 'comment' ? '登录后继续评论' : '登录'}
         </DialogTitle>
 
         {/* 自定义关闭按钮 */}
