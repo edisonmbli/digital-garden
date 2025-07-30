@@ -20,6 +20,10 @@ import CommentForm from '@/app/ui/comment-form'
 import { CommentList } from '@/app/ui/comment-list'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  useOptimalModalSize,
+  getModalStyles,
+} from '@/hooks/use-optimal-modal-size'
 
 export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
   const [selectedPhoto, setSelectedPhoto] = useState<EnrichedPhoto | null>(null)
@@ -33,6 +37,17 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
 
   const dict = useI18n()
   const router = useRouter()
+
+  // 动态计算模态框最优尺寸
+  const optimalModalSize = useOptimalModalSize(
+    selectedPhoto?.metadata?.dimensions
+      ? {
+          width: selectedPhoto.metadata.dimensions.width,
+          height: selectedPhoto.metadata.dimensions.height,
+        }
+      : undefined
+  )
+  const modalStyles = getModalStyles(optimalModalSize)
 
   // 检查URL参数中的照片ID，自动打开对应照片
   useEffect(() => {
@@ -171,94 +186,96 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
         }}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <ResponsiveDialogContent className="p-0 md:max-w-7xl md:max-h-[95vh] bg-background border-0 md:border md:rounded-lg overflow-hidden">
+        <ResponsiveDialogContent
+          className="p-0 bg-background border-0 md:border md:rounded-lg overflow-hidden"
+          style={modalStyles.modal}
+        >
           {selectedPhoto && (
             <>
-              {/* 桌面端：左右分栏布局 */}
-              <div className="hidden md:flex md:h-[90vh]">
-                {/* 左侧：照片展示区域 */}
-                <div className="flex-1 relative bg-neutral-50 dark:bg-neutral-900 flex p-6 overflow-hidden">
-                  <div className="m-auto">
-                    {/* 动态相框容器 - 贴合照片尺寸 */}
-                    <div className="relative inline-block bg-white dark:bg-white p-3 shadow-2xl">
-                      {/* 照片本体 */}
-                      <div className="relative">
-                        <Image
-                          src={selectedPhoto.imageUrl}
-                          alt={
-                            selectedPhoto.title || 'A photo from the collection'
-                          }
-                          width={
-                            selectedPhoto.metadata?.dimensions.width || 800
-                          }
-                          height={
-                            selectedPhoto.metadata?.dimensions.height || 600
-                          }
-                          className="max-w-full max-h-[calc(90vh-6rem)] object-contain"
-                          sizes="(min-width: 768px) 60vw, 90vw"
-                          priority
-                        />
-                        {/* 照片表面的微妙光泽效果 */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/3 to-transparent pointer-events-none"></div>
-                      </div>
-                    </div>
-                  </div>
-                  {/* 相框投影 - 动态适应 */}
-                  <div className="absolute inset-8 -z-10 bg-black/20 dark:bg-black/40 blur-xl transform-gpu"></div>
-                </div>
-
-                {/* 右侧：信息和互动区域 */}
-                <div className="w-80 flex flex-col bg-background border-l border-border/20">
-                  {/* 内容区域 - 增加垂直内边距以实现视觉平衡 */}
+              {/* 桌面端：上中下三层结构 - 整体可滚动 */}
+              <div className="hidden md:flex md:flex-col md:h-full md:overflow-hidden">
+                {/* 整体滚动容器 - 包含上中下三层 */}
+                <div className="flex-1 overflow-y-auto">
+                  {/* 上层：图片区域 - 使用动态计算的高度 */}
                   <div
-                    className={clsx(
-                      'p-6 overflow-y-auto flex flex-1 flex-col',
-                      isLandscape ? 'pt-[40%]' : 'pt-[20%]'
-                    )}
+                    className="flex-shrink-0 bg-black/90 flex items-center justify-center"
+                    style={modalStyles.photo}
                   >
-                    {selectedPhoto.title && (
-                      <h3 className="font-bold text-lg mb-4 text-foreground tracking-tight leading-tight">
-                        {selectedPhoto.title}
-                      </h3>
-                    )}
-                    {selectedPhoto.description && (
-                      <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                        {selectedPhoto.description}
-                      </p>
-                    )}
+                    <Image
+                      src={selectedPhoto.imageUrl}
+                      alt={selectedPhoto.title || 'A photo from the collection'}
+                      width={selectedPhoto.metadata?.dimensions.width || 800}
+                      height={selectedPhoto.metadata?.dimensions.height || 600}
+                      className="max-w-full max-h-full object-contain"
+                      sizes="90vw"
+                      priority
+                    />
+                  </div>
 
-                    {/* 评论区域 */}
-                    {selectedPhoto.post && (
-                      <div className="flex-1 flex flex-col min-h-0">
-                        {/* 评论列表 - 可滚动区域，只在有评论时显示 */}
-                        {selectedPhoto.post.commentsCount > 0 && (
-                          <div className="flex-1 min-h-0 mb-4">
-                            <CommentList postId={selectedPhoto.post.id} />
-                          </div>
+                  {/* 中层：信息和互动按钮区域 */}
+                  <div className="flex-shrink-0 bg-background border-t border-border/20 px-6 py-4">
+                    <div className="flex items-end justify-between gap-6">
+                      {/* 左侧：标题和描述 */}
+                      <div className="flex-1 min-w-0">
+                        {selectedPhoto.title && (
+                          <h3 className="font-bold text-xl mb-2 text-foreground tracking-tight leading-tight">
+                            {selectedPhoto.title}
+                          </h3>
+                        )}
+                        {selectedPhoto.description && (
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {selectedPhoto.description}
+                          </p>
                         )}
                       </div>
-                    )}
+
+                      {/* 右侧：互动按钮 - 与描述底部对齐 */}
+                      {selectedPhoto.post && (
+                        <div className="flex space-x-3 flex-shrink-0">
+                          {/* 点赞按钮 */}
+                          <EnhancedLikeButton
+                            postId={selectedPhoto.post.id}
+                            initialLikes={selectedPhoto.post.likesCount}
+                            isLikedByUser={selectedPhoto.post.isLikedByUser}
+                            onAuthRequired={handleAuthRequired}
+                            variant="default"
+                            className="justify-center"
+                          />
+
+                          {/* 评论按钮 */}
+                          <EnhancedCommentButton
+                            commentCount={selectedPhoto.post.commentsCount}
+                            hasUserCommented={
+                              selectedPhoto.post.hasUserCommented || false
+                            }
+                            onCommentClick={() => {
+                              setShowCommentForm(true)
+                            }}
+                            onAuthRequired={handleCommentAuthRequired}
+                            variant="default"
+                            className="justify-center"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* 底部固定的互动区域 */}
+                  {/* 下层：评论区域 - 在整体滚动中自然展开 */}
                   {selectedPhoto.post && (
-                    <div className="p-6 border-t border-border/10 bg-background/80 backdrop-blur-sm">
+                    <div className="bg-background border-t border-border/20 px-6 py-4 space-y-4">
                       {/* 评论提交成功提示 */}
                       {showCommentSubmittedMessage && (
-                        <div className="mb-4 p-3 bg-green-50 text-green-800 text-sm text-center">
+                        <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 text-sm text-center rounded-md">
                           {dict.comments?.commentSubmittedSuccess ||
                             '评论已提交，审核后可对外展示'}
                         </div>
                       )}
 
-                      {/* 评论表单区域 - 在按钮上方 */}
+                      {/* 评论表单 - 可展开/收起 */}
                       {showCommentForm && (
-                        <div className="mb-4">
-                          <div className="flex flex-col h-48">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium text-foreground">
-                                {dict.comments.writeComment}
-                              </span>
+                        <div className="space-y-3">
+                          <div className="flex items-start space-x-2">
+                            <div className="flex-shrink-0">
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -289,31 +306,20 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                         </div>
                       )}
 
-                      <div className="flex space-x-3 justify-center">
-                        {/* 点赞按钮 */}
-                        <EnhancedLikeButton
-                          postId={selectedPhoto.post.id}
-                          initialLikes={selectedPhoto.post.likesCount}
-                          isLikedByUser={selectedPhoto.post.isLikedByUser}
-                          onAuthRequired={handleAuthRequired}
-                          variant="default"
-                          className="justify-center"
-                        />
+                      {/* 评论列表 - 只在有评论时显示 */}
+                      {selectedPhoto.post.commentsCount > 0 && (
+                        <div className="space-y-3">
+                          <CommentList postId={selectedPhoto.post.id} />
+                        </div>
+                      )}
 
-                        {/* 评论按钮 */}
-                        <EnhancedCommentButton
-                          commentCount={selectedPhoto.post.commentsCount}
-                          hasUserCommented={
-                            selectedPhoto.post.hasUserCommented || false
-                          }
-                          onCommentClick={() => {
-                            setShowCommentForm(true)
-                          }}
-                          onAuthRequired={handleCommentAuthRequired}
-                          variant="default"
-                          className="justify-center"
-                        />
-                      </div>
+                      {/* 当没有评论且没有展开评论表单时，显示引导信息 */}
+                      {selectedPhoto.post.commentsCount === 0 &&
+                        !showCommentForm && (
+                          <div className="flex items-center justify-center py-8 text-center text-muted-foreground">
+                            <p className="text-sm">还没有评论，来说点什么吧</p>
+                          </div>
+                        )}
                     </div>
                   )}
                 </div>

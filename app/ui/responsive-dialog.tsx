@@ -15,6 +15,7 @@ interface ResponsiveDialogProps {
 interface ResponsiveDialogContentProps {
   children: React.ReactNode
   className?: string
+  style?: React.CSSProperties
   onOpenAutoFocus?: (event: Event) => void
 }
 
@@ -50,19 +51,26 @@ export function ResponsiveDialog({
 export function ResponsiveDialogContent({
   children,
   className,
+  style,
   onOpenAutoFocus,
 }: ResponsiveDialogContentProps) {
   const isDesktop = useMediaQuery('(min-width: 768px)')
 
   if (isDesktop) {
     return (
-      <DialogContent className={className} showCloseButton={true} onOpenAutoFocus={onOpenAutoFocus}>
+      <DialogContent 
+        className={className} 
+        style={style}
+        showCloseButton={true} 
+        onOpenAutoFocus={onOpenAutoFocus}
+      >
         <DialogTitle className="sr-only">Photo Details</DialogTitle>
         {children}
       </DialogContent>
     )
   }
 
+  // 移动端不应用动态样式，保持原有的drawer布局
   return (
     <DrawerContent className={className}>
       <DrawerTitle className="sr-only">Photo Details</DrawerTitle>
