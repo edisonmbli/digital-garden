@@ -320,7 +320,7 @@ export async function updateCommentAction(commentId: string, data: {
 }
 
 // 软删除评论的 Server Action
-export async function deleteCommentAction(commentId: string) {
+export async function deleteCommentAction(commentId: string, reason?: string) {
   try {
     // 验证用户身份
     const { userId } = await auth()
@@ -360,8 +360,13 @@ export async function deleteCommentAction(commentId: string) {
       }
     }
 
+    // 获取用户信息
+    const client = await clerkClient()
+    const user = await client.users.getUser(userId)
+    const moderatorName = user.fullName || user.firstName || '用户'
+
     // 软删除评论
-    await commentsDal.softDeleteComment(commentId, userId)
+    await commentsDal.softDeleteComment(commentId, userId, moderatorName, reason)
     
     // 重新验证相关的缓存标签
     revalidateTag(`post-comments:${existingComment.postId}`)
@@ -659,5 +664,65 @@ export async function commentAction(postId: string, formData: FormData) {
   } catch (error) {
     console.error('Failed to create comment:', error)
     return { error: 'Failed to create comment.' }
+  }
+}
+
+// ================================================= //
+//                   公开评论获取Actions               //
+// ================================================= //
+
+// 获取评论列表的 Server Action（替代 /api/comments）
+export async function getCommentsAction({
+  postId,
+  page = 1,
+  limit = 10,
+  status = CommentStatus.APPROVED
+}: {
+  postId: string
+  page?: number
+  limit?: number
+  status?: CommentStatus
+}) {
+  try {
+    // 验证输入参数
+    if (!postId || typeof postId !== 'string') {
+      return {
+        success: false,
+        error: 'postId is required',
+        code: 'INVALID_INPUT'
+      }
+    }
+
+    // 计算偏移量
+    const offset = (page - 1) * limit
+
+    // 获取评论数据
+    const comments = await commentsDal.getComments({
+      postId,
+      status,
+      limit,
+      offset,
+      includeReplies: true,
+      includeDeleted: false,
+      orderBy: 'pinned' // 使用 pinned 排序，置顶评论优先
+    })
+
+    return {
+      success: true,
+      data: {
+        comments,
+        page,
+        limit,
+        hasMore: comments.length === limit
+      }
+    }
+
+  } catch (error) {
+    console.error('Error fetching comments:', error)
+    return {
+      success: false,
+      error: 'Failed to fetch comments',
+      code: 'INTERNAL_ERROR'
+    }
   }
 }

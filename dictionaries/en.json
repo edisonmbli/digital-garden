@@ -82,7 +82,8 @@
     "loadMore": "Load more comments",
     "signInToComment": "Please sign in to leave a comment",
     "commentSubmitted": "Comment submitted, will be displayed after review",
-    "commentSubmittedSuccess": "Comment submitted, will be displayed after review"
+    "commentSubmittedSuccess": "Comment submitted, will be displayed after review",
+    "anonymousUser": "Anonymous"
   },
   "common": {
     "submitting": "Submitting...",

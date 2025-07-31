@@ -111,7 +111,7 @@ export async function testUpdateCommentAction(commentId: string, input: {
 }
 
 // 测试用的删除评论Action（跳过身份验证）
-export async function testDeleteCommentAction(commentId: string, userId?: string) {
+export async function testDeleteCommentAction(commentId: string, userId?: string, reason?: string) {
   try {
     const commentIdValidation = z.string().min(1).safeParse(commentId)
     if (!commentIdValidation.success) {
@@ -125,7 +125,7 @@ export async function testDeleteCommentAction(commentId: string, userId?: string
     // 使用提供的用户ID或默认测试用户ID
     const testUserId = userId || 'test-actions-user'
 
-    const comment = await commentsDal.softDeleteComment(commentId, testUserId)
+    const comment = await commentsDal.softDeleteComment(commentId, testUserId, '测试用户', reason)
 
     return {
       success: true,

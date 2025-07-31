@@ -106,7 +106,8 @@
     "loadMore": "加载更多评论",
     "signInToComment": "请登录后发表评论",
     "commentSubmitted": "评论已提交，审核后可对外展示",
-    "commentSubmittedSuccess": "评论已提交，审核后可对外展示"
+    "commentSubmittedSuccess": "评论已提交，审核后可对外展示",
+    "anonymousUser": "匿名用户"
   },
   "common": {
     "submitting": "提交中...",

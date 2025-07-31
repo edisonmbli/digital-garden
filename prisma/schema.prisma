@@ -112,6 +112,7 @@ model Comment {
   isPinned       Boolean                @default(false)
   userAgent      String?
   deletedBy      String?
+  deletedReason  String?
   isAuthorReply  Boolean                @default(false)
   moderatedAt    DateTime?
   moderatedBy    String?
@@ -204,4 +205,5 @@ enum CommentStatus {
   PENDING
   APPROVED
   REJECTED
+  DELETED
 }

@@ -1,16 +1,70 @@
 // lib/dal-comments.ts
 import { cache } from 'react'
-import prisma from './prisma'
+import prisma from '@/lib/prisma'
 import { 
   CommentDTO, 
-  CommentStatus, 
+  CommentQueryOptions, 
   CreateCommentInput, 
   UpdateCommentInput, 
-  CommentQueryOptions, 
   CommentStats,
   ModerationLogDTO,
   SpamDetectionLogDTO
-} from '../types'
+} from '@/types'
+import type { Prisma } from '@prisma/client'
+import { CommentStatus as PrismaCommentStatus } from '@prisma/client'
+
+// 管理后台评论类型
+interface AdminComment {
+  id: string
+  content: string
+  status: PrismaCommentStatus
+  isPinned: boolean
+  isDeleted: boolean
+  isAuthorReply: boolean
+  parentId: string | null
+  createdAt: Date
+  updatedAt: Date
+  user: {
+    id: string
+    name: string | null
+    email: string | null
+    avatarUrl: string | null
+  }
+  post: {
+    id: string
+    contentType: string
+    sanityDocumentId: string | null
+    photo: {
+      titleJson: string | null
+      sanityAssetId: string | null
+    } | null
+    logs: {
+      title: string
+      slug: string
+      language: string
+    }[]
+  }
+  _count: {
+    replies: number
+  }
+  replies?: Array<{
+    id: string
+    content: string
+    status: PrismaCommentStatus
+    isPinned: boolean
+    isDeleted: boolean
+    isAuthorReply: boolean
+    parentId: string | null
+    createdAt: Date
+    updatedAt: Date
+    user: {
+      id: string
+      name: string | null
+      email: string | null
+      avatarUrl: string | null
+    }
+  }>
+}
 
 // ================================================= //
 //                评论查询函数                       //
@@ -33,8 +87,8 @@ export const getComments = cache(async (options: CommentQueryOptions): Promise<C
   // 构建状态过滤条件
   const statusFilter = status 
     ? Array.isArray(status) 
-      ? { in: status }
-      : status
+      ? { in: status.map(s => s as PrismaCommentStatus) }
+      : status as PrismaCommentStatus
     : undefined
 
   // 构建排序条件
@@ -94,7 +148,8 @@ export const getComments = cache(async (options: CommentQueryOptions): Promise<C
     skip: offset,
   })
 
-  return comments as CommentDTO[]
+  // 转换为 CommentDTO 格式，确保 replies 字段正确
+  return comments as unknown as CommentDTO[]
 })
 
 /**
@@ -140,9 +195,9 @@ export const getCommentById = cache(async (id: string): Promise<CommentDTO | nul
 export const getCommentStats = cache(async (postId: string): Promise<CommentStats> => {
   const [total, approved, pending, rejected, deleted, pinned] = await Promise.all([
     prisma.comment.count({ where: { postId } }),
-    prisma.comment.count({ where: { postId, status: CommentStatus.APPROVED } }),
-    prisma.comment.count({ where: { postId, status: CommentStatus.PENDING } }),
-    prisma.comment.count({ where: { postId, status: CommentStatus.REJECTED } }),
+    prisma.comment.count({ where: { postId, status: PrismaCommentStatus.APPROVED } }),
+    prisma.comment.count({ where: { postId, status: PrismaCommentStatus.PENDING } }),
+    prisma.comment.count({ where: { postId, status: PrismaCommentStatus.REJECTED } }),
     prisma.comment.count({ where: { postId, isDeleted: true } }),
     prisma.comment.count({ where: { postId, isPinned: true } }),
   ])
@@ -162,8 +217,63 @@ export const getCommentStats = cache(async (postId: string): Promise<CommentStat
 // ================================================= //
 
 /**
- * 创建新评论（完整版本，支持所有新字段）
+ * 创建作者回复
  */
+export async function createAuthorReply(data: {
+  content: string
+  postId: string
+  userId: string
+  parentId: string
+}): Promise<CommentDTO> {
+  const comment = await prisma.comment.create({
+    data: {
+      content: data.content,
+      postId: data.postId,
+      userId: data.userId,
+      parentId: data.parentId,
+      isAuthorReply: true,
+      status: PrismaCommentStatus.APPROVED, // 作者回复自动审核通过
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+        },
+      },
+      _count: {
+        select: {
+          replies: true,
+        },
+      },
+    },
+  })
+
+  return {
+    id: comment.id,
+    content: comment.content,
+    postId: comment.postId,
+    userId: comment.userId,
+    parentId: comment.parentId,
+    createdAt: comment.createdAt,
+    updatedAt: comment.updatedAt,
+    deletedAt: comment.deletedAt,
+    ipAddress: comment.ipAddress,
+    isDeleted: comment.isDeleted,
+    isPinned: comment.isPinned,
+    userAgent: comment.userAgent,
+    deletedBy: comment.deletedBy,
+    isAuthorReply: comment.isAuthorReply,
+    moderatedAt: comment.moderatedAt,
+    moderatedBy: comment.moderatedBy,
+    pinnedAt: comment.pinnedAt,
+    pinnedBy: comment.pinnedBy,
+    status: comment.status as PrismaCommentStatus,
+    user: comment.user,
+    replyCount: comment._count.replies,
+  }
+}
 export async function createComment(data: CreateCommentInput): Promise<CommentDTO> {
   const { 
     content, 
@@ -205,7 +315,7 @@ export async function createComment(data: CreateCommentInput): Promise<CommentDT
       ipAddress,
       userAgent,
       isAuthorReply,
-      status: CommentStatus.PENDING, // 默认待审核
+      status: PrismaCommentStatus.PENDING, // 默认待审核
     },
     include: {
       user: {
@@ -233,7 +343,7 @@ export async function updateComment(id: string, data: UpdateCommentInput): Promi
   const updateData: {
     content?: string
     updatedAt?: Date
-    status?: CommentStatus
+    status?: PrismaCommentStatus
     moderatedAt?: Date | null
     moderatedBy?: string | null
     isPinned?: boolean
@@ -306,11 +416,61 @@ export async function updateComment(id: string, data: UpdateCommentInput): Promi
 /**
  * 软删除评论
  */
-export async function softDeleteComment(id: string, deletedBy: string): Promise<CommentDTO> {
-  return updateComment(id, {
-    isDeleted: true,
-    deletedBy,
+export async function softDeleteComment(
+  id: string, 
+  deletedBy: string, 
+  moderatorName?: string,
+  reason?: string
+): Promise<CommentDTO> {
+  const comment = await prisma.comment.findUnique({
+    where: { id },
+    select: { content: true }
   })
+
+  if (!comment) {
+    throw new Error('评论不存在')
+  }
+
+  // 使用事务确保数据一致性
+  const [updatedComment] = await prisma.$transaction([
+    prisma.comment.update({
+      where: { id },
+      data: {
+        isDeleted: true,
+        deletedBy,
+        deletedAt: new Date(),
+
+        moderatedAt: new Date(),
+        moderatedBy: deletedBy,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+          },
+        },
+        _count: {
+          select: {
+            replies: true,
+          },
+        },
+      },
+    }),
+    prisma.commentModerationLog.create({
+      data: {
+        commentId: id,
+        moderatorId: deletedBy,
+        moderatorName,
+        reason,
+        action: 'REJECTED',
+        contentSnapshot: comment.content,
+      },
+    }),
+  ])
+
+  return updatedComment as CommentDTO
 }
 
 /**
@@ -370,7 +530,7 @@ export async function approveComment(
     prisma.comment.update({
       where: { id },
       data: {
-        status: CommentStatus.APPROVED,
+        status: PrismaCommentStatus.APPROVED,
         moderatedAt: new Date(),
         moderatedBy: moderatorId,
       },
@@ -395,7 +555,7 @@ export async function approveComment(
         moderatorId,
         moderatorName,
         reason,
-        action: CommentStatus.APPROVED,
+        action: 'APPROVED',
         contentSnapshot: comment.content,
       },
     }),
@@ -426,7 +586,7 @@ export async function rejectComment(
     prisma.comment.update({
       where: { id },
       data: {
-        status: CommentStatus.REJECTED,
+        status: PrismaCommentStatus.REJECTED,
         moderatedAt: new Date(),
         moderatedBy: moderatorId,
       },
@@ -451,7 +611,7 @@ export async function rejectComment(
         moderatorId,
         moderatorName,
         reason,
-        action: CommentStatus.REJECTED,
+        action: 'REJECTED',
         contentSnapshot: comment.content,
       },
     }),
@@ -465,7 +625,7 @@ export async function rejectComment(
  */
 export async function batchModerateComments(
   commentIds: string[],
-  action: CommentStatus,
+  action: PrismaCommentStatus,
   moderatorId: string,
   moderatorName?: string,
   reason?: string
@@ -475,9 +635,9 @@ export async function batchModerateComments(
 
   for (const id of commentIds) {
     try {
-      if (action === CommentStatus.APPROVED) {
+      if (action === PrismaCommentStatus.APPROVED) {
         await approveComment(id, moderatorId, moderatorName, reason)
-      } else if (action === CommentStatus.REJECTED) {
+      } else if (action === PrismaCommentStatus.REJECTED) {
         await rejectComment(id, moderatorId, moderatorName, reason)
       }
       success++
@@ -574,6 +734,385 @@ export const getSpamDetectionLogs = cache(async (
   })
 
   return logs as SpamDetectionLogDTO[]
+})
+
+// ================================================= //
+//                管理后台专用函数                   //
+// ================================================= //
+
+/**
+ * 获取全站评论统计信息（管理后台用）
+ */
+export const getGlobalCommentStats = cache(async (): Promise<CommentStats> => {
+  const [total, approved, pending, rejected, deleted, pinned] = await Promise.all([
+    prisma.comment.count(),
+    prisma.comment.count({ where: { status: PrismaCommentStatus.APPROVED } }),
+    prisma.comment.count({ where: { status: PrismaCommentStatus.PENDING } }),
+    prisma.comment.count({ where: { status: PrismaCommentStatus.REJECTED } }),
+    prisma.comment.count({ where: { isDeleted: true } }),
+    prisma.comment.count({ where: { isPinned: true } }),
+  ])
+
+  return {
+    total,
+    approved,
+    pending,
+    rejected,
+    deleted,
+    pinned,
+  }
+})
+
+/**
+ * 获取管理后台评论列表（支持复杂过滤和搜索）
+ */
+export const getCommentsForAdmin = cache(async (options: {
+  contentType?: 'photo' | 'log'
+  status?: PrismaCommentStatus | 'all'
+  search?: string
+  page?: number
+  limit?: number
+  sortBy?: 'newest' | 'oldest' | 'status' | 'pinned'
+  includeDeleted?: boolean
+}): Promise<{
+  comments: AdminComment[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}> => {
+  const {
+    contentType,
+    status = 'all',
+    search = '',
+    page = 1,
+    limit = 20,
+    sortBy = 'newest',
+    includeDeleted = false
+  } = options
+
+  // 构建 where 条件
+  const where: Prisma.CommentWhereInput = {}
+
+  // 内容类型过滤
+  if (contentType) {
+    where.post = {
+      contentType
+    }
+  }
+
+  // 状态过滤
+  if (status !== 'all') {
+    where.status = status
+  }
+
+  // 删除状态过滤
+  if (!includeDeleted) {
+    where.isDeleted = false
+  }
+
+  // 搜索过滤
+  if (search.trim()) {
+    where.OR = [
+      { content: { contains: search.trim(), mode: 'insensitive' } },
+      { user: { name: { contains: search.trim(), mode: 'insensitive' } } },
+      { user: { email: { contains: search.trim(), mode: 'insensitive' } } }
+    ]
+  }
+
+  // 构建排序条件
+  const orderBy: Prisma.CommentOrderByWithRelationInput[] = (() => {
+    switch (sortBy) {
+      case 'oldest':
+        return [{ createdAt: 'asc' }]
+      case 'status':
+        return [
+          { status: 'asc' },
+          { createdAt: 'desc' }
+        ]
+      case 'pinned':
+        return [
+          { isPinned: 'desc' },
+          { createdAt: 'desc' }
+        ]
+      default:
+        return [{ createdAt: 'desc' }]
+    }
+  })()
+
+  // 计算分页
+  const skip = (page - 1) * limit
+
+  // 执行查询
+  const [comments, total] = await Promise.all([
+    prisma.comment.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+        post: {
+          select: {
+            id: true,
+            contentType: true,
+            sanityDocumentId: true,
+            photo: {
+              select: {
+                titleJson: true,
+                sanityAssetId: true,
+              },
+            },
+            logs: {
+              select: {
+                title: true,
+                slug: true,
+                language: true,
+              },
+            },
+          },
+        },
+        replies: {
+          where: {
+            isDeleted: false,
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatarUrl: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+        _count: {
+          select: {
+            replies: true,
+          },
+        },
+      },
+      orderBy,
+      take: limit,
+      skip,
+    }),
+    prisma.comment.count({ where })
+  ])
+
+  const totalPages = Math.ceil(total / limit)
+
+  return {
+    comments: comments as AdminComment[],
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+    },
+  }
+})
+
+/**
+ * 批量更新评论状态（管理后台用）
+ */
+export async function batchUpdateComments(
+  commentIds: string[],
+  action: 'approve' | 'reject' | 'delete' | 'pin' | 'unpin',
+  moderatorId: string,
+  moderatorName?: string,
+  reason?: string
+): Promise<{ success: number; failed: number; errors: string[] }> {
+  let success = 0
+  let failed = 0
+  const errors: string[] = []
+
+  for (const id of commentIds) {
+    try {
+      switch (action) {
+        case 'approve':
+          await approveComment(id, moderatorId, moderatorName, reason)
+          break
+        case 'reject':
+          await rejectComment(id, moderatorId, moderatorName, reason)
+          break
+        case 'delete':
+          await softDeleteComment(id, moderatorId, moderatorName, reason)
+          break
+        case 'pin':
+          await pinComment(id, moderatorId)
+          break
+        case 'unpin':
+          await unpinComment(id)
+          break
+        default:
+          throw new Error(`未知操作: ${action}`)
+      }
+      success++
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误'
+      console.error(`Failed to ${action} comment ${id}:`, error)
+      errors.push(`评论 ${id}: ${errorMessage}`)
+      failed++
+    }
+  }
+
+  return { success, failed, errors }
+}
+
+/**
+ * 获取评论详情（管理后台用，包含完整信息）
+ */
+export const getCommentForAdmin = cache(async (id: string): Promise<AdminComment | null> => {
+  const comment = await prisma.comment.findUnique({
+    where: { id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatarUrl: true,
+          createdAt: true,
+        },
+      },
+      post: {
+        select: {
+          id: true,
+          contentType: true,
+          sanityDocumentId: true,
+          photo: {
+            select: {
+              titleJson: true,
+              sanityAssetId: true,
+            },
+          },
+          logs: {
+            select: {
+              title: true,
+              slug: true,
+              language: true,
+            },
+          },
+        },
+      },
+      replies: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              avatarUrl: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      },
+      _count: {
+        select: {
+          replies: true,
+        },
+      },
+    },
+  })
+
+  return comment as AdminComment | null
+})
+
+/**
+ * 获取用户的评论历史（管理后台用）
+ */
+export const getUserComments = cache(async (
+  userId: string,
+  options: {
+    limit?: number
+    offset?: number
+    includeDeleted?: boolean
+  } = {}
+): Promise<AdminComment[]> => {
+  const { limit = 20, offset = 0, includeDeleted = false } = options
+
+  const comments = await prisma.comment.findMany({
+    where: {
+      userId,
+      isDeleted: includeDeleted ? undefined : false,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatarUrl: true,
+        },
+      },
+      post: {
+        select: {
+          id: true,
+          contentType: true,
+          sanityDocumentId: true,
+          photo: {
+            select: {
+              titleJson: true,
+              sanityAssetId: true,
+            },
+          },
+          logs: {
+            select: {
+              title: true,
+              slug: true,
+              language: true,
+            },
+          },
+        },
+      },
+      _count: {
+        select: {
+          replies: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+    skip: offset,
+  })
+
+  return comments as AdminComment[]
+})
+
+/**
+ * 获取最近的审核活动（管理后台用）
+ */
+export const getRecentModerationActivity = cache(async (
+  limit = 50
+): Promise<ModerationLogDTO[]> => {
+  const logs = await prisma.commentModerationLog.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+    include: {
+      comment: {
+        select: {
+          id: true,
+          content: true,
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
+  return logs as ModerationLogDTO[]
 })
 
 // ================================================= //

@@ -34,10 +34,13 @@ function getLocale(request: NextRequest): string {
 // 定义哪些路由是受保护的。这是一个"黑名单"，所有匹配的路径都需要用户登录。
 const isProtectedRoute = createRouteMatcher([
   '/admin(.*)', // /admin 及其所有子路由
+  '/(zh|en)/admin(.*)', // 包含语言前缀的 admin 路由
 ])
 
 // 导出我们的主中间件函数，由 Clerk 的 clerkMiddleware 进行包装
 export default clerkMiddleware(async (auth, req) => {
+  const pathname = req.nextUrl.pathname
+  
   // --- 步骤一：优先处理认证 (Authentication First) ---
   // 检查当前请求的路径是否在我们定义的"受保护列表"中
   if (isProtectedRoute(req)) {
@@ -46,11 +49,13 @@ export default clerkMiddleware(async (auth, req) => {
     // - 如果已登录，则允许请求继续。
     // - 如果未登录，它会自动将用户重定向到 Clerk 的登录页面。
     await auth.protect()
+    
+    // 注意：权限检查（admin role）现在移到页面组件中进行
+    // 这样避免了在 Edge Runtime 中调用 Prisma 和复杂的 Server Actions
   }
 
   // --- 步骤二：处理国际化重定向 (Internationalization Next) ---
   // 这个逻辑只会在请求通过了上面的认证检查（或者本身就是公共路由）后才执行。
-  const pathname = req.nextUrl.pathname
 
   // 跳过 API 路由的国际化处理
   if (pathname.startsWith('/api/')) {

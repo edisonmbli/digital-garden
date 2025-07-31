@@ -13,6 +13,7 @@ export enum CommentStatus {
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
+  DELETED = 'DELETED',
 }
 
 // 基础评论DTO（用于客户端传输）

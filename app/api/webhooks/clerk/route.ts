@@ -44,14 +44,21 @@ export async function POST(req: Request) {
   const eventType = evt.type
 
   if (eventType === 'user.created') {
-    const { id, email_addresses, image_url, first_name, last_name } = evt.data
+    const { id, email_addresses, image_url, username, first_name, last_name } = evt.data
+
+    // 优先使用 username，如果没有则使用 first_name + last_name，最后使用匿名用户作为兜底
+    let displayName = username
+    if (!displayName) {
+      const fullName = `${first_name || ''} ${last_name || ''}`.trim()
+      displayName = fullName || '匿名用户' // 默认中文匿名用户
+    }
 
     // 将用户数据写入到我们自己的数据库
     await prisma.user.create({
       data: {
         id: id,
         email: email_addresses[0].email_address,
-        name: `${first_name || ''} ${last_name || ''}`.trim(),
+        name: displayName,
         avatarUrl: image_url,
       },
     })
@@ -68,12 +75,20 @@ export async function POST(req: Request) {
   }
 
   if (eventType === 'user.updated') {
-    const { id, email_addresses, image_url, first_name, last_name } = evt.data
+    const { id, email_addresses, image_url, username, first_name, last_name } = evt.data
+    
+    // 优先使用 username，如果没有则使用 first_name + last_name，最后使用匿名用户作为兜底
+    let displayName = username
+    if (!displayName) {
+      const fullName = `${first_name || ''} ${last_name || ''}`.trim()
+      displayName = fullName || '匿名用户' // 默认中文匿名用户
+    }
+    
     await prisma.user.update({
       where: { id: id },
       data: {
         email: email_addresses[0].email_address,
-        name: `${first_name || ''} ${last_name || ''}`.trim(),
+        name: displayName,
         avatarUrl: image_url,
       },
     })

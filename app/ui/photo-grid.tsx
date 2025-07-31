@@ -33,7 +33,7 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
   const [showCommentSubmittedMessage, setShowCommentSubmittedMessage] =
     useState(false)
   const [isCommentAuth, setIsCommentAuth] = useState(false) // 新增：标识是否是从评论触发的认证
-  const [isPending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
 
   const dict = useI18n()
   const router = useRouter()
