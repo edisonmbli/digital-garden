@@ -84,9 +84,16 @@ export async function POST(req: Request) {
       displayName = fullName || '匿名用户' // 默认中文匿名用户
     }
     
-    await prisma.user.update({
+    // 使用 upsert 操作，如果用户不存在则创建，存在则更新
+    await prisma.user.upsert({
       where: { id: id },
-      data: {
+      update: {
+        email: email_addresses[0].email_address,
+        name: displayName,
+        avatarUrl: image_url,
+      },
+      create: {
+        id: id,
         email: email_addresses[0].email_address,
         name: displayName,
         avatarUrl: image_url,

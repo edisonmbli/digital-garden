@@ -8,16 +8,16 @@ import {
   UpdateCommentInput, 
   CommentStats,
   ModerationLogDTO,
-  SpamDetectionLogDTO
+  SpamDetectionLogDTO,
+  CommentStatus
 } from '@/types'
 import type { Prisma } from '@prisma/client'
-import { CommentStatus as PrismaCommentStatus } from '@prisma/client'
 
 // 管理后台评论类型
 interface AdminComment {
   id: string
   content: string
-  status: PrismaCommentStatus
+  status: CommentStatus
   isPinned: boolean
   isDeleted: boolean
   isAuthorReply: boolean
@@ -50,7 +50,7 @@ interface AdminComment {
   replies?: Array<{
     id: string
     content: string
-    status: PrismaCommentStatus
+    status: CommentStatus
     isPinned: boolean
     isDeleted: boolean
     isAuthorReply: boolean
@@ -87,8 +87,8 @@ export const getComments = cache(async (options: CommentQueryOptions): Promise<C
   // 构建状态过滤条件
   const statusFilter = status 
     ? Array.isArray(status) 
-      ? { in: status.map(s => s as PrismaCommentStatus) }
-      : status as PrismaCommentStatus
+      ? { in: status.map(s => s as CommentStatus) }
+      : status as CommentStatus
     : undefined
 
   // 构建排序条件
@@ -195,9 +195,9 @@ export const getCommentById = cache(async (id: string): Promise<CommentDTO | nul
 export const getCommentStats = cache(async (postId: string): Promise<CommentStats> => {
   const [total, approved, pending, rejected, deleted, pinned] = await Promise.all([
     prisma.comment.count({ where: { postId } }),
-    prisma.comment.count({ where: { postId, status: PrismaCommentStatus.APPROVED } }),
-    prisma.comment.count({ where: { postId, status: PrismaCommentStatus.PENDING } }),
-    prisma.comment.count({ where: { postId, status: PrismaCommentStatus.REJECTED } }),
+    prisma.comment.count({ where: { postId, status: CommentStatus.APPROVED } }),
+    prisma.comment.count({ where: { postId, status: CommentStatus.PENDING } }),
+    prisma.comment.count({ where: { postId, status: CommentStatus.REJECTED } }),
     prisma.comment.count({ where: { postId, isDeleted: true } }),
     prisma.comment.count({ where: { postId, isPinned: true } }),
   ])
@@ -232,7 +232,7 @@ export async function createAuthorReply(data: {
       userId: data.userId,
       parentId: data.parentId,
       isAuthorReply: true,
-      status: PrismaCommentStatus.APPROVED, // 作者回复自动审核通过
+      status: CommentStatus.APPROVED, // 作者回复自动审核通过
     },
     include: {
       user: {
@@ -269,9 +269,9 @@ export async function createAuthorReply(data: {
     moderatedBy: comment.moderatedBy,
     pinnedAt: comment.pinnedAt,
     pinnedBy: comment.pinnedBy,
-    status: comment.status as PrismaCommentStatus,
+    status: comment.status,
     user: comment.user,
-    replyCount: comment._count.replies,
+    _count: comment._count,
   }
 }
 export async function createComment(data: CreateCommentInput): Promise<CommentDTO> {
@@ -288,6 +288,16 @@ export async function createComment(data: CreateCommentInput): Promise<CommentDT
   // 内容验证
   if (!content.trim() || content.length > 2000) {
     throw new Error('评论内容不能为空且不能超过2000字符')
+  }
+
+  // 验证文章是否存在
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { id: true }
+  })
+  
+  if (!post) {
+    throw new Error('文章不存在')
   }
 
   // 检查父评论是否存在
@@ -315,7 +325,7 @@ export async function createComment(data: CreateCommentInput): Promise<CommentDT
       ipAddress,
       userAgent,
       isAuthorReply,
-      status: PrismaCommentStatus.PENDING, // 默认待审核
+      status: CommentStatus.PENDING, // 默认待审核
     },
     include: {
       user: {
@@ -343,7 +353,7 @@ export async function updateComment(id: string, data: UpdateCommentInput): Promi
   const updateData: {
     content?: string
     updatedAt?: Date
-    status?: PrismaCommentStatus
+    status?: CommentStatus
     moderatedAt?: Date | null
     moderatedBy?: string | null
     isPinned?: boolean
@@ -436,10 +446,11 @@ export async function softDeleteComment(
     prisma.comment.update({
       where: { id },
       data: {
+        status: CommentStatus.DELETED,
         isDeleted: true,
         deletedBy,
         deletedAt: new Date(),
-
+        deletedReason: reason,
         moderatedAt: new Date(),
         moderatedBy: deletedBy,
       },
@@ -464,7 +475,7 @@ export async function softDeleteComment(
         moderatorId: deletedBy,
         moderatorName,
         reason,
-        action: 'REJECTED',
+        action: 'DELETED',
         contentSnapshot: comment.content,
       },
     }),
@@ -530,7 +541,7 @@ export async function approveComment(
     prisma.comment.update({
       where: { id },
       data: {
-        status: PrismaCommentStatus.APPROVED,
+        status: CommentStatus.APPROVED,
         moderatedAt: new Date(),
         moderatedBy: moderatorId,
       },
@@ -586,7 +597,7 @@ export async function rejectComment(
     prisma.comment.update({
       where: { id },
       data: {
-        status: PrismaCommentStatus.REJECTED,
+        status: CommentStatus.REJECTED,
         moderatedAt: new Date(),
         moderatedBy: moderatorId,
       },
@@ -625,7 +636,7 @@ export async function rejectComment(
  */
 export async function batchModerateComments(
   commentIds: string[],
-  action: PrismaCommentStatus,
+  action: CommentStatus,
   moderatorId: string,
   moderatorName?: string,
   reason?: string
@@ -635,9 +646,9 @@ export async function batchModerateComments(
 
   for (const id of commentIds) {
     try {
-      if (action === PrismaCommentStatus.APPROVED) {
+      if (action === CommentStatus.APPROVED) {
         await approveComment(id, moderatorId, moderatorName, reason)
-      } else if (action === PrismaCommentStatus.REJECTED) {
+      } else if (action === CommentStatus.REJECTED) {
         await rejectComment(id, moderatorId, moderatorName, reason)
       }
       success++
@@ -746,9 +757,9 @@ export const getSpamDetectionLogs = cache(async (
 export const getGlobalCommentStats = cache(async (): Promise<CommentStats> => {
   const [total, approved, pending, rejected, deleted, pinned] = await Promise.all([
     prisma.comment.count(),
-    prisma.comment.count({ where: { status: PrismaCommentStatus.APPROVED } }),
-    prisma.comment.count({ where: { status: PrismaCommentStatus.PENDING } }),
-    prisma.comment.count({ where: { status: PrismaCommentStatus.REJECTED } }),
+    prisma.comment.count({ where: { status: CommentStatus.APPROVED } }),
+    prisma.comment.count({ where: { status: CommentStatus.PENDING } }),
+    prisma.comment.count({ where: { status: CommentStatus.REJECTED } }),
     prisma.comment.count({ where: { isDeleted: true } }),
     prisma.comment.count({ where: { isPinned: true } }),
   ])
@@ -768,12 +779,11 @@ export const getGlobalCommentStats = cache(async (): Promise<CommentStats> => {
  */
 export const getCommentsForAdmin = cache(async (options: {
   contentType?: 'photo' | 'log'
-  status?: PrismaCommentStatus | 'all'
+  status?: CommentStatus | 'all'
   search?: string
   page?: number
   limit?: number
   sortBy?: 'newest' | 'oldest' | 'status' | 'pinned'
-  includeDeleted?: boolean
 }): Promise<{
   comments: AdminComment[]
   pagination: {
@@ -789,8 +799,7 @@ export const getCommentsForAdmin = cache(async (options: {
     search = '',
     page = 1,
     limit = 20,
-    sortBy = 'newest',
-    includeDeleted = false
+    sortBy = 'newest'
   } = options
 
   // 构建 where 条件
@@ -809,7 +818,16 @@ export const getCommentsForAdmin = cache(async (options: {
   }
 
   // 删除状态过滤
-  if (!includeDeleted) {
+  // 当状态为 'all' 时，显示所有评论包括已删除的
+  // 当状态为 'DELETED' 时，只显示已删除的评论
+  // 当状态为其他特定状态时，只显示未删除的评论
+  if (status === 'all') {
+    // 显示所有评论，包括已删除的
+  } else if (status === CommentStatus.DELETED) {
+    // 只显示已删除的评论
+    where.isDeleted = true
+  } else {
+    // 显示未删除的评论
     where.isDeleted = false
   }
 

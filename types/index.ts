@@ -1,3 +1,5 @@
+import { CommentStatus } from '@prisma/client'
+
 export type NavItem = {
   label: string
   href: string
@@ -8,13 +10,8 @@ export type NavItem = {
 //                评论系统类型定义                    //
 // ================================================= //
 
-// 评论状态枚举
-export enum CommentStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  DELETED = 'DELETED',
-}
+// 评论状态枚举 - 直接使用 Prisma 生成的类型
+export { CommentStatus }
 
 // 基础评论DTO（用于客户端传输）
 export interface CommentDTO {

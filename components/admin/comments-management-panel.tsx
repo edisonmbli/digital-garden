@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import { useUser } from '@clerk/nextjs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -40,6 +39,39 @@ import {
 } from '@/lib/admin-actions'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
+
+// 客户端时间格式化组件，避免 Hydration 错误
+function ClientTimeAgo({ date }: { date: string | Date }) {
+  const [timeAgo, setTimeAgo] = useState<string>('')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    
+    const updateTimeAgo = () => {
+      try {
+        setTimeAgo(formatDistanceToNow(new Date(date), { addSuffix: true, locale: zhCN }))
+      } catch (error) {
+        console.error('Error formatting time:', error)
+        setTimeAgo('时间格式错误')
+      }
+    }
+
+    // 立即更新一次
+    updateTimeAgo()
+
+    // 每分钟更新一次时间显示
+    const interval = setInterval(updateTimeAgo, 60000)
+
+    return () => clearInterval(interval)
+  }, [date])
+
+  if (!mounted) {
+    return <span>刚刚</span>
+  }
+
+  return <span>{timeAgo}</span>
+}
 
 interface Comment {
   id: string
@@ -98,7 +130,7 @@ export function CommentsManagementPanel({
   const [isPending, startTransition] = useTransition()
 
   // 获取当前用户信息
-  const { user, isLoaded } = useUser()
+  // const { user, isLoaded } = useUser()
 
   // Tab状态管理
   const [activeTab, setActiveTab] = useState<'photo' | 'log'>(
@@ -179,6 +211,7 @@ export function CommentsManagementPanel({
           | 'PENDING'
           | 'APPROVED'
           | 'REJECTED'
+          | 'DELETED'
           | 'all',
         search: newFilters.search,
         page: newFilters.page,
@@ -353,7 +386,6 @@ export function CommentsManagementPanel({
       const result = await batchUpdateCommentsAction({
         commentIds: selectedComments,
         action: batchAction.action!,
-        reason: batchAction.reason,
       })
 
       if (result.success) {
@@ -400,6 +432,13 @@ export function CommentsManagementPanel({
             已拒绝
           </Badge>
         )
+      case 'DELETED':
+        return (
+          <Badge variant="outline" className="text-gray-600">
+            <Trash2 className="w-3 h-3 mr-1" />
+            已删除
+          </Badge>
+        )
       default:
         return <Badge variant="outline">{status}</Badge>
     }
@@ -410,8 +449,29 @@ export function CommentsManagementPanel({
     if (comment.post.contentType === 'photo' && comment.post.photo) {
       try {
         const titleData = comment.post.photo.titleJson
-        return titleData?.zh || titleData?.en || '无标题照片'
-      } catch {
+        
+        if (!titleData) {
+          return '无标题照片'
+        }
+        
+        // 如果 titleJson 是字符串，尝试解析
+        let parsedTitle
+        if (typeof titleData === 'string') {
+          try {
+            parsedTitle = JSON.parse(titleData)
+          } catch {
+            // 如果解析失败，可能 titleData 本身就是标题字符串
+            return titleData || '无标题照片'
+          }
+        } else {
+          // 如果已经是对象
+          parsedTitle = titleData
+        }
+        
+        // 优先返回中文标题，其次英文，最后返回默认值
+        return parsedTitle?.zh || parsedTitle?.en || parsedTitle?.title || '无标题照片'
+      } catch (error) {
+        console.error('Error parsing photo title:', error)
         return '无标题照片'
       }
     } else if (comment.post.contentType === 'log' && comment.post.logs?.length) {
@@ -470,6 +530,7 @@ export function CommentsManagementPanel({
                   <option value="PENDING">待审核</option>
                   <option value="APPROVED">已通过</option>
                   <option value="REJECTED">已拒绝</option>
+                  <option value="DELETED">已删除</option>
                 </select>
 
                 <select
@@ -721,12 +782,7 @@ export function CommentsManagementPanel({
 
                                   <div className="flex items-center gap-1">
                                     <Calendar className="w-4 h-4" />
-                                    <span>
-                                      {formatDistanceToNow(
-                                        new Date(comment.createdAt),
-                                        { addSuffix: true, locale: zhCN }
-                                      )}
-                                    </span>
+                                    <ClientTimeAgo date={comment.createdAt} />
                                   </div>
 
                                   <div className="flex items-center gap-1">
@@ -828,8 +884,8 @@ export function CommentsManagementPanel({
                                       size="sm"
                                       variant="outline"
                                       onClick={() => handleReply(comment.id)}
-                                      disabled={isPending || !!authorReply}
-                                      title={authorReply ? '该评论已有作者回复' : '作者回复'}
+                                      disabled={isPending || !!authorReply || comment.status === 'DELETED'}
+                                      title={comment.status === 'DELETED' ? '已删除的评论不能回复' : authorReply ? '该评论已有作者回复' : '作者回复'}
                                     >
                                       <Reply className="w-4 h-4 mr-1" />
                                       作者回复
@@ -857,12 +913,7 @@ export function CommentsManagementPanel({
                                       <User className="w-4 h-4" />
                                       <span>{authorReply.user.name || authorReply.user.email}</span>
                                       <Calendar className="w-4 h-4" />
-                                      <span>
-                                        {formatDistanceToNow(
-                                          new Date(authorReply.createdAt),
-                                          { addSuffix: true, locale: zhCN }
-                                        )}
-                                      </span>
+                                      <ClientTimeAgo date={authorReply.createdAt} />
                                       {getStatusBadge(authorReply.status)}
                                     </div>
                                   </div>

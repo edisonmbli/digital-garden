@@ -2,13 +2,24 @@
 
 import type { PortableTextBlock } from '@portabletext/types'
 
-// 对应 getFeaturedGroups 查询返回的数组中的单个对象
-export type FeaturedGroup = {
-  _id: string
-  name: string
-  slug: string
-  coverImageUrl?: string
+// 多语言字段类型
+export type MultilingualField = {
+  zh?: string
+  en?: string
 }
+
+// Collection类型（支持字段级别国际化）
+export type Collection = {
+  _id: string
+  name: MultilingualField
+  description?: MultilingualField
+  slug: string
+  coverImageUrl?: string | null
+  isFeatured: boolean
+}
+
+// 对应 getFeaturedGroups 查询返回的数组中的单个对象（保持向后兼容）
+export type FeaturedGroup = Collection
 
 // 对应 getLogPosts 查询返回的数组中的单个对象
 export type LogPost = {

@@ -9,22 +9,20 @@ datasource db {
 
 model Collection {
   id            String               @id @default(cuid())
-  name          String
+  nameEn        String               @map("name_en")
+  nameZh        String               @map("name_zh")
   slug          String
-  description   String?
+  descriptionEn String?              @map("description_en")
+  descriptionZh String?              @map("description_zh")
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
   coverImageUrl String?
   isFeatured    Boolean              @default(false)
-  language      String
-  sanityI18nId  String               @map("sanity_i18n_id")
-  sanityId      String               @map("sanity_id")
+  sanityId      String               @unique @map("sanity_id")
   deletedAt     DateTime?
   isDeleted     Boolean              @default(false)
   posts         PostsOnCollections[]
 
-  @@unique([sanityI18nId, language])
-  @@index([language])
   @@index([isFeatured])
   @@index([isDeleted])
 }

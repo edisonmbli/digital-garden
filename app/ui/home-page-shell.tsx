@@ -3,20 +3,24 @@
 import { Button } from '@/components/ui/button'
 import { getDictionary } from '@/lib/dictionary'
 import { FeaturedGroup } from '@/types/sanity'
+import { Locale } from '@/i18n-config'
 import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 type DictionaryType = Awaited<ReturnType<typeof getDictionary>>
 
 interface HomePageShellProps {
   dictionary: DictionaryType
   collections: FeaturedGroup[]
+  lang: Locale
 }
 
-export function HomePageShell({ dictionary, collections }: HomePageShellProps) {
+export function HomePageShell({ dictionary, collections, lang }: HomePageShellProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isAutoPlaying, setIsAutoPlaying] = useState(true)
+  const router = useRouter()
 
   // 自动轮播逻辑 - 延长到6秒
   useEffect(() => {
@@ -53,9 +57,23 @@ export function HomePageShell({ dictionary, collections }: HomePageShellProps) {
     goToSlide(newIndex)
   }
 
+  // 跳转到collection页面
+  const goToCollection = () => {
+    if (hasCollections && currentCollection) {
+      router.push(`/${lang}/gallery/${currentCollection.slug}`)
+    }
+  }
+
   // 如果没有集合数据，显示默认背景
   const currentCollection = collections[currentIndex]
   const hasCollections = collections.length > 0
+
+  // 根据语言动态选择Collection名称的辅助函数
+  const getCollectionName = (collection: FeaturedGroup) => {
+    return lang === 'en' 
+      ? (collection.name?.en || collection.name?.zh || 'Untitled') 
+      : (collection.name?.zh || collection.name?.en || '无标题')
+  }
 
   return (
     <div className="w-full min-h-[calc(100vh-3.5rem)] flex flex-col">
@@ -64,7 +82,10 @@ export function HomePageShell({ dictionary, collections }: HomePageShellProps) {
         <div className="relative flex-1 mt-12 mb-8 rounded-lg overflow-hidden">
           {/* 背景图片轮播 */}
           {hasCollections ? (
-            <div className="absolute inset-0">
+            <div 
+              className="absolute inset-0 cursor-pointer"
+              onClick={goToCollection}
+            >
               {collections.map((collection, index) => (
                 <div
                   key={collection._id}
@@ -75,7 +96,7 @@ export function HomePageShell({ dictionary, collections }: HomePageShellProps) {
                   {collection.coverImageUrl && (
                     <Image
                       src={collection.coverImageUrl}
-                      alt={collection.name}
+                      alt={getCollectionName(collection)}
                       fill
                       sizes="100vw"
                       priority={index === 0}
@@ -124,11 +145,14 @@ export function HomePageShell({ dictionary, collections }: HomePageShellProps) {
                 <Button
                   size="lg"
                   className="bg-white/90 text-black hover:bg-white dark:bg-neutral-200 dark:hover:bg-white dark:text-neutral-900 flex items-center gap-2 min-w-[240px] justify-center"
-                  onClick={goToNext}
+                  onClick={goToCollection}
                 >
-                  {currentCollection.name.length > 20
-                    ? `${currentCollection.name.substring(0, 17)}...`
-                    : currentCollection.name}
+                  {(() => {
+                    const collectionName = getCollectionName(currentCollection)
+                    return collectionName.length > 20
+                      ? `${collectionName.substring(0, 17)}...`
+                      : collectionName
+                  })()}
                   <ArrowRight className="h-4 w-4 flex-shrink-0" />
                 </Button>
               </div>

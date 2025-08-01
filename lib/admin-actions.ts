@@ -49,6 +49,174 @@ export async function isAdmin(): Promise<boolean> {
   }
 }
 
+// 运行系统测试
+export async function runSystemTestsAction() {
+  try {
+    await verifyAdminAccess()
+    
+    const tests = []
+    
+    // 数据库连接测试
+    try {
+      await prisma.$queryRaw`SELECT 1`
+      tests.push({
+        name: '数据库连接测试',
+        success: true,
+        message: 'Prisma 数据库连接正常'
+      })
+    } catch (error) {
+      tests.push({
+        name: '数据库连接测试',
+        success: false,
+        message: `数据库连接失败: ${error instanceof Error ? error.message : '未知错误'}`
+      })
+    }
+    
+    // 评论系统测试
+    try {
+      const commentCount = await prisma.comment.count()
+      tests.push({
+        name: '评论系统测试',
+        success: true,
+        message: `评论系统正常，当前共有 ${commentCount} 条评论`
+      })
+    } catch (error) {
+      tests.push({
+        name: '评论系统测试',
+        success: false,
+        message: `评论系统测试失败: ${error instanceof Error ? error.message : '未知错误'}`
+      })
+    }
+    
+    // 反垃圾系统测试
+    try {
+      const spamStats = getSpamStats()
+      tests.push({
+        name: '反垃圾系统测试',
+        success: true,
+        message: `反垃圾系统正常，当前活跃限流规则: ${spamStats.activeRateLimits}`
+      })
+    } catch (error) {
+      tests.push({
+        name: '反垃圾系统测试',
+        success: false,
+        message: `反垃圾系统测试失败: ${error instanceof Error ? error.message : '未知错误'}`
+      })
+    }
+    
+    // Webhook 系统测试
+    try {
+      const webhookCount = await prisma.webhookCall.count()
+      tests.push({
+        name: 'Webhook 系统测试',
+        success: true,
+        message: `Webhook 系统正常，共记录 ${webhookCount} 次调用`
+      })
+    } catch (error) {
+      tests.push({
+        name: 'Webhook 系统测试',
+        success: false,
+        message: `Webhook 系统测试失败: ${error instanceof Error ? error.message : '未知错误'}`
+      })
+    }
+    
+    const passed = tests.filter(test => test.success).length
+    const failed = tests.filter(test => !test.success).length
+    const total = tests.length
+    const passRate = total > 0 ? ((passed / total) * 100).toFixed(1) + '%' : '0%'
+    
+    return {
+      success: true,
+      data: {
+        results: tests,
+        summary: {
+          total,
+          passed,
+          failed,
+          passRate
+        }
+      },
+      message: '系统测试完成'
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '系统测试失败'
+    }
+  }
+}
+
+// 清理过期数据 (别名)
+export async function cleanupExpiredDataAction() {
+  return cleanupSpamDataAction()
+}
+
+// 重置垃圾邮件系统
+export async function resetSpamSystemAction() {
+  try {
+    await verifyAdminAccess()
+    
+    // 清理内存中的数据
+    cleanupExpiredData()
+    
+    // 清理数据库中的垃圾检测日志（可选，谨慎使用）
+    const deletedLogs = await prisma.spamDetectionLog.deleteMany({
+      where: {
+        createdAt: {
+          lt: new Date(Date.now() - 24 * 60 * 60 * 1000) // 删除24小时前的日志
+        }
+      }
+    })
+    
+    revalidatePath('/admin/spam-management')
+    
+    return {
+      success: true,
+      message: `垃圾邮件系统重置完成，清理了 ${deletedLogs.count} 条历史日志`
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '重置垃圾邮件系统失败'
+    }
+  }
+}
+
+// 测试敏感词检测
+export async function testSensitiveWordsAction(content: string) {
+  try {
+    await verifyAdminAccess()
+    
+    // 这里应该调用敏感词检测逻辑
+    // 暂时返回模拟数据
+    const foundWords: string[] = []
+    const sensitiveWords = ['测试敏感词', '垃圾', '广告'] // 示例敏感词
+    
+    for (const word of sensitiveWords) {
+      if (content.includes(word)) {
+        foundWords.push(word)
+      }
+    }
+    
+    return {
+      success: true,
+      data: {
+        content,
+        contentLength: content.length,
+        hasSensitiveWords: foundWords.length > 0,
+        foundWords,
+        wordsCount: foundWords.length
+      },
+      message: '敏感词检测完成'
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '敏感词检测失败'
+    }
+  }
+}
+
 // 验证管理员权限的辅助函数
 async function verifyAdminAccess() {
   const { userId } = await auth()
@@ -284,7 +452,7 @@ export async function getCommentStatsAction() {
 // 获取管理后台评论列表
 export async function getCommentsForAdminAction(options: {
   contentType?: 'photo' | 'log'
-  status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'all'
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'DELETED' | 'all'
   search?: string
   page?: number
   limit?: number
@@ -295,7 +463,7 @@ export async function getCommentsForAdminAction(options: {
     
     const result = await commentsDal.getCommentsForAdmin({
       ...options,
-      status: options.status === 'all' ? 'all' : (options.status as 'PENDING' | 'APPROVED' | 'REJECTED')
+      status: options.status === 'all' ? 'all' : (options.status as 'PENDING' | 'APPROVED' | 'REJECTED' | 'DELETED')
     })
     
     return {
@@ -304,9 +472,11 @@ export async function getCommentsForAdminAction(options: {
       message: '评论列表获取完成'
     }
   } catch (error) {
+    console.error('获取评论列表失败:', error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : '获取评论列表失败'
+      error: '获取评论列表失败',
+      message: '系统错误，请稍后重试'
     }
   }
 }
@@ -386,7 +556,7 @@ export async function updateCommentAction({
           }
           
         case 'delete':
-          const deleteResult = await commentsDal.softDeleteComment(commentId, userId, reason || '管理员删除')
+          const deleteResult = await commentsDal.softDeleteComment(commentId, userId, '管理员', reason || '管理员删除')
           revalidatePath('/admin/comments')
           return {
             success: true,

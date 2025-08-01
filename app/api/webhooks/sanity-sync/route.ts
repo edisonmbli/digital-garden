@@ -13,9 +13,14 @@ type SanityDocument = {
   _createdAt?: string
   _updatedAt?: string
   _rev?: string
-  name?: string
+  name?: string | { en?: string; zh?: string }
   title?: string
-  description?: string
+  description?: string | { en?: string; zh?: string }
+  // Collection specific fields (field-level i18n)
+  nameEn?: string
+  nameZh?: string
+  descriptionEn?: string
+  descriptionZh?: string
   slug?: { _type: 'slug'; current: string }
   isFeatured?: boolean
   publishedAt?: string
@@ -189,38 +194,6 @@ async function getI18nInfo(documentId: string): Promise<{
   }
 }
 
-// Function to sync i18n_id for all related documents (only for collections)
-async function syncRelatedI18nIds(i18nId: string, documentType: string) {
-  if (!i18nId || documentType !== 'collection') return
-
-  try {
-    // Get all related documents from the same translation group
-    const query = `*[_type == "translation.metadata" && _id == $i18nId][0].translations[].value._ref`
-    const relatedDocumentIds = await client.fetch<string[]>(query, { i18nId })
-
-    if (!relatedDocumentIds || relatedDocumentIds.length === 0) return
-
-    console.log(`🔄 Syncing i18n_id for related documents:`, {
-      i18nId,
-      relatedDocumentIds,
-    })
-
-    // Update all related collection documents in our database
-    for (const docId of relatedDocumentIds) {
-      await prisma.collection.updateMany({
-        where: { sanityId: docId },
-        data: { sanityI18nId: i18nId },
-      })
-    }
-
-    console.log(
-      `✅ Successfully synced i18n_id for ${relatedDocumentIds.length} related documents`
-    )
-  } catch (error) {
-    console.error('Error syncing related i18n IDs:', error)
-  }
-}
-
 // Function to handle log i18n consolidation
 async function consolidateLogI18nRecords(
   i18n_id: string,
@@ -306,19 +279,30 @@ async function consolidateLogI18nRecords(
 async function handleCollectionCreate(
   payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
 ) {
+  // Extract i18n data from object-level structure
+  const nameObj = payload.name as { en?: string; zh?: string } | string | undefined
+  const descObj = payload.description as { en?: string; zh?: string } | string | undefined
+  
+  const nameEn = typeof nameObj === 'object' ? nameObj?.en || '' : payload.nameEn || ''
+  const nameZh = typeof nameObj === 'object' ? nameObj?.zh || '' : payload.nameZh || ''
+  const descriptionEn = typeof descObj === 'object' ? descObj?.en || null : payload.descriptionEn || null
+  const descriptionZh = typeof descObj === 'object' ? descObj?.zh || null : payload.descriptionZh || null
+
   console.log('🆕 处理 Collection 创建操作', {
     id: payload._id,
-    i18n_id: payload.i18n_id,
-    lang: payload.i18n_lang,
-    name: payload.name,
+    nameEn,
+    nameZh,
+    descriptionEn,
+    descriptionZh,
+    slug: payload.slug?.current,
+    isFeatured: payload.isFeatured,
   })
 
   try {
     // Check if collection already exists
-    const existing = await prisma.collection.findFirst({
+    const existing = await prisma.collection.findUnique({
       where: {
-        sanityI18nId: payload.i18n_id,
-        language: payload.language || 'en',
+        sanityId: payload._id,
       },
     })
 
@@ -329,20 +313,15 @@ async function handleCollectionCreate(
 
     await prisma.collection.create({
       data: {
-        sanityI18nId: payload.i18n_id,
         sanityId: payload._id,
-        language: payload.language || 'en',
-        name: payload.name || '',
+        nameEn,
+        nameZh,
         slug: payload.slug?.current || '',
-        description: payload.description || null,
+        descriptionEn,
+        descriptionZh,
         isFeatured: payload.isFeatured || false,
       },
     })
-
-    // Sync i18n_id for related documents if this document has a proper i18n_id
-    if (payload.i18n_id !== payload._id) {
-      await syncRelatedI18nIds(payload.i18n_id, 'collection')
-    }
 
     console.log('✅ Collection created successfully')
   } catch (error) {
@@ -354,36 +333,53 @@ async function handleCollectionCreate(
 async function handleCollectionUpdate(
   payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
 ) {
+  // Extract i18n data from object-level structure
+  const nameObj = payload.name as { en?: string; zh?: string } | string | undefined
+  const descObj = payload.description as { en?: string; zh?: string } | string | undefined
+  
+  const nameEn = typeof nameObj === 'object' ? nameObj?.en || '' : payload.nameEn || ''
+  const nameZh = typeof nameObj === 'object' ? nameObj?.zh || '' : payload.nameZh || ''
+  const descriptionEn = typeof descObj === 'object' ? descObj?.en || null : payload.descriptionEn || null
+  const descriptionZh = typeof descObj === 'object' ? descObj?.zh || null : payload.descriptionZh || null
+
   console.log('📝 处理 Collection 更新操作', {
     id: payload._id,
-    i18n_id: payload.i18n_id,
-    lang: payload.i18n_lang,
-    name: payload.name,
+    nameEn,
+    nameZh,
+    descriptionEn,
+    descriptionZh,
+    slug: payload.slug?.current,
+    isFeatured: payload.isFeatured,
   })
 
   try {
-    const updated = await prisma.collection.updateMany({
+    // Use upsert to handle both update and create cases
+    const result = await prisma.collection.upsert({
       where: {
         sanityId: payload._id,
       },
-      data: {
-        sanityI18nId: payload.i18n_id,
-        name: payload.name || '',
+      update: {
+        nameEn,
+        nameZh,
         slug: payload.slug?.current || '',
-        description: payload.description || null,
+        descriptionEn,
+        descriptionZh,
         isFeatured: payload.isFeatured || false,
-        language: payload.language || 'en',
+      },
+      create: {
+        sanityId: payload._id,
+        nameEn,
+        nameZh,
+        slug: payload.slug?.current || '',
+        descriptionEn,
+        descriptionZh,
+        isFeatured: payload.isFeatured || false,
       },
     })
 
-    // Sync i18n_id for related documents if this document has a proper i18n_id
-    if (payload.i18n_id !== payload._id) {
-      await syncRelatedI18nIds(payload.i18n_id, 'collection')
-    }
-
-    console.log(`✅ Updated ${updated.count} collection(s)`)
+    console.log(`✅ Upserted collection: ${result.id} (${result.nameEn})`)
   } catch (error) {
-    console.error('❌ Error updating collection:', error)
+    console.error('❌ Error upserting collection:', error)
     throw error
   }
 }

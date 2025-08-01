@@ -8,7 +8,6 @@ import { groq } from 'next-sanity'
 import { type Locale } from '@/i18n-config'
 
 import type {
-  FeaturedGroup,
   Photo,
   LogPost,
   GroupAndPhotos,
@@ -18,26 +17,32 @@ import type {
 
 // --- Sanity Queries ---
 
-// 只获取那些被标记为“精选”的影像组，用于首页
-export const getHeroCollections = cache(async (lang: Locale) => {
-  const query = groq`*[_type == "collection" && language == $lang && isFeatured == true] | order(_createdAt desc) {
+// 只获取那些被标记为"精选"的影像组，用于首页
+export const getHeroCollections = cache(async () => {
+  const query = groq`*[_type == "collection" && isFeatured == true] | order(_createdAt desc) {
     _id,
-    name,
+    "name": name,
+    "description": description,
     "slug": slug.current,
-    "coverImageUrl": coverImage.asset->url
+    "coverImageUrl": coverImage.asset->url,
+    isFeatured
   }`
-  return sanityClient.fetch<FeaturedGroup[]>(query, { lang })
+  
+  return sanityClient.fetch(query)
 })
 
 // 获取所有的影像组（未来支持分页），用于 /gallery 列表页
-export const getAllCollections = cache(async (lang: Locale) => {
-  const query = groq`*[_type == "collection" && language == $lang] | order(_createdAt desc) {
+export const getAllCollections = cache(async () => {
+  const query = groq`*[_type == "collection"] | order(_createdAt desc) {
     _id,
-    name,
+    "name": name,
+    "description": description,
     "slug": slug.current,
-    "coverImageUrl": coverImage.asset->url
+    "coverImageUrl": coverImage.asset->url,
+    isFeatured
   }`
-  return sanityClient.fetch<FeaturedGroup[]>(query, { lang })
+  
+  return sanityClient.fetch(query)
 })
 
 export const getLogPosts = cache(async (lang: Locale) => {
@@ -258,10 +263,12 @@ export const getGroupAndPhotosBySlug = cache(
     const start = (page - 1) * PHOTOS_PER_PAGE
     const end = start + PHOTOS_PER_PAGE
 
-    // 1. 从 Sanity 获取基础的照片内容数据
-    const query = groq`*[_type == "collection" && slug.current == $slug && language == $lang][0] {
-      name,
-      description,
+    console.log('🔍 Debug: Query parameters:', { slug, lang, start, end })
+
+    // 1. 从 Sanity 获取基础的照片内容数据（新schema不再有language字段）
+    const query = groq`*[_type == "collection" && slug.current == $slug][0] {
+      "name": coalesce(name.${lang}, name.en, ""),
+      "description": coalesce(description.${lang}, description.en, ""),
       "photos": photos[${start}...${end}]-> {
         _id,
         "title": coalesce(title.${lang}, title.en, ""),
@@ -271,15 +278,22 @@ export const getGroupAndPhotosBySlug = cache(
       }
     }`
 
+    console.log('🔍 Debug: GROQ Query:', query)
+
     const collectionDataFromSanity = await sanityClient.fetch<GroupAndPhotos>(
       query,
-      {
-        slug,
-        lang,
-      }
+      { slug }
     )
 
+    console.log('🔍 Debug: Sanity query result:', {
+      hasResult: !!collectionDataFromSanity,
+      name: collectionDataFromSanity?.name,
+      photosCount: collectionDataFromSanity?.photos?.length,
+      firstPhotoId: collectionDataFromSanity?.photos?.[0]?._id
+    })
+
     if (!collectionDataFromSanity || !collectionDataFromSanity.photos) {
+      console.log('❌ Debug: No collection data found from Sanity')
       return null
     }
 
@@ -288,6 +302,9 @@ export const getGroupAndPhotosBySlug = cache(
       (p: Photo) => p._id
     )
     const { userId } = await auth()
+
+    console.log('🔍 Debug: Photo IDs from Sanity:', photoContentIds)
+    console.log('🔍 Debug: Current user ID:', userId)
 
     // 简化查询，直接获取需要的数据
     const photoesInfoFromDb = await prisma.post.findMany({
@@ -319,6 +336,12 @@ export const getGroupAndPhotosBySlug = cache(
       },
     })
 
+    console.log('🔍 Debug: Posts found in Prisma:', {
+      totalFound: photoesInfoFromDb.length,
+      foundIds: photoesInfoFromDb.map(p => p.sanityDocumentId),
+      missingIds: photoContentIds.filter(id => !photoesInfoFromDb.find(p => p.sanityDocumentId === id))
+    })
+
     // 3. 将 Prisma 数据，转换为一个易于查找的 Map（使用 sanityDocumentId 作为 key）
     const photoesMap = new Map(
       photoesInfoFromDb.map((p) => [p.sanityDocumentId, p])
@@ -328,6 +351,16 @@ export const getGroupAndPhotosBySlug = cache(
     const enrichedPhotos: EnrichedPhoto[] = collectionDataFromSanity.photos.map(
       (photo: Photo) => {
         const photoData = photoesMap.get(photo._id) // 使用 Sanity 的 _id 来查找对应的 Post 记录
+        
+        console.log('🔍 Debug: Building enriched photo:', {
+          photoId: photo._id,
+          hasPhotoData: !!photoData,
+          photoDataFields: photoData ? Object.keys(photoData) : 'No photo data',
+          likesCount: photoData?._count.likes,
+          commentsCount: photoData?._count.comments,
+          userLikes: photoData?.likes
+        })
+        
         return {
           ...photo,
           post: photoData

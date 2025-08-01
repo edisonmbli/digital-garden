@@ -9,15 +9,18 @@ import { InfinitePhotoGrid } from '@/app/ui/infinite-photo-grid'
 
 // --- 静态路径生成 ---
 export async function generateStaticParams() {
-  const query = groq`*[_type == "collection" && defined(slug.current) && defined(language)]{ "slug": slug.current, language }`
-  const results = await sanityClient.fetch<
-    { slug: string; language: Locale }[]
-  >(query)
+  const query = groq`*[_type == "collection" && defined(slug.current)]{ "slug": slug.current }`
+  const results = await sanityClient.fetch<{ slug: string }[]>(query)
 
-  return results.map((r) => ({
-    lang: r.language,
-    'collection-slug': r.slug,
-  }))
+  // 为每个collection生成所有支持的语言路径
+  const supportedLanguages: Locale[] = ['en', 'zh']
+  
+  return results.flatMap((r) =>
+    supportedLanguages.map((lang) => ({
+      lang,
+      'collection-slug': r.slug,
+    }))
+  )
 }
 
 // --- 页面组件 ---

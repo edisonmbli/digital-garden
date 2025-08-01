@@ -12,15 +12,16 @@ async function verifyI18nData() {
     // 1. 检查 Collection 数据
     console.log('📋 Collection 数据:')
     const collections = await prisma.collection.findMany({
-      orderBy: [{ sanityI18nId: 'asc' }, { language: 'asc' }],
+      orderBy: { createdAt: 'asc' },
     })
     
     collections.forEach(collection => {
       console.log(`  - ID: ${collection.id}`)
-      console.log(`    sanityI18nId: ${collection.sanityI18nId}`)
       console.log(`    sanityId: ${collection.sanityId}`)
-      console.log(`    language: ${collection.language}`)
-      console.log(`    name: ${collection.name}`)
+      console.log(`    nameEn: ${collection.nameEn}`)
+      console.log(`    nameZh: ${collection.nameZh}`)
+      console.log(`    slug: ${collection.slug}`)
+      console.log(`    isFeatured: ${collection.isFeatured}`)
       console.log('')
     })
 
@@ -86,23 +87,15 @@ async function verifyI18nData() {
     // 5. 验证国际化关系
     console.log('\n🔗 国际化关系验证:')
     
-    // 检查 Collection 的国际化关系
-    const collectionGroups = await prisma.collection.groupBy({
-      by: ['sanityI18nId'],
-      _count: { id: true },
+    // 检查 Collection 的字段级别国际化
+    console.log('  Collection 字段级别国际化:')
+    collections.forEach(collection => {
+      const hasEn = collection.nameEn && collection.nameEn.trim() !== ''
+      const hasZh = collection.nameZh && collection.nameZh.trim() !== ''
+      console.log(`    - ${collection.sanityId}: EN(${hasEn ? '✓' : '✗'}) ZH(${hasZh ? '✓' : '✗'})`)
+      if (hasEn) console.log(`      EN: ${collection.nameEn}`)
+      if (hasZh) console.log(`      ZH: ${collection.nameZh}`)
     })
-    
-    console.log('  Collection 国际化组:')
-    for (const group of collectionGroups) {
-      const collections = await prisma.collection.findMany({
-        where: { sanityI18nId: group.sanityI18nId },
-        select: { language: true, name: true },
-      })
-      console.log(`    - sanityI18nId: ${group.sanityI18nId} (${group._count.id} 个语言版本)`)
-      collections.forEach(c => {
-        console.log(`      ${c.language}: ${c.name}`)
-      })
-    }
 
     // 检查 Log 的国际化关系
     console.log('\n  Log 国际化组:')

@@ -71,28 +71,24 @@ async function backfillCollections() {
         processedCount++
         console.log(
           `\n🔄 处理 Collection ${processedCount}/${collections.length}: ${
-            collection.name || 'Unnamed'
+            collection.nameEn || collection.nameZh || 'Unnamed'
           }`
         )
 
-        const i18nId = collection._i18n_id_ || collection._id
-        const language = collection.language || 'en'
-
         // 检查现有记录
         const existing = await prisma.collection.findFirst({
-          where: {
-            sanityI18nId: i18nId,
-            language: language,
-          },
+          where: { sanityId: collection._id },
         })
 
         if (existing) {
           await prisma.collection.update({
             where: { id: existing.id },
             data: {
-              name: collection.name,
+              nameEn: collection.nameEn,
+              nameZh: collection.nameZh,
               slug: collection.slug,
-              description: collection.description,
+              descriptionEn: collection.descriptionEn,
+              descriptionZh: collection.descriptionZh,
               coverImageUrl: collection.coverImageUrl,
               isFeatured: collection.isFeatured || false,
             },
@@ -102,12 +98,12 @@ async function backfillCollections() {
         } else {
           await prisma.collection.create({
             data: {
-              sanityI18nId: i18nId,
               sanityId: collection._id,
-              language: language,
-              name: collection.name,
+              nameEn: collection.nameEn,
+              nameZh: collection.nameZh,
               slug: collection.slug,
-              description: collection.description,
+              descriptionEn: collection.descriptionEn,
+              descriptionZh: collection.descriptionZh,
               coverImageUrl: collection.coverImageUrl,
               isFeatured: collection.isFeatured || false,
             },

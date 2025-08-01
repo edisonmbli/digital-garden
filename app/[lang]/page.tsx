@@ -15,8 +15,8 @@ export default async function Home(props: {
 
   // 在服务端并行获取数据
   const dictionary = await getDictionary(lang)
-  const heroCollections = await getHeroCollections(lang)
+  const heroCollections = await getHeroCollections()
 
   // 将获取到的精选摄影集，传递给 UI Shell 组件
-  return <HomePageShell dictionary={dictionary} collections={heroCollections} />
+  return <HomePageShell dictionary={dictionary} collections={heroCollections} lang={lang} />
 }

@@ -2,7 +2,7 @@
 'use client'
 
 import { FadeIn } from '@/app/ui/fade-in'
-import { useState, useCallback, useEffect, useTransition } from 'react'
+import { useState, useCallback, useEffect, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import clsx from 'clsx'
 import Image from 'next/image'
@@ -34,6 +34,12 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
     useState(false)
   const [isCommentAuth, setIsCommentAuth] = useState(false) // 新增：标识是否是从评论触发的认证
   const [, startTransition] = useTransition()
+
+  // 用于自动滚动到评论表单的 ref
+  const desktopCommentFormRef = useRef<HTMLDivElement>(null)
+  const mobileCommentFormRef = useRef<HTMLDivElement>(null)
+  const desktopScrollContainerRef = useRef<HTMLDivElement>(null)
+  const mobileScrollContainerRef = useRef<HTMLDivElement>(null)
 
   const dict = useI18n()
   const router = useRouter()
@@ -79,6 +85,98 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
     ? (selectedPhoto.metadata?.dimensions.width || 0) >
       (selectedPhoto.metadata?.dimensions.height || 0)
     : false
+
+  // 键盘导航功能
+  const navigateToPhoto = useCallback(
+    (direction: 'prev' | 'next') => {
+      if (!selectedPhoto || photos.length <= 1) return
+
+      const currentIndex = photos.findIndex(
+        (photo) => photo._id === selectedPhoto._id
+      )
+      if (currentIndex === -1) return
+
+      let newIndex: number
+      if (direction === 'prev') {
+        newIndex = currentIndex === 0 ? photos.length - 1 : currentIndex - 1
+      } else {
+        newIndex = currentIndex === photos.length - 1 ? 0 : currentIndex + 1
+      }
+
+      setSelectedPhoto(photos[newIndex])
+      setShowCommentForm(false) // 重置评论表单状态
+    },
+    [selectedPhoto, photos]
+  )
+
+  // 键盘事件监听
+  useEffect(() => {
+    if (!selectedPhoto) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      switch (event.key) {
+        case 'ArrowLeft':
+        case 'ArrowUp':
+          event.preventDefault()
+          navigateToPhoto('prev')
+          break
+        case 'ArrowRight':
+        case 'ArrowDown':
+          event.preventDefault()
+          navigateToPhoto('next')
+          break
+        case 'Escape':
+          event.preventDefault()
+          setSelectedPhoto(null)
+          setShowCommentForm(false)
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedPhoto, navigateToPhoto])
+
+  // 评论表单展开时自动滚动
+  useEffect(() => {
+    if (!showCommentForm) return
+
+    // 延迟执行，确保 DOM 更新完成
+    const timer = setTimeout(() => {
+      const isMobile = window.innerWidth < 768 // md 断点
+      const scrollContainer = isMobile
+        ? mobileScrollContainerRef.current
+        : desktopScrollContainerRef.current
+      const commentForm = isMobile
+        ? mobileCommentFormRef.current
+        : desktopCommentFormRef.current
+
+      if (!scrollContainer || !commentForm) return
+
+      // 获取评论表单的位置信息
+      const formRect = commentForm.getBoundingClientRect()
+      const containerRect = scrollContainer.getBoundingClientRect()
+
+      // 计算需要滚动的距离
+      // 目标：让评论表单底部高出容器底部一点（大约一条评论的高度，约 80px）
+      const targetOffset = 80
+      const scrollTop = scrollContainer.scrollTop
+      const formBottomRelativeToContainer = formRect.bottom - containerRect.top
+      const containerHeight = containerRect.height
+
+      // 如果评论表单底部不在理想位置，则滚动
+      const idealPosition = containerHeight - targetOffset
+      if (formBottomRelativeToContainer > idealPosition) {
+        const scrollDistance = formBottomRelativeToContainer - idealPosition
+        scrollContainer.scrollTo({
+          top: scrollTop + scrollDistance,
+          behavior: 'smooth',
+        })
+      }
+    }, 100) // 100ms 延迟确保 DOM 渲染完成
+
+    return () => clearTimeout(timer)
+  }, [showCommentForm])
 
   // 定义断点
   const breakpointColumnsObj = {
@@ -150,6 +248,14 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
             <div
               className="rounded-lg overflow-hidden cursor-pointer"
               onClick={() => {
+                console.log('🔍 Debug: Selected photo data:', {
+                  photoId: photo._id,
+                  post: photo.post,
+                  hasPost: !!photo.post,
+                  postFields: photo.post
+                    ? Object.keys(photo.post)
+                    : 'No post data',
+                })
                 setSelectedPhoto(photo)
                 setShowCommentForm(false) // 重置评论表单状态
               }}
@@ -195,10 +301,14 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
               {/* 桌面端：上中下三层结构 - 整体可滚动 */}
               <div className="hidden md:flex md:flex-col md:h-full md:overflow-hidden">
                 {/* 整体滚动容器 - 包含上中下三层 */}
-                <div className="flex-1 overflow-y-auto">
+                <div
+                  ref={desktopScrollContainerRef}
+                  className="flex-1 overflow-y-auto"
+                >
                   {/* 上层：图片区域 - 使用动态计算的高度 */}
+                  {/* 拍立得效果的白色边框容器 pt-3 bg-whiter/90 */}
                   <div
-                    className="flex-shrink-0 bg-black/90 flex items-center justify-center"
+                    className="flex-shrink-0 pt-3 bg-white/90 dark:pt-0 dark:bg-background flex items-center justify-center"
                     style={modalStyles.photo}
                   >
                     <Image
@@ -231,7 +341,7 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
 
                       {/* 右侧：互动按钮 - 与描述底部对齐 */}
                       {selectedPhoto.post && (
-                        <div className="flex space-x-3 flex-shrink-0">
+                        <div className="flex space-x-3 flex-shrink-0 justify-items-end">
                           {/* 点赞按钮 */}
                           <EnhancedLikeButton
                             postId={selectedPhoto.post.id}
@@ -273,7 +383,7 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
 
                       {/* 评论表单 - 可展开/收起 */}
                       {showCommentForm && (
-                        <div className="space-y-3">
+                        <div ref={desktopCommentFormRef} className="space-y-3">
                           <div className="flex items-start space-x-2">
                             <div className="flex-shrink-0">
                               <Button
@@ -327,76 +437,83 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
 
               {/* 移动端：底部抽屉 */}
               <div className="md:hidden">
-                {/* 图片显示区域 - 动态调整高度，横屏照片减少黑边 */}
-                <div
-                  className={clsx(
-                    'relative bg-black/90 flex items-center justify-center',
-                    isLandscape ? 'h-[40vh]' : 'h-[60vh]'
-                  )}
-                >
-                  <Image
-                    src={selectedPhoto.imageUrl}
-                    alt={selectedPhoto.title || 'A photo from the collection'}
-                    width={selectedPhoto.metadata?.dimensions.width || 800}
-                    height={selectedPhoto.metadata?.dimensions.height || 600}
-                    className="max-w-full max-h-full object-contain"
-                    sizes="100vw"
-                    priority
-                  />
-                </div>
-
-                {/* 底部抽屉 - 限制最大高度为 75vh */}
+                {/* 底部抽屉 - 限制最大高度为 75vh，包含所有内容的整体滚动 */}
                 <div className="bg-background border-t border-border/20 max-h-[75vh] flex flex-col">
-                  {/* 内容区域 */}
-                  <div className="p-4 flex-1 overflow-y-auto">
-                    {selectedPhoto.title && (
-                      <h3 className="font-bold text-xl mb-3 text-foreground tracking-tight leading-tight">
-                        {selectedPhoto.title}
-                      </h3>
-                    )}
-                    {selectedPhoto.description && (
-                      <p className="text-base text-muted-foreground leading-relaxed mb-3">
-                        {selectedPhoto.description}
-                      </p>
-                    )}
+                  {/* 整体滚动容器 - 包含图片、信息、评论的所有内容 */}
+                  <div
+                    ref={mobileScrollContainerRef}
+                    className="flex-1 overflow-y-auto"
+                  >
+                    {/* 上层：图片显示区域 - 动态调整高度，横屏照片减少黑边 */}
+                    {/* 拍立得效果的白色边框容器 pt-3 bg-whiter/90 */}
+                    <div
+                      className={clsx(
+                        'relative pt-3 bg-white/90 dark:bg-background flex items-center justify-center flex-shrink-0',
+                        isLandscape ? 'h-[35vh]' : 'h-[60vh]'
+                      )}
+                    >
+                      <Image
+                        src={selectedPhoto.imageUrl}
+                        alt={selectedPhoto.title || 'A photo from the collection'}
+                        width={selectedPhoto.metadata?.dimensions.width || 800}
+                        height={selectedPhoto.metadata?.dimensions.height || 600}
+                        className="max-w-full max-h-full object-contain"
+                        sizes="100vw"
+                        priority
+                      />
+                    </div>
 
-                    {/* 底部固定的互动区域 - 移到内容区域内 */}
-                    {selectedPhoto.post && (
-                      <div className="mb-4">
-                        <div className="flex space-x-3 justify-end">
-                          {/* 点赞按钮 */}
-                          <EnhancedLikeButton
-                            postId={selectedPhoto.post.id}
-                            initialLikes={selectedPhoto.post.likesCount}
-                            isLikedByUser={selectedPhoto.post.isLikedByUser}
-                            onAuthRequired={handleAuthRequired}
-                            variant="default"
-                            className="justify-center"
-                          />
+                    {/* 中层：标题、描述和互动按钮区域 */}
+                    <div className="bg-background p-4 flex-shrink-0">
+                      {selectedPhoto.title && (
+                        <h3 className="font-bold text-base mb-3 text-foreground tracking-tight leading-tight">
+                          {selectedPhoto.title}
+                        </h3>
+                      )}
+                      {selectedPhoto.description && (
+                        <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                          {selectedPhoto.description}
+                        </p>
+                      )}
 
-                          {/* 评论按钮 */}
-                          <EnhancedCommentButton
-                            commentCount={selectedPhoto.post.commentsCount}
-                            hasUserCommented={
-                              selectedPhoto.post.hasUserCommented || false
-                            }
-                            onCommentClick={() => {
-                              setShowCommentForm(true)
-                            }}
-                            onAuthRequired={handleCommentAuthRequired}
-                            variant="default"
-                            className="justify-center"
-                          />
+                      {/* 互动按钮区域 */}
+                      {selectedPhoto.post && (
+                        <div className="mb-4">
+                          <div className="flex space-x-3 justify-end">
+                            {/* 点赞按钮 */}
+                            <EnhancedLikeButton
+                              postId={selectedPhoto.post.id}
+                              initialLikes={selectedPhoto.post.likesCount}
+                              isLikedByUser={selectedPhoto.post.isLikedByUser}
+                              onAuthRequired={handleAuthRequired}
+                              variant="default"
+                              className="justify-center"
+                            />
+
+                            {/* 评论按钮 */}
+                            <EnhancedCommentButton
+                              commentCount={selectedPhoto.post.commentsCount}
+                              hasUserCommented={
+                                selectedPhoto.post.hasUserCommented || false
+                              }
+                              onCommentClick={() => {
+                                setShowCommentForm(true)
+                              }}
+                              onAuthRequired={handleCommentAuthRequired}
+                              variant="default"
+                              className="justify-center"
+                            />
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
 
-                    {/* 评论区域 */}
+                    {/* 下层：评论区域 */}
                     {selectedPhoto.post && (
-                      <div className="space-y-4">
-                        {/* 评论提交成功提示 - 移动端专用 */}
+                      <div className="bg-background px-4 pb-4 flex-shrink-0">
+                        {/* 评论提交成功提示 */}
                         {showCommentSubmittedMessage && (
-                          <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 text-sm text-center rounded-md">
+                          <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 text-sm text-center rounded-md mb-4">
                             {dict.comments?.commentSubmittedSuccess ||
                               '评论已提交，审核后可对外展示'}
                           </div>
@@ -404,7 +521,7 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
 
                         {/* 评论表单 - 可展开/收起，置于评论列表之上 */}
                         {showCommentForm && (
-                          <div className="space-y-3">
+                          <div ref={mobileCommentFormRef} className="space-y-3 mb-4">
                             <CommentForm
                               postId={selectedPhoto.post.id}
                               compact={true}
@@ -435,6 +552,14 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                             <CommentList postId={selectedPhoto.post.id} />
                           </div>
                         )}
+
+                        {/* 当没有评论且没有展开评论表单时，显示引导信息 */}
+                        {selectedPhoto.post.commentsCount === 0 &&
+                          !showCommentForm && (
+                            <div className="flex items-center justify-center py-8 text-center text-muted-foreground">
+                              <p className="text-sm">还没有评论，来说点什么吧</p>
+                            </div>
+                          )}
                       </div>
                     )}
                   </div>
