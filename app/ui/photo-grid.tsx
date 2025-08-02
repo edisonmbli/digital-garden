@@ -454,9 +454,13 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                     >
                       <Image
                         src={selectedPhoto.imageUrl}
-                        alt={selectedPhoto.title || 'A photo from the collection'}
+                        alt={
+                          selectedPhoto.title || 'A photo from the collection'
+                        }
                         width={selectedPhoto.metadata?.dimensions.width || 800}
-                        height={selectedPhoto.metadata?.dimensions.height || 600}
+                        height={
+                          selectedPhoto.metadata?.dimensions.height || 600
+                        }
                         className="max-w-full max-h-full object-contain"
                         sizes="100vw"
                         priority
@@ -521,7 +525,10 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
 
                         {/* 评论表单 - 可展开/收起，置于评论列表之上 */}
                         {showCommentForm && (
-                          <div ref={mobileCommentFormRef} className="space-y-3 mb-4">
+                          <div
+                            ref={mobileCommentFormRef}
+                            className="space-y-3 mb-4"
+                          >
                             <CommentForm
                               postId={selectedPhoto.post.id}
                               compact={true}
@@ -557,7 +564,9 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                         {selectedPhoto.post.commentsCount === 0 &&
                           !showCommentForm && (
                             <div className="flex items-center justify-center py-8 text-center text-muted-foreground">
-                              <p className="text-sm">还没有评论，来说点什么吧</p>
+                              <p className="text-sm">
+                                还没有评论，来说点什么吧
+                              </p>
                             </div>
                           )}
                       </div>
