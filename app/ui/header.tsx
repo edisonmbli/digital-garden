@@ -36,7 +36,7 @@ export async function Header({
           {/* 桌面导航：只在大于 md 断点时显示 */}
           <Link
             href={`/${lang}`}
-            className="hidden font-bold text-xl tracking-tight md:block"
+            className="hidden font-display font-semibold text-xl tracking-tight md:block link-elegant text-foreground hover:text-foreground"
           >
             {dictionary.header.title}
           </Link>
@@ -45,7 +45,7 @@ export async function Header({
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="text-label-md font-sans font-base text-muted-foreground transition-all duration-300 hover:text-foreground hover:tracking-wide"
               >
                 {item.label}
               </Link>

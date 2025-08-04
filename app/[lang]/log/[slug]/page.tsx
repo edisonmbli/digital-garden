@@ -53,10 +53,10 @@ export default async function LogPostPage({
   return (
     <article className="container py-12 max-w-3xl mx-auto">
       <header className="mb-8 text-center">
-        <h1 className="text-4xl font-bold tracking-tighter leading-tight">
+        <h1 className="text-display-sm md:text-display-md font-display font-semibold tracking-tight leading-tight text-foreground">
           {postContent.title}
         </h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-body-md font-sans text-muted-foreground mt-4">
           {new Date(postContent.publishedAt).toLocaleDateString(lang, {
             year: 'numeric',
             month: 'long',
@@ -72,10 +72,10 @@ export default async function LogPostPage({
       </div>
 
       <section className="mt-12">
-        <h2 className="text-2xl font-bold mb-4">Interactions</h2>
+        <h2 className="text-heading-lg font-display font-semibold mb-4 text-foreground">Interactions</h2>
         {/* 在这里，我们将需要组件来渲染点赞按钮和评论区 */}
         {/* 这同样将在第七章实现 */}
-        <p>{interactions?.likes.length || 0} Likes</p>
+        <p className="text-body-md font-sans text-muted-foreground">{interactions?.likes.length || 0} Likes</p>
       </section>
 
       {/* 隐藏的翻译数据，供语言切换器使用 */}

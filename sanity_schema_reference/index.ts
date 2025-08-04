@@ -4,5 +4,6 @@ import log from './log'
 import author from './author'
 import collection from './collection'
 import photo from './photo'
+import devCollection from './devCollection'
 
-export const schemaTypes = [log, author, collection, photo]
+export const schemaTypes = [author, collection, photo, devCollection, log]

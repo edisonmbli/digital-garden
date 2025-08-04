@@ -10,14 +10,14 @@ export async function Footer({ dictionary }: { dictionary: DictionaryType }) {
       {' '}
       {/* 与header保持一致的边框样式 */}
       <div className="container mx-auto flex flex-col items-center justify-center gap-4 px-4 sm:px-6 lg:px-8 ">
-        <p className="text-balance text-right text-sm leading-loose text-muted-foreground">
+        <p className="text-balance text-right text-xs leading-loose text-muted-foreground">
           {dictionary.footer.built_in_public_by_}{' '}
           {dictionary.footer.source_code_available_on_}
           <Link
             href="https://github.com/edisonmbli/digital-garden"
             target="_blank"
             rel="noreferrer"
-            className="font-medium underline underline-offset-4"
+            className="font-base underline underline-offset-4"
           >
             GitHub
           </Link>

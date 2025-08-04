@@ -49,13 +49,15 @@ export function InfinitePhotoGrid({
     <>
       <PhotoGrid photos={photos} />
 
-      {/* 只有在“还有更多”时，才显示“加载中”的提示 */}
+      {/* 只有在"还有更多"时，才显示"加载中"的提示 */}
       <div ref={ref} className="mt-8 text-center">
-        {hasMore
-          ? isLoading
-            ? dictionary.gallery.loading
-            : ''
-          : dictionary.gallery.allPhotosLoaded}
+        <p className="text-sm font-sans text-muted-foreground">
+          {hasMore
+            ? isLoading
+              ? dictionary.gallery.loading
+              : ''
+            : dictionary.gallery.allPhotosLoaded}
+        </p>
       </div>
     </>
   )

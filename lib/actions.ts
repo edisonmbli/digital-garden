@@ -10,7 +10,11 @@ import { type Locale } from '@/i18n-config'
 import { checkRateLimit } from './rate-limit'
 import { checkSpam } from './anti-spam'
 import { auth, clerkClient } from '@clerk/nextjs/server'
-import { CommentStatus, type CreateCommentInput, type UpdateCommentInput } from '@/types'
+import {
+  CommentStatus,
+  type CreateCommentInput,
+  type UpdateCommentInput,
+} from '@/types'
 
 // ================================================= //
 //                   照片相关Actions                  //
@@ -23,7 +27,7 @@ export async function loadMorePhotosAction(
   page: number
 ) {
   // 我们直接复用 DAL 函数来获取下一页的数据
-  const groupData = await dal.getGroupAndPhotosBySlug(slug, lang, page)
+  const groupData = await dal.getCollectionAndPhotosBySlug(slug, lang, page)
 
   // 确保 groupData 存在，且包含 photos 字段
   const newPhotos = groupData?.photos || []
@@ -72,7 +76,7 @@ export async function toggleLikeAction(postId: string) {
       return {
         success: false,
         error: '请先登录后再进行点赞操作',
-        code: 'UNAUTHORIZED'
+        code: 'UNAUTHORIZED',
       }
     }
 
@@ -81,42 +85,44 @@ export async function toggleLikeAction(postId: string) {
       return {
         success: false,
         error: '无效的帖子ID',
-        code: 'INVALID_INPUT'
+        code: 'INVALID_INPUT',
       }
     }
 
     // Rate limiting 检查
     const rateLimitResult = await checkRateLimit('like', {
       maxRequests: 30, // 1分钟内最多30次点赞操作
-      windowMs: 60000
+      windowMs: 60000,
     })
-    
+
     if (!rateLimitResult.allowed) {
-      const resetTimeMinutes = Math.ceil((rateLimitResult.resetTime - Date.now()) / 60000)
+      const resetTimeMinutes = Math.ceil(
+        (rateLimitResult.resetTime - Date.now()) / 60000
+      )
       return {
         success: false,
         error: `操作过于频繁，请 ${resetTimeMinutes} 分钟后再试`,
-        code: 'RATE_LIMITED'
+        code: 'RATE_LIMITED',
       }
     }
-    
+
     // 执行点赞/取消点赞操作
     const result = await dal.toggleLikePost(postId)
-    
+
     // 重新验证相关的缓存标签
     revalidateTag(`post-interactions:${postId}`)
-    
+
     return {
       success: true,
       data: result,
-      message: result.action === 'liked' ? '点赞成功' : '取消点赞成功'
+      message: result.action === 'liked' ? '点赞成功' : '取消点赞成功',
     }
   } catch (error) {
     console.error('Toggle like action error:', error)
     return {
       success: false,
       error: '操作失败，请稍后重试',
-      code: 'INTERNAL_ERROR'
+      code: 'INTERNAL_ERROR',
     }
   }
 }
@@ -126,10 +132,11 @@ export async function toggleLikeAction(postId: string) {
 // ================================================= //
 
 // 评论内容验证Schema
-const commentContentSchema = z.string()
+const commentContentSchema = z
+  .string()
   .min(1, '评论内容不能为空')
   .max(2000, '评论内容不能超过2000字符')
-  .refine(content => content.trim().length > 0, '评论内容不能只包含空格')
+  .refine((content) => content.trim().length > 0, '评论内容不能只包含空格')
 
 // 创建评论的 Server Action
 export async function createCommentAction(data: {
@@ -144,40 +151,42 @@ export async function createCommentAction(data: {
       return {
         success: false,
         error: '请先登录后再发表评论',
-        code: 'UNAUTHORIZED'
+        code: 'UNAUTHORIZED',
       }
     }
 
     // 验证输入数据
-     const contentValidation = commentContentSchema.safeParse(data.content)
-     if (!contentValidation.success) {
-       return {
-         success: false,
-         error: contentValidation.error.issues[0].message,
-         code: 'INVALID_INPUT'
-       }
-     }
+    const contentValidation = commentContentSchema.safeParse(data.content)
+    if (!contentValidation.success) {
+      return {
+        success: false,
+        error: contentValidation.error.issues[0].message,
+        code: 'INVALID_INPUT',
+      }
+    }
 
     if (!data.postId || typeof data.postId !== 'string') {
       return {
         success: false,
         error: '无效的文章ID',
-        code: 'INVALID_INPUT'
+        code: 'INVALID_INPUT',
       }
     }
 
     // Rate limiting 检查
     const rateLimitResult = await checkRateLimit('comment', {
       maxRequests: 10, // 1分钟内最多10条评论
-      windowMs: 60000
+      windowMs: 60000,
     })
-    
+
     if (!rateLimitResult.allowed) {
-      const resetTimeMinutes = Math.ceil((rateLimitResult.resetTime - Date.now()) / 60000)
+      const resetTimeMinutes = Math.ceil(
+        (rateLimitResult.resetTime - Date.now()) / 60000
+      )
       return {
         success: false,
         error: `评论过于频繁，请 ${resetTimeMinutes} 分钟后再试`,
-        code: 'RATE_LIMITED'
+        code: 'RATE_LIMITED',
       }
     }
 
@@ -186,55 +195,58 @@ export async function createCommentAction(data: {
       content: contentValidation.data,
       userId: userId,
       // 在实际应用中，可以从请求头获取真实IP
-      ipAddress: undefined
+      ipAddress: undefined,
     })
-    
+
     if (spamCheckResult.isSpam) {
       return {
         success: false,
         error: `内容被识别为垃圾信息: ${spamCheckResult.reason}`,
-        code: 'SPAM_DETECTED'
+        code: 'SPAM_DETECTED',
       }
     }
 
     // 准备评论数据
-     const commentInput: CreateCommentInput = {
-       content: contentValidation.data.trim(),
-       postId: data.postId,
-       userId: userId,
-       parentId: data.parentId || undefined,
-       ipAddress: undefined, // 在实际应用中，可以从请求头获取IP
-       userAgent: undefined, // 在实际应用中，可以从请求头获取User-Agent
-       isAuthorReply: false, // 可以通过检查用户是否为文章作者来设置
-     }
+    const commentInput: CreateCommentInput = {
+      content: contentValidation.data.trim(),
+      postId: data.postId,
+      userId: userId,
+      parentId: data.parentId || undefined,
+      ipAddress: undefined, // 在实际应用中，可以从请求头获取IP
+      userAgent: undefined, // 在实际应用中，可以从请求头获取User-Agent
+      isAuthorReply: false, // 可以通过检查用户是否为文章作者来设置
+    }
 
     // 创建评论
     const comment = await commentsDal.createComment(commentInput)
-    
+
     // 重新验证相关的缓存标签
     revalidateTag(`post-comments:${data.postId}`)
     revalidateTag(`post-interactions:${data.postId}`)
-    
+
     return {
       success: true,
       data: comment,
-      message: data.parentId ? '回复发表成功' : '评论发表成功'
+      message: data.parentId ? '回复发表成功' : '评论发表成功',
     }
   } catch (error) {
     console.error('Create comment action error:', error)
     return {
       success: false,
       error: '发表评论失败，请稍后重试',
-      code: 'INTERNAL_ERROR'
+      code: 'INTERNAL_ERROR',
     }
   }
 }
 
 // 更新评论的 Server Action
-export async function updateCommentAction(commentId: string, data: {
-  content?: string
-  status?: CommentStatus
-}) {
+export async function updateCommentAction(
+  commentId: string,
+  data: {
+    content?: string
+    status?: CommentStatus
+  }
+) {
   try {
     // 验证用户身份
     const { userId } = await auth()
@@ -242,7 +254,7 @@ export async function updateCommentAction(commentId: string, data: {
       return {
         success: false,
         error: '请先登录',
-        code: 'UNAUTHORIZED'
+        code: 'UNAUTHORIZED',
       }
     }
 
@@ -250,21 +262,21 @@ export async function updateCommentAction(commentId: string, data: {
       return {
         success: false,
         error: '无效的评论ID',
-        code: 'INVALID_INPUT'
+        code: 'INVALID_INPUT',
       }
     }
 
     // 验证评论内容（如果提供）
-     if (data.content !== undefined) {
-       const contentValidation = commentContentSchema.safeParse(data.content)
-       if (!contentValidation.success) {
-         return {
-           success: false,
-           error: contentValidation.error.issues[0].message,
-           code: 'INVALID_INPUT'
-         }
-       }
-     }
+    if (data.content !== undefined) {
+      const contentValidation = commentContentSchema.safeParse(data.content)
+      if (!contentValidation.success) {
+        return {
+          success: false,
+          error: contentValidation.error.issues[0].message,
+          code: 'INVALID_INPUT',
+        }
+      }
+    }
 
     // 获取评论信息以验证权限
     const existingComment = await commentsDal.getCommentById(commentId)
@@ -272,7 +284,7 @@ export async function updateCommentAction(commentId: string, data: {
       return {
         success: false,
         error: '评论不存在',
-        code: 'NOT_FOUND'
+        code: 'NOT_FOUND',
       }
     }
 
@@ -281,40 +293,43 @@ export async function updateCommentAction(commentId: string, data: {
       return {
         success: false,
         error: '您只能编辑自己的评论',
-        code: 'FORBIDDEN'
+        code: 'FORBIDDEN',
       }
     }
 
     // 准备更新数据
     const updateInput: UpdateCommentInput = {}
-    
+
     if (data.content !== undefined) {
       updateInput.content = data.content.trim()
     }
-    
+
     if (data.status !== undefined) {
       updateInput.status = data.status
       updateInput.moderatedBy = userId
     }
 
     // 更新评论
-    const updatedComment = await commentsDal.updateComment(commentId, updateInput)
-    
+    const updatedComment = await commentsDal.updateComment(
+      commentId,
+      updateInput
+    )
+
     // 重新验证相关的缓存标签
     revalidateTag(`post-comments:${existingComment.postId}`)
     revalidateTag(`post-interactions:${existingComment.postId}`)
-    
+
     return {
       success: true,
       data: updatedComment,
-      message: '评论更新成功'
+      message: '评论更新成功',
     }
   } catch (error) {
     console.error('Update comment action error:', error)
     return {
       success: false,
       error: '更新评论失败，请稍后重试',
-      code: 'INTERNAL_ERROR'
+      code: 'INTERNAL_ERROR',
     }
   }
 }
@@ -328,7 +343,7 @@ export async function deleteCommentAction(commentId: string, reason?: string) {
       return {
         success: false,
         error: '请先登录',
-        code: 'UNAUTHORIZED'
+        code: 'UNAUTHORIZED',
       }
     }
 
@@ -336,7 +351,7 @@ export async function deleteCommentAction(commentId: string, reason?: string) {
       return {
         success: false,
         error: '无效的评论ID',
-        code: 'INVALID_INPUT'
+        code: 'INVALID_INPUT',
       }
     }
 
@@ -346,7 +361,7 @@ export async function deleteCommentAction(commentId: string, reason?: string) {
       return {
         success: false,
         error: '评论不存在',
-        code: 'NOT_FOUND'
+        code: 'NOT_FOUND',
       }
     }
 
@@ -356,7 +371,7 @@ export async function deleteCommentAction(commentId: string, reason?: string) {
       return {
         success: false,
         error: '您只能删除自己的评论',
-        code: 'FORBIDDEN'
+        code: 'FORBIDDEN',
       }
     }
 
@@ -366,22 +381,27 @@ export async function deleteCommentAction(commentId: string, reason?: string) {
     const moderatorName = user.fullName || user.firstName || '用户'
 
     // 软删除评论
-    await commentsDal.softDeleteComment(commentId, userId, moderatorName, reason)
-    
+    await commentsDal.softDeleteComment(
+      commentId,
+      userId,
+      moderatorName,
+      reason
+    )
+
     // 重新验证相关的缓存标签
     revalidateTag(`post-comments:${existingComment.postId}`)
     revalidateTag(`post-interactions:${existingComment.postId}`)
-    
+
     return {
       success: true,
-      message: '评论删除成功'
+      message: '评论删除成功',
     }
   } catch (error) {
     console.error('Delete comment action error:', error)
     return {
       success: false,
       error: '删除评论失败，请稍后重试',
-      code: 'INTERNAL_ERROR'
+      code: 'INTERNAL_ERROR',
     }
   }
 }
@@ -399,7 +419,7 @@ export async function approveCommentAction(commentId: string, reason?: string) {
       return {
         success: false,
         error: '请先登录',
-        code: 'UNAUTHORIZED'
+        code: 'UNAUTHORIZED',
       }
     }
 
@@ -416,7 +436,7 @@ export async function approveCommentAction(commentId: string, reason?: string) {
       return {
         success: false,
         error: '无效的评论ID',
-        code: 'INVALID_INPUT'
+        code: 'INVALID_INPUT',
       }
     }
 
@@ -426,7 +446,7 @@ export async function approveCommentAction(commentId: string, reason?: string) {
       return {
         success: false,
         error: '评论不存在',
-        code: 'NOT_FOUND'
+        code: 'NOT_FOUND',
       }
     }
 
@@ -437,26 +457,26 @@ export async function approveCommentAction(commentId: string, reason?: string) {
 
     // 审核通过评论
     await commentsDal.approveComment(
-      commentId, 
-      userId, 
+      commentId,
+      userId,
       moderatorName,
       reason || '审核通过'
     )
-    
+
     // 重新验证相关的缓存标签
     revalidateTag(`post-comments:${existingComment.postId}`)
     revalidateTag(`post-interactions:${existingComment.postId}`)
-    
+
     return {
       success: true,
-      message: '评论审核通过'
+      message: '评论审核通过',
     }
   } catch (error) {
     console.error('Approve comment action error:', error)
     return {
       success: false,
       error: '审核操作失败，请稍后重试',
-      code: 'INTERNAL_ERROR'
+      code: 'INTERNAL_ERROR',
     }
   }
 }
@@ -470,7 +490,7 @@ export async function rejectCommentAction(commentId: string, reason?: string) {
       return {
         success: false,
         error: '请先登录',
-        code: 'UNAUTHORIZED'
+        code: 'UNAUTHORIZED',
       }
     }
 
@@ -480,7 +500,7 @@ export async function rejectCommentAction(commentId: string, reason?: string) {
       return {
         success: false,
         error: '无效的评论ID',
-        code: 'INVALID_INPUT'
+        code: 'INVALID_INPUT',
       }
     }
 
@@ -490,7 +510,7 @@ export async function rejectCommentAction(commentId: string, reason?: string) {
       return {
         success: false,
         error: '评论不存在',
-        code: 'NOT_FOUND'
+        code: 'NOT_FOUND',
       }
     }
 
@@ -501,26 +521,26 @@ export async function rejectCommentAction(commentId: string, reason?: string) {
 
     // 拒绝评论
     await commentsDal.rejectComment(
-      commentId, 
-      userId, 
+      commentId,
+      userId,
       moderatorName,
       reason || '审核不通过'
     )
-    
+
     // 重新验证相关的缓存标签
     revalidateTag(`post-comments:${existingComment.postId}`)
     revalidateTag(`post-interactions:${existingComment.postId}`)
-    
+
     return {
       success: true,
-      message: '评论已被拒绝'
+      message: '评论已被拒绝',
     }
   } catch (error) {
     console.error('Reject comment action error:', error)
     return {
       success: false,
       error: '审核操作失败，请稍后重试',
-      code: 'INTERNAL_ERROR'
+      code: 'INTERNAL_ERROR',
     }
   }
 }
@@ -534,7 +554,7 @@ export async function pinCommentAction(commentId: string) {
       return {
         success: false,
         error: '请先登录',
-        code: 'UNAUTHORIZED'
+        code: 'UNAUTHORIZED',
       }
     }
 
@@ -544,7 +564,7 @@ export async function pinCommentAction(commentId: string) {
       return {
         success: false,
         error: '无效的评论ID',
-        code: 'INVALID_INPUT'
+        code: 'INVALID_INPUT',
       }
     }
 
@@ -554,27 +574,27 @@ export async function pinCommentAction(commentId: string) {
       return {
         success: false,
         error: '评论不存在',
-        code: 'NOT_FOUND'
+        code: 'NOT_FOUND',
       }
     }
 
     // 置顶评论
     await commentsDal.pinComment(commentId, userId)
-    
+
     // 重新验证相关的缓存标签
     revalidateTag(`post-comments:${existingComment.postId}`)
     revalidateTag(`post-interactions:${existingComment.postId}`)
-    
+
     return {
       success: true,
-      message: '评论置顶成功'
+      message: '评论置顶成功',
     }
   } catch (error) {
     console.error('Pin comment action error:', error)
     return {
       success: false,
       error: '置顶操作失败，请稍后重试',
-      code: 'INTERNAL_ERROR'
+      code: 'INTERNAL_ERROR',
     }
   }
 }
@@ -588,7 +608,7 @@ export async function unpinCommentAction(commentId: string) {
       return {
         success: false,
         error: '请先登录',
-        code: 'UNAUTHORIZED'
+        code: 'UNAUTHORIZED',
       }
     }
 
@@ -598,7 +618,7 @@ export async function unpinCommentAction(commentId: string) {
       return {
         success: false,
         error: '无效的评论ID',
-        code: 'INVALID_INPUT'
+        code: 'INVALID_INPUT',
       }
     }
 
@@ -608,27 +628,27 @@ export async function unpinCommentAction(commentId: string) {
       return {
         success: false,
         error: '评论不存在',
-        code: 'NOT_FOUND'
+        code: 'NOT_FOUND',
       }
     }
 
     // 取消置顶评论
     await commentsDal.unpinComment(commentId)
-    
+
     // 重新验证相关的缓存标签
     revalidateTag(`post-comments:${existingComment.postId}`)
     revalidateTag(`post-interactions:${existingComment.postId}`)
-    
+
     return {
       success: true,
-      message: '取消置顶成功'
+      message: '取消置顶成功',
     }
   } catch (error) {
     console.error('Unpin comment action error:', error)
     return {
       success: false,
       error: '取消置顶操作失败，请稍后重试',
-      code: 'INTERNAL_ERROR'
+      code: 'INTERNAL_ERROR',
     }
   }
 }
@@ -653,7 +673,7 @@ export async function commentAction(postId: string, formData: FormData) {
     // 调用新的创建评论Action
     const result = await createCommentAction({
       content: validation.data,
-      postId: postId
+      postId: postId,
     })
 
     if (result.success) {
@@ -676,7 +696,7 @@ export async function getCommentsAction({
   postId,
   page = 1,
   limit = 10,
-  status = CommentStatus.APPROVED
+  status = CommentStatus.APPROVED,
 }: {
   postId: string
   page?: number
@@ -689,7 +709,7 @@ export async function getCommentsAction({
       return {
         success: false,
         error: 'postId is required',
-        code: 'INVALID_INPUT'
+        code: 'INVALID_INPUT',
       }
     }
 
@@ -704,7 +724,7 @@ export async function getCommentsAction({
       offset,
       includeReplies: true,
       includeDeleted: false,
-      orderBy: 'pinned' // 使用 pinned 排序，置顶评论优先
+      orderBy: 'pinned', // 使用 pinned 排序，置顶评论优先
     })
 
     return {
@@ -713,16 +733,15 @@ export async function getCommentsAction({
         comments,
         page,
         limit,
-        hasMore: comments.length === limit
-      }
+        hasMore: comments.length === limit,
+      },
     }
-
   } catch (error) {
     console.error('Error fetching comments:', error)
     return {
       success: false,
       error: 'Failed to fetch comments',
-      code: 'INTERNAL_ERROR'
+      code: 'INTERNAL_ERROR',
     }
   }
 }

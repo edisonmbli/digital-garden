@@ -328,7 +328,7 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                       {/* 左侧：标题和描述 */}
                       <div className="flex-1 min-w-0">
                         {selectedPhoto.title && (
-                          <h3 className="font-bold text-xl mb-2 text-foreground tracking-tight leading-tight">
+                          <h3 className="font-medium text-lg mb-2 text-foreground tracking-tight leading-tight">
                             {selectedPhoto.title}
                           </h3>
                         )}
@@ -427,7 +427,10 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                       {selectedPhoto.post.commentsCount === 0 &&
                         !showCommentForm && (
                           <div className="flex items-center justify-center py-8 text-center text-muted-foreground">
-                            <p className="text-sm">还没有评论，来说点什么吧</p>
+                            <p className="text-sm">
+                              {dict.comments?.noComments ||
+                                '还没有评论，来说点什么吧'}
+                            </p>
                           </div>
                         )}
                     </div>
@@ -565,7 +568,8 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                           !showCommentForm && (
                             <div className="flex items-center justify-center py-8 text-center text-muted-foreground">
                               <p className="text-sm">
-                                还没有评论，来说点什么吧
+                                {dict.comments?.noComments ||
+                                  '还没有评论，来说点什么吧'}
                               </p>
                             </div>
                           )}

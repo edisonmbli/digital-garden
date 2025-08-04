@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Figtree, Lora } from 'next/font/google'
+import { Inter, Crimson_Pro, Playfair_Display, Noto_Sans_SC, Noto_Serif_SC } from 'next/font/google'
 import '@/app/ui/globals.css'
 import { ThemeProvider } from '@/app/ui/theme-provider'
 import { DynamicClerkProvider } from '@/components/dynamic-clerk-provider'
@@ -11,16 +11,41 @@ import { type Locale, generateStaticParams } from '@/i18n-config'
 import { I18nProvider } from '@/app/context/i18n-provider'
 import { PageTransitionRecommended } from '@/app/ui/page-transition'
 
-const fontSans = Figtree({
+// 英文字体配置
+const fontSans = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-sans',
+  weight: ['300', '400', '500', '600', '700'],
 })
 
-const fontSerif = Lora({
+const fontSerif = Crimson_Pro({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-serif',
+  weight: ['300', '400', '500', '600', '700'],
+})
+
+const fontDisplay = Playfair_Display({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-display',
+  weight: ['400', '500', '600', '700', '900'],
+})
+
+// 中文字体配置
+const fontSansCN = Noto_Sans_SC({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-sans-cn',
+  weight: ['300', '400', '500', '600', '700'],
+})
+
+const fontSerifCN = Noto_Serif_SC({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-serif-cn',
+  weight: ['300', '400', '500', '600', '700', '900'],
 })
 
 export const metadata: Metadata = {
@@ -50,7 +75,7 @@ export default async function RootLayout({
     >
       <html lang="en" suppressHydrationWarning>
         <body
-          className={`${fontSans.variable} ${fontSerif.variable} font-sans min-h-screen w-full bg-background text-foreground antialiased`}
+          className={`${fontSans.variable} ${fontSerif.variable} ${fontDisplay.variable} ${fontSansCN.variable} ${fontSerifCN.variable} font-sans min-h-screen w-full bg-background text-foreground antialiased`}
         >
           <ThemeProvider
             attribute="class"

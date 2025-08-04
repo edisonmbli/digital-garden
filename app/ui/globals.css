@@ -1,4 +1,7 @@
 /* app/globals.css */
+/* Import component-specific styles */
+@import './hero-animations.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -80,15 +83,15 @@
   .safe-area-pb {
     padding-bottom: env(safe-area-inset-bottom);
   }
-  
+
   .safe-area-pt {
     padding-top: env(safe-area-inset-top);
   }
-  
+
   .safe-area-pl {
     padding-left: env(safe-area-inset-left);
   }
-  
+
   .safe-area-pr {
     padding-right: env(safe-area-inset-right);
   }

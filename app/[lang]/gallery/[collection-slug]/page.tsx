@@ -1,7 +1,7 @@
 // app/[lang]/gallery/[collection-slug]/page.tsx
 
 import { type Locale } from '@/i18n-config'
-import { getGroupAndPhotosBySlug } from '@/lib/dal'
+import { getCollectionAndPhotosBySlug } from '@/lib/dal'
 import { notFound } from 'next/navigation'
 import { client as sanityClient } from '@/sanity/client'
 import { groq } from 'next-sanity'
@@ -14,7 +14,7 @@ export async function generateStaticParams() {
 
   // 为每个collection生成所有支持的语言路径
   const supportedLanguages: Locale[] = ['en', 'zh']
-  
+
   return results.flatMap((r) =>
     supportedLanguages.map((lang) => ({
       lang,
@@ -31,7 +31,7 @@ export default async function CollectionPage({
 }) {
   const { 'collection-slug': collectionSlug, lang } = await params
 
-  const initialGroupData = await getGroupAndPhotosBySlug(
+  const initialGroupData = await getCollectionAndPhotosBySlug(
     collectionSlug,
     lang,
     1
@@ -44,13 +44,15 @@ export default async function CollectionPage({
   return (
     <div className="w-full py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <header className="text-center mb-12">
-          <h1 className="text-4xl font-bold">{initialGroupData.name}</h1>
-          <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
+        <header className="text-center mb-8">
+          <h1 className="text-lg md:text-xl font-display font-semibold tracking-wide text-foreground">
+            {initialGroupData.name}
+          </h1>
+          <p className="text-md font-sans text-muted-foreground mt-2 max-w-2xl mx-auto leading-relaxed">
             {initialGroupData.description}
           </p>
         </header>
-        
+
         <main>
           <InfinitePhotoGrid
             initialPhotos={initialGroupData.photos}

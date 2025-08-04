@@ -28,8 +28,10 @@ export function LogPageShell({ dictionary, posts, lang }: LogPageShellProps) {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* 页面标题区域 */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold">{dictionary.develop.title}</h1>
-          <p className="text-muted-foreground mt-2 text-lg">
+          <h1 className="text-display-sm md:text-display-md font-display font-semibold tracking-tight text-foreground">
+            {dictionary.develop.title}
+          </h1>
+          <p className="text-body-lg font-sans text-muted-foreground mt-6 leading-relaxed">
             {dictionary.develop.description}
           </p>
           {/* 未来这里的搜索/筛选区 */}
@@ -49,14 +51,14 @@ export function LogPageShell({ dictionary, posts, lang }: LogPageShellProps) {
                     {/* 标题和日期区域 - 响应式布局 */}
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between sm:gap-4 mb-3">
                       {/* 文章标题 */}
-                      <h2 className="text-xl font-semibold group-hover:text-primary transition-colors sm:flex-1">
+                      <h2 className="text-heading-md font-display font-medium group-hover:text-primary transition-colors sm:flex-1 tracking-tight">
                         {post.title}
                       </h2>
 
                       {/* 发布日期 - 响应式位置 */}
                       <time
                         dateTime={post.publishedAt}
-                        className="text-sm text-muted-foreground mt-1 sm:mt-0 sm:text-right sm:flex-shrink-0"
+                        className="text-label-sm font-sans text-muted-foreground mt-1 sm:mt-0 sm:text-right sm:flex-shrink-0"
                       >
                         {formatDate(post.publishedAt)}
                       </time>
@@ -64,7 +66,7 @@ export function LogPageShell({ dictionary, posts, lang }: LogPageShellProps) {
 
                     {/* 文章摘要 */}
                     {post.excerpt && (
-                      <p className="text-muted-foreground leading-relaxed">
+                      <p className="text-body-md font-sans text-muted-foreground leading-relaxed">
                         {post.excerpt}
                       </p>
                     )}
@@ -91,10 +93,10 @@ export function LogPageShell({ dictionary, posts, lang }: LogPageShellProps) {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-foreground mb-2">
+              <h3 className="text-heading-sm font-display font-medium text-foreground mb-2">
                 No posts yet
               </h3>
-              <p className="text-muted-foreground">
+              <p className="text-body-md font-sans text-muted-foreground">
                 Check back later for new developer log entries.
               </p>
             </div>

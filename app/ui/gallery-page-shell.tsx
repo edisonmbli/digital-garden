@@ -16,10 +16,11 @@ export function GalleryPageShell({ collections, lang }: GalleryPageShellProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {collections.map((collection) => {
             // 根据语言动态选择对应的名称
-            const collectionName = lang === 'en' 
-              ? (collection.name?.en || collection.name?.zh || 'Untitled') 
-              : (collection.name?.zh || collection.name?.en || '无标题')
-            
+            const collectionName =
+              lang === 'en'
+                ? collection.name?.en || collection.name?.zh || 'Untitled'
+                : collection.name?.zh || collection.name?.en || '无标题'
+
             return (
               <Link
                 key={collection._id}
@@ -40,11 +41,11 @@ export function GalleryPageShell({ collections, lang }: GalleryPageShellProps) {
                 )}
 
                 {/* 渐变遮罩层 - 从透明到半透明黑色 */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/15 to-transparent" />
 
                 {/* 文字内容 */}
                 <div className="absolute inset-0 flex items-center justify-center p-6">
-                  <h2 className="text-2xl font-bold text-white text-center drop-shadow-lg">
+                  <h2 className="text-xl font-display-2xl font-semiabold rounded-sm text-white bg-white/50 px-2 py-1 text-center drop-shadow-lg tracking-wide">
                     {collectionName}
                   </h2>
                 </div>

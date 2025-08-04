@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, Mountain } from 'lucide-react'
+import { Menu, Camera } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -40,7 +40,7 @@ export function MobileNav({
           <span className="sr-only">Toggle Menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="pr-0">
+      <SheetContent side="left" className="pr-0 bg-white/80">
         {/* 添加 SheetHeader 和 SheetTitle 来满足无障碍要求 */}
         <SheetHeader>
           <SheetTitle className="sr-only">
@@ -53,12 +53,12 @@ export function MobileNav({
           className="mr-6 flex items-center space-x-2"
           onClick={() => setOpen(false)}
         >
-          <Mountain className="h-6 w-6" />
-          <span className="font-bold">{dictionary.header.title}</span>
+          <Camera className="h-6 w-6 ml-4 dark:text-black/90" />
+          <span className="text-xl font-medium tracking-tight dark:text-black/90">{dictionary.header.title}</span>
         </Link>
 
-        <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
-          <nav className="flex flex-col space-y-3" role="navigation">
+        <div className="my-3 h-[calc(100vh-8rem)] pb-10 pl-6">
+          <nav className="flex flex-col space-y-4" role="navigation">
             {navItems?.map(
               (item) =>
                 item.href && (
@@ -66,7 +66,7 @@ export function MobileNav({
                     key={item.href}
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    className="text-md font-base dark:text-black/80 text-muted-foreground transition-all duration-300 hover:text-foreground hover:translate-x-2 active:scale-95"
                   >
                     {item.label}
                   </Link>

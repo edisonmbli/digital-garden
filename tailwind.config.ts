@@ -11,6 +11,13 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-sans)', 'var(--font-sans-cn)', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-serif)', 'var(--font-serif-cn)', 'Georgia', 'serif'],
+        display: ['var(--font-display)', 'var(--font-serif-cn)', 'Georgia', 'serif'],
+        'sans-cn': ['var(--font-sans-cn)', 'var(--font-sans)', 'system-ui', 'sans-serif'],
+        'serif-cn': ['var(--font-serif-cn)', 'var(--font-serif)', 'Georgia', 'serif'],
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',

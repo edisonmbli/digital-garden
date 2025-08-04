@@ -27,7 +27,7 @@ export const getHeroCollections = cache(async () => {
     "coverImageUrl": coverImage.asset->url,
     isFeatured
   }`
-  
+
   return sanityClient.fetch(query)
 })
 
@@ -41,7 +41,7 @@ export const getAllCollections = cache(async () => {
     "coverImageUrl": coverImage.asset->url,
     isFeatured
   }`
-  
+
   return sanityClient.fetch(query)
 })
 
@@ -193,19 +193,21 @@ export async function toggleLikePost(postId: string) {
 // 获取帖子的点赞统计信息
 export async function getPostLikeStats(postId: string) {
   const { userId } = await auth()
-  
+
   const [likesCount, userLike] = await Promise.all([
     prisma.like.count({
       where: { postId },
     }),
-    userId ? prisma.like.findUnique({
-      where: {
-        postId_userId: {
-          postId,
-          userId,
-        },
-      },
-    }) : null,
+    userId
+      ? prisma.like.findUnique({
+          where: {
+            postId_userId: {
+              postId,
+              userId,
+            },
+          },
+        })
+      : null,
   ])
 
   return {
@@ -257,7 +259,7 @@ export async function deleteComment(commentId: string) {
 
 export const PHOTOS_PER_PAGE = 12 // 定义每页加载的照片数量
 
-export const getGroupAndPhotosBySlug = cache(
+export const getCollectionAndPhotosBySlug = cache(
   async (slug: string, lang: Locale, page: number = 1) => {
     // 分页逻辑
     const start = (page - 1) * PHOTOS_PER_PAGE
@@ -289,7 +291,7 @@ export const getGroupAndPhotosBySlug = cache(
       hasResult: !!collectionDataFromSanity,
       name: collectionDataFromSanity?.name,
       photosCount: collectionDataFromSanity?.photos?.length,
-      firstPhotoId: collectionDataFromSanity?.photos?.[0]?._id
+      firstPhotoId: collectionDataFromSanity?.photos?.[0]?._id,
     })
 
     if (!collectionDataFromSanity || !collectionDataFromSanity.photos) {
@@ -338,8 +340,10 @@ export const getGroupAndPhotosBySlug = cache(
 
     console.log('🔍 Debug: Posts found in Prisma:', {
       totalFound: photoesInfoFromDb.length,
-      foundIds: photoesInfoFromDb.map(p => p.sanityDocumentId),
-      missingIds: photoContentIds.filter(id => !photoesInfoFromDb.find(p => p.sanityDocumentId === id))
+      foundIds: photoesInfoFromDb.map((p) => p.sanityDocumentId),
+      missingIds: photoContentIds.filter(
+        (id) => !photoesInfoFromDb.find((p) => p.sanityDocumentId === id)
+      ),
     })
 
     // 3. 将 Prisma 数据，转换为一个易于查找的 Map（使用 sanityDocumentId 作为 key）
@@ -351,16 +355,16 @@ export const getGroupAndPhotosBySlug = cache(
     const enrichedPhotos: EnrichedPhoto[] = collectionDataFromSanity.photos.map(
       (photo: Photo) => {
         const photoData = photoesMap.get(photo._id) // 使用 Sanity 的 _id 来查找对应的 Post 记录
-        
+
         console.log('🔍 Debug: Building enriched photo:', {
           photoId: photo._id,
           hasPhotoData: !!photoData,
           photoDataFields: photoData ? Object.keys(photoData) : 'No photo data',
           likesCount: photoData?._count.likes,
           commentsCount: photoData?._count.comments,
-          userLikes: photoData?.likes
+          userLikes: photoData?.likes,
         })
-        
+
         return {
           ...photo,
           post: photoData

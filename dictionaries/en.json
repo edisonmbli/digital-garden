@@ -22,11 +22,11 @@
     "description": "Here, we fully record the construction process of this website from zero to one."
   },
   "clerk": {
-    "signIn": { 
-      "start": { 
+    "signIn": {
+      "start": {
         "title": "Sign in",
         "subtitle": "Welcome back! Please sign in to continue"
-      } 
+      }
     },
     "signUp": { "start": { "title": "Sign Up" } },
     "userButton": { "action__manageAccount": "Manage Account" }
@@ -77,7 +77,7 @@
     "pinned": "Pinned",
     "pending": "Pending approval",
     "rejected": "Rejected",
-    "noComments": "No comments yet",
+    "noComments": "No comments yet, be the first to share your thoughts!",
     "beFirstToComment": "Be the first to share your thoughts!",
     "loadMore": "Load more comments",
     "signInToComment": "Please sign in to leave a comment",

@@ -98,7 +98,7 @@ export function CommentItem({
                 : ''
             }`}
           >
-            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap mb-0">
+            <p className="text-sm text-gray-500 text-foreground leading-relaxed whitespace-pre-wrap mb-0">
               {comment.content}
             </p>
           </div>
