@@ -34,7 +34,7 @@ export function MobileNav({
       <SheetTrigger asChild>
         <Button
           variant="ghost"
-          className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
+          className="mr-2 px-0 text-body-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
         >
           <Menu className="h-6 w-6" />
           <span className="sr-only">Toggle Menu</span>
@@ -54,7 +54,7 @@ export function MobileNav({
           onClick={() => setOpen(false)}
         >
           <Camera className="h-6 w-6 ml-4 dark:text-black/90" />
-          <span className="text-xl font-medium tracking-tight dark:text-black/90">{dictionary.header.title}</span>
+          <span className="text-display-sm font-medium tracking-tight dark:text-black/90">{dictionary.header.title}</span>
         </Link>
 
         <div className="my-3 h-[calc(100vh-8rem)] pb-10 pl-6">
@@ -66,7 +66,7 @@ export function MobileNav({
                     key={item.href}
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    className="text-md font-base dark:text-black/80 text-muted-foreground transition-all duration-300 hover:text-foreground hover:translate-x-2 active:scale-95"
+                    className="text-body-md font-base dark:text-black/80 text-muted-foreground transition-all duration-300 hover:text-foreground hover:translate-x-2 active:scale-95"
                   >
                     {item.label}
                   </Link>

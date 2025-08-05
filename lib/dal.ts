@@ -1,18 +1,19 @@
 // app/lib/dal.ts
 import 'server-only'
-import { auth } from '@clerk/nextjs/server'
 import { cache } from 'react'
-import prisma from './prisma'
-import { client as sanityClient } from '@/sanity/client' // 假设你已创建 Sanity 客户端
 import { groq } from 'next-sanity'
-import { type Locale } from '@/i18n-config'
-
+import { auth } from '@clerk/nextjs/server'
+import prisma from './prisma'
+import { client as sanityClient } from '@/sanity/client'
+import type { Locale } from '@/i18n-config'
 import type {
-  Photo,
+  DevCollection,
   LogPost,
+  Photo,
   GroupAndPhotos,
   LogPostDetails,
   EnrichedPhoto,
+  EnrichedLogPost,
 } from '@/types/sanity'
 
 // --- Sanity Queries ---
@@ -66,6 +67,76 @@ export const getLogPostBySlug = cache(async (slug: string, lang: Locale) => {
   }`
   return sanityClient.fetch<LogPostDetails>(query, { slug, lang })
 })
+
+// 获取所有开发教程合集（用于列表页）
+export const getAllDevCollectionsAndLogs = cache(async (lang: Locale) => {
+  const query = groq`*[_type == "devCollection"] | order(orderRank asc, _createdAt desc) {
+    _id,
+    "name": name,
+    "description": description,
+    "slug": slug.current,
+    "coverImageUrl": coverImage.asset->url,
+    isFeatured,
+    orderRank,
+    "logs": *[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref] {
+      _id,
+      title,
+      "slug": slug.current,
+      publishedAt,
+      excerpt,
+      language
+    } [defined(@)],
+    "logsCount": count(*[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref])
+  }`
+
+  const devCollections = await sanityClient.fetch<DevCollection[]>(query, {
+    lang,
+  })
+
+  // 直接返回完整的 DevCollection 数据，包含所有 logs
+  return devCollections
+})
+
+// 获取特定合集的详细信息（用于文章详情页的导航）
+export const getDevCollectionBySlug = cache(
+  async (slug: string, lang: Locale) => {
+    const query = groq`*[_type == "devCollection" && slug.current == $slug][0] {
+    _id,
+    "name": name,
+    "description": description,
+    "slug": slug.current,
+    "coverImageUrl": coverImage.asset->url,
+    isFeatured,
+    "logs": *[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref] {
+      _id,
+      title,
+      "slug": slug.current,
+      publishedAt,
+      excerpt,
+      language
+    } [defined(@)]
+  }`
+
+    const devCollection = await sanityClient.fetch<DevCollection | null>(
+      query,
+      { slug, lang }
+    )
+
+    if (!devCollection) {
+      return null
+    }
+
+    return {
+      _id: devCollection._id,
+      name: devCollection.name,
+      description: devCollection.description,
+      slug: devCollection.slug,
+      coverImageUrl: devCollection.coverImageUrl,
+      isFeatured: devCollection.isFeatured,
+      logs: devCollection.logs || [],
+    }
+  }
+)
 
 // 根据当前文档的 slug 和 lang，获取其所有翻译版本的 slug
 export const getTranslationsBySlug = cache(
@@ -384,5 +455,221 @@ export const getCollectionAndPhotosBySlug = cache(
       ...collectionDataFromSanity,
       photos: enrichedPhotos,
     }
+  }
+)
+
+// ---- Log 相关的 Sanity x Prisma 数据合并 ----
+
+// 确保 Postgres 中存在对应的 Post 记录
+export async function ensureLogPostExists(sanityDocumentId: string, authorId: string) {
+  const existingPost = await prisma.post.findUnique({
+    where: {
+      sanityDocumentId,
+    },
+  })
+
+  if (!existingPost) {
+    // 创建新的 Post 记录
+    const newPost = await prisma.post.create({
+      data: {
+        sanityDocumentId,
+        contentType: 'log',
+        authorId,
+        isDeleted: false,
+      },
+    })
+    console.log('✅ Created new Post record for log:', sanityDocumentId)
+    return newPost
+  }
+
+  return existingPost
+}
+
+// 获取log文章及其交互数据（参考getCollectionAndPhotosBySlug的模式）
+export const getLogPostWithInteractions = cache(
+  async (slug: string, lang: Locale): Promise<EnrichedLogPost | null> => {
+    console.log('🔍 Debug: getLogPostWithInteractions parameters:', { slug, lang })
+
+    // 1. 从 Sanity 获取基础的log内容数据
+    const query = groq`*[_type == "log" && slug.current == $slug && language == $lang][0] {
+      _id,
+      title,
+      content,
+      publishedAt,
+      "author": author->{ name, "avatarUrl": image.asset->url },
+      "mainImageUrl": mainImage.asset->url
+    }`
+
+    console.log('🔍 Debug: GROQ Query for log:', query)
+
+    const logDataFromSanity = await sanityClient.fetch<LogPostDetails>(
+      query,
+      { slug, lang }
+    )
+
+    console.log('🔍 Debug: Sanity log query result:', {
+      hasResult: !!logDataFromSanity,
+      title: logDataFromSanity?.title,
+      logId: logDataFromSanity?._id,
+    })
+
+    if (!logDataFromSanity) {
+      console.log('❌ Debug: No log data found from Sanity')
+      return null
+    }
+
+    // 2. 获取当前用户信息
+    const { userId } = await auth()
+    
+    // 3. 确保 Postgres 中存在对应的 Post 记录
+    // 使用当前用户ID作为作者，如果没有登录用户则使用默认系统用户ID
+    const authorId = userId || 'system-user-id' // 需要确保这个ID在User表中存在
+    await ensureLogPostExists(logDataFromSanity._id, authorId)
+
+    // 4. 从 Postgres 获取交互数据
+
+    console.log('🔍 Debug: Log ID from Sanity:', logDataFromSanity._id)
+    console.log('🔍 Debug: Current user ID:', userId)
+
+    // 分步查询以避免复杂的类型问题
+    const logInfoFromDb = await prisma.post.findUnique({
+      where: {
+        sanityDocumentId: logDataFromSanity._id,
+      },
+      include: {
+        _count: {
+          select: {
+            likes: true,
+            comments: {
+              where: {
+                status: 'APPROVED',
+                isDeleted: false,
+                parentId: null, // 只计算顶级评论，与评论列表显示逻辑一致
+              },
+            },
+          },
+        },
+      },
+    })
+
+    // 单独查询用户是否点赞
+    const userLike = userId && logInfoFromDb
+      ? await prisma.like.findUnique({
+          where: {
+            postId_userId: {
+              postId: logInfoFromDb.id,
+              userId,
+            },
+          },
+        })
+      : null
+
+    console.log('🔍 Debug: Post found in Prisma:', {
+      hasLogData: !!logInfoFromDb,
+      logDataFields: logInfoFromDb ? Object.keys(logInfoFromDb) : 'No log data',
+      likesCount: logInfoFromDb?._count.likes,
+      commentsCount: logInfoFromDb?._count.comments,
+      userLiked: !!userLike,
+    })
+
+    // 4. 获取所属合集信息
+    const collectionQuery = groq`*[_type == "devCollection" && $logId in logs[]._ref][0] {
+      _id,
+      "name": name,
+      "slug": slug.current,
+      "logs": *[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref] {
+        _id,
+        title,
+        "slug": slug.current,
+        publishedAt,
+        excerpt,
+        language
+      } [defined(@)]
+    }`
+
+    const collectionData = await sanityClient.fetch(collectionQuery, {
+      logId: logDataFromSanity._id,
+      lang,
+    })
+
+    console.log('🔍 Debug: Collection data:', {
+      hasCollection: !!collectionData,
+      collectionName: collectionData?.name,
+      logsCount: collectionData?.logs?.length,
+    })
+
+    // 5. 合并数据并返回 EnrichedLogPost
+    const enrichedLogPost: EnrichedLogPost = {
+      ...logDataFromSanity,
+      post: logInfoFromDb
+        ? {
+            id: logInfoFromDb.id,
+            likesCount: logInfoFromDb._count.likes,
+            commentsCount: logInfoFromDb._count.comments,
+            isLikedByUser: !!userLike,
+            hasUserCommented: false, // TODO: 可以后续添加用户是否评论过的逻辑
+          }
+        : null,
+      collection: collectionData
+        ? {
+            _id: collectionData._id,
+            name: collectionData.name,
+            slug: collectionData.slug,
+            logs: collectionData.logs || [],
+          }
+        : null,
+    }
+
+    return enrichedLogPost
+  }
+)
+
+// 获取当前log所属合集的其他文章列表（用于左侧导航）
+export const getCollectionLogsBySlug = cache(
+  async (logSlug: string, lang: Locale) => {
+    console.log('🔍 Debug: getCollectionLogsBySlug parameters:', { logSlug, lang })
+
+    // 1. 先通过log slug找到对应的log _id
+    const logQuery = groq`*[_type == "log" && slug.current == $logSlug && language == $lang][0] {
+      _id
+    }`
+
+    const logData = await sanityClient.fetch<{ _id: string } | null>(
+      logQuery,
+      { logSlug, lang }
+    )
+
+    if (!logData) {
+      console.log('❌ Debug: No log found for slug:', logSlug)
+      return null
+    }
+
+    // 2. 通过log _id找到所属的devCollection及其所有logs
+    const collectionQuery = groq`*[_type == "devCollection" && $logId in logs[]._ref][0] {
+      _id,
+      "name": name,
+      "slug": slug.current,
+      "logs": *[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref] | order(publishedAt asc) {
+        _id,
+        title,
+        "slug": slug.current,
+        publishedAt,
+        excerpt,
+        language
+      } [defined(@)]
+    }`
+
+    const collectionData = await sanityClient.fetch(collectionQuery, {
+      logId: logData._id,
+      lang,
+    })
+
+    console.log('🔍 Debug: Collection logs result:', {
+      hasCollection: !!collectionData,
+      collectionName: collectionData?.name,
+      logsCount: collectionData?.logs?.length,
+    })
+
+    return collectionData
   }
 )

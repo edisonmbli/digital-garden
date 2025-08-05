@@ -42,11 +42,11 @@ export function CompactAuthPrompt({
         {/* 简洁的登录提示 */}
         <div className="px-6 pb-6 pt-2">
           <div className="text-center mb-4">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body-sm text-muted-foreground">
               请
               <Button
                 variant="link"
-                className="p-0 h-auto text-sm font-medium text-primary"
+                className="p-0 h-auto text-body-sm font-medium text-primary"
                 onClick={() => {
                   // 这里会触发 SignIn 组件
                 }}
@@ -68,15 +68,15 @@ export function CompactAuthPrompt({
                 headerTitle: 'hidden',
                 headerSubtitle: 'hidden',
                 socialButtonsBlockButton:
-                  'border border-gray-200 bg-background hover:bg-accent text-foreground text-sm py-2',
-                socialButtonsBlockButtonText: 'text-foreground font-medium text-sm',
+                  'border border-gray-200 bg-background hover:bg-accent text-foreground text-body-sm py-2',
+                socialButtonsBlockButtonText: 'text-foreground font-medium text-body-sm',
                 formButtonPrimary:
-                  'bg-primary text-primary-foreground hover:bg-primary/90 text-sm py-2',
+                  'bg-primary text-primary-foreground hover:bg-primary/90 text-body-sm py-2',
                 formFieldInput:
-                  'bg-background border border-gray-200 text-foreground text-sm',
-                formFieldLabel: 'text-foreground font-medium text-sm',
-                footerActionLink: 'text-primary hover:text-primary/80 text-sm',
-                footerActionText: 'text-muted-foreground text-sm',
+                  'bg-background border border-gray-200 text-foreground text-body-sm',
+                formFieldLabel: 'text-foreground font-medium text-body-sm',
+                footerActionLink: 'text-primary hover:text-primary/80 text-body-sm',
+                footerActionText: 'text-muted-foreground text-body-sm',
                 form: 'space-y-3',
                 formField: 'space-y-1',
                 formButtonGroup: 'space-y-2',

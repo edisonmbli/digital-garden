@@ -110,7 +110,7 @@ export default function SystemTestPage() {
         <div className="space-y-6">
           {/* 数据库测试 */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">数据库测试</h2>
+            <h2 className="text-display-sm font-semibold mb-4">数据库测试</h2>
             <div className="grid grid-cols-1 gap-3">
               <button
                 onClick={() => runServerAction('数据库连接测试', testDatabaseConnectionAction)}
@@ -152,7 +152,7 @@ export default function SystemTestPage() {
 
           {/* 垃圾邮件检测测试 */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">垃圾邮件检测测试</h2>
+            <h2 className="text-display-sm font-semibold mb-4">垃圾邮件检测测试</h2>
             <div className="grid grid-cols-1 gap-3">
               <button
                 onClick={() => runSpamTest('这是正常内容', '正常内容测试')}
@@ -187,7 +187,7 @@ export default function SystemTestPage() {
 
           {/* 系统管理 */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">系统管理</h2>
+            <h2 className="text-display-sm font-semibold mb-4">系统管理</h2>
             <div className="grid grid-cols-1 gap-3">
               <button
                 onClick={() => runServerAction('重置垃圾邮件系统', resetSpamSystemAction)}
@@ -218,7 +218,7 @@ export default function SystemTestPage() {
 
         {/* 测试结果面板 */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">测试结果</h2>
+          <h2 className="text-display-sm font-semibold mb-4">测试结果</h2>
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {testResults.length === 0 ? (
               <p className="text-gray-500">暂无测试结果</p>
@@ -234,13 +234,13 @@ export default function SystemTestPage() {
                 >
                   <div className="flex justify-between items-start">
                     <h3 className="font-medium">{result.name}</h3>
-                    <span className="text-xs text-gray-500">{result.timestamp}</span>
+                    <span className="text-caption-xs text-gray-500">{result.timestamp}</span>
                   </div>
-                  <p className="text-sm mt-1">{result.message}</p>
+                  <p className="text-body-sm mt-1">{result.message}</p>
                   {result.details && (
                     <details className="mt-2">
-                      <summary className="text-xs cursor-pointer text-gray-600">详细信息</summary>
-                      <pre className="text-xs mt-1 p-2 bg-gray-100 dark:bg-gray-700 rounded overflow-x-auto">
+                      <summary className="text-caption-xs cursor-pointer text-gray-600">详细信息</summary>
+                      <pre className="text-caption-xs mt-1 p-2 bg-gray-100 dark:bg-gray-700 rounded overflow-x-auto">
                         {result.details}
                       </pre>
                     </details>

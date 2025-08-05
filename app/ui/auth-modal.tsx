@@ -155,8 +155,8 @@ export default function AuthModal({
               elements: {
                 rootBox: 'w-full',
                 card: 'shadow-none border-0 bg-transparent',
-                headerTitle: 'text-xl font-semibold text-foreground',
-                headerSubtitle: 'text-sm text-muted-foreground',
+                headerTitle: 'text-display-sm font-semibold text-foreground',
+    headerSubtitle: 'text-body-sm text-muted-foreground',
                 // 社交登录按钮样式 - 确保边框在暗黑模式下可见
                 socialButtonsBlockButton:
                   'border border-zinc-700 dark:bg-gray-300 hover:bg-accent hover:text-accent-foreground text-foreground',

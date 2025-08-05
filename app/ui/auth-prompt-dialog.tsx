@@ -65,7 +65,7 @@ export function AuthPromptDialog({
           </Button>
         </div>
         
-        <p className="text-xs text-muted-foreground text-center mt-4">
+        <p className="text-caption-xs text-muted-foreground text-center mt-4">
           By signing in, you agree to our terms of service and privacy policy.
         </p>
       </DialogContent>

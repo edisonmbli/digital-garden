@@ -27,21 +27,44 @@ model Collection {
   @@index([isDeleted])
 }
 
+model DevCollection {
+  id            String                    @id @default(cuid())
+  nameEn        String                    @map("name_en")
+  nameZh        String                    @map("name_zh")
+  slug          String
+  descriptionEn String?                   @map("description_en")
+  descriptionZh String?                   @map("description_zh")
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  coverImageUrl String?                   @map("cover_image_url")
+  isFeatured    Boolean                   @default(false)
+  sanityId      String                    @unique @map("sanity_id")
+  deletedAt     DateTime?                 @map("deleted_at")
+  isDeleted     Boolean                   @default(false) @map("is_deleted")
+  posts         PostsOnDevCollections[]
+
+  @@index([isFeatured])
+  @@index([isDeleted])
+  @@index([slug])
+  @@map("dev_collections")
+}
+
 model Post {
-  id               String               @id @default(cuid())
+  id               String                    @id @default(cuid())
   authorId         String
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
   contentType      String
-  sanityDocumentId String               @unique @map("sanity_document_id")
+  sanityDocumentId String                    @unique @map("sanity_document_id")
   deletedAt        DateTime?
-  isDeleted        Boolean              @default(false)
+  isDeleted        Boolean                   @default(false)
   comments         Comment[]
   likes            Like[]
   logs             Log[]
   photo            Photo?
-  author           User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author           User                      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   collections      PostsOnCollections[]
+  devCollections   PostsOnDevCollections[]
 
   @@index([contentType])
   @@index([authorId])
@@ -140,6 +163,18 @@ model PostsOnCollections {
   post         Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@id([postId, collectionId])
+}
+
+model PostsOnDevCollections {
+  postId          String
+  devCollectionId String        @map("dev_collection_id")
+  assignedAt      DateTime      @default(now()) @map("assigned_at")
+  assignedBy      String        @map("assigned_by")
+  devCollection   DevCollection @relation(fields: [devCollectionId], references: [id], onDelete: Cascade)
+  post            Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([postId, devCollectionId])
+  @@map("posts_on_dev_collections")
 }
 
 model WebhookCall {

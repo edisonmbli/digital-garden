@@ -18,7 +18,7 @@ export function CommentCount({
   const dict = useI18n()
 
   return (
-    <div className={`flex items-center text-muted-foreground text-sm ${className}`}>
+    <div className={`flex items-center text-muted-foreground text-body-sm ${className}`}>
       {showIcon && <MessageCircle className="mr-2 h-4 w-4" />}
       <span>
         {count} {dict.interactions?.comments || 'Comments'}

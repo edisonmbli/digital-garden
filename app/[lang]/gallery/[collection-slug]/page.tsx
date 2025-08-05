@@ -42,13 +42,13 @@ export default async function CollectionPage({
   }
 
   return (
-    <div className="w-full py-12">
+    <div className="w-full py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <header className="text-center mb-8">
-          <h1 className="text-lg md:text-xl font-display font-semibold tracking-wide text-foreground">
+          <h1 className="text-display-sm md:text-display-md text-foreground">
             {initialGroupData.name}
           </h1>
-          <p className="text-md font-sans text-muted-foreground mt-2 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-body-base font-sans text-muted-foreground mt-2 max-w-2xl mx-auto leading-relaxed">
             {initialGroupData.description}
           </p>
         </header>

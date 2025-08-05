@@ -149,25 +149,25 @@ export default function SpamManagementPanel() {
       {/* 统计概览 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg border">
-          <h3 className="text-sm font-medium text-gray-500">被封禁IP</h3>
+          <h3 className="text-body-sm font-medium text-gray-500">被封禁IP</h3>
           <p className="text-2xl font-bold text-red-600">
             {data.stats.blockedIPs}
           </p>
         </div>
         <div className="bg-white p-4 rounded-lg border">
-          <h3 className="text-sm font-medium text-gray-500">活跃限流</h3>
+          <h3 className="text-body-sm font-medium text-gray-500">活跃限流</h3>
           <p className="text-2xl font-bold text-yellow-600">
             {data.stats.activeRateLimits}
           </p>
         </div>
         <div className="bg-white p-4 rounded-lg border">
-          <h3 className="text-sm font-medium text-gray-500">内容模式</h3>
+          <h3 className="text-body-sm font-medium text-gray-500">内容模式</h3>
           <p className="text-2xl font-bold text-blue-600">
             {data.stats.contentPatterns}
           </p>
         </div>
         <div className="bg-white p-4 rounded-lg border">
-          <h3 className="text-sm font-medium text-gray-500">最大评论/分钟</h3>
+          <h3 className="text-body-sm font-medium text-gray-500">最大评论/分钟</h3>
           <p className="text-2xl font-bold text-green-600">
             {data.stats.config.MAX_COMMENTS_PER_MINUTE}
           </p>
@@ -176,8 +176,8 @@ export default function SpamManagementPanel() {
 
       {/* 配置信息 */}
       <div className="bg-white p-6 rounded-lg border">
-        <h2 className="text-lg font-semibold mb-4">防护配置</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <h2 className="text-body-lg font-semibold mb-4">防护配置</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-body-sm">
           <div>
             <span className="font-medium">每分钟最大评论数:</span>
             <span className="ml-2">
@@ -213,7 +213,7 @@ export default function SpamManagementPanel() {
 
       {/* 被封禁的IP列表 */}
       <div className="bg-white p-6 rounded-lg border">
-        <h2 className="text-lg font-semibold mb-4">被封禁的IP地址</h2>
+        <h2 className="text-body-lg font-semibold mb-4">被封禁的IP地址</h2>
         {data.blockedIPs.length === 0 ? (
           <p className="text-gray-500">当前没有被封禁的IP地址</p>
         ) : (
@@ -238,7 +238,7 @@ export default function SpamManagementPanel() {
       </div>
 
       {/* 最后更新时间 */}
-      <div className="text-sm text-gray-500">
+      <div className="text-body-sm text-gray-500">
         最后更新: {new Date(data.timestamp).toLocaleString('zh-CN')}
       </div>
     </div>

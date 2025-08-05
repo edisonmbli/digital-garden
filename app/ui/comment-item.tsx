@@ -52,7 +52,7 @@ export function CommentItem({
         {/* 用户头像 - 缩小尺寸 */}
         <Avatar className="h-6 w-6 md:h-7 md:w-7 flex-shrink-0">
           <AvatarImage src={comment.user.avatarUrl || undefined} />
-          <AvatarFallback className="text-xs">
+          <AvatarFallback className="text-caption-xs">
             {getUserInitials(comment.user.name)}
           </AvatarFallback>
         </Avatar>
@@ -61,7 +61,7 @@ export function CommentItem({
         <div className="flex-1 min-w-0">
           {/* 评论头部 - 增加用户名和时间的间距 */}
           <div className="flex items-center space-x-4 mb-1.5">
-            <span className="font-medium text-sm text-foreground">
+            <span className="font-medium text-body-sm text-foreground">
               {getDisplayName(comment.user.name)}
             </span>
 
@@ -69,7 +69,7 @@ export function CommentItem({
             {comment.isAuthorReply && (
               <Badge
                 variant="secondary"
-                className="text-xs bg-blue-200/50 text-blue-400 dark:bg-blue-400/70 dark:text-blue-100/90"
+                className="text-caption-xs bg-blue-200/50 text-blue-400 dark:bg-blue-400/70 dark:text-blue-100/90"
               >
                 <Shield className="mr-1 h-3 w-3" />
                 {dict.comments?.authorReply || '作者'}
@@ -78,13 +78,13 @@ export function CommentItem({
 
             {/* 置顶标识 */}
             {comment.isPinned && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-caption-xs">
                 <Pin className="mr-1 h-3 w-3" />
                 {dict.comments?.pinned || '置顶'}
               </Badge>
             )}
 
-            <span className="text-xs text-muted-foreground flex items-center">
+            <span className="text-caption-xs text-muted-foreground flex items-center">
               <Clock className="mr-1 h-3 w-3" />
               {timeAgo}
             </span>
@@ -98,7 +98,7 @@ export function CommentItem({
                 : ''
             }`}
           >
-            <p className="text-sm text-gray-500 text-foreground leading-relaxed whitespace-pre-wrap mb-0">
+            <p className="text-body-sm text-gray-500 text-foreground leading-relaxed whitespace-pre-wrap mb-0">
               {comment.content}
             </p>
           </div>

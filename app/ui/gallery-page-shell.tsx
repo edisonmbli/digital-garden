@@ -45,7 +45,7 @@ export function GalleryPageShell({ collections, lang }: GalleryPageShellProps) {
 
                 {/* 文字内容 */}
                 <div className="absolute inset-0 flex items-center justify-center p-6">
-                  <h2 className="text-xl font-display-2xl font-semiabold rounded-sm text-white bg-white/50 px-2 py-1 text-center drop-shadow-lg tracking-wide">
+                  <h2 className="text-display-md text-white bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg text-center drop-shadow-lg">
                     {collectionName}
                   </h2>
                 </div>

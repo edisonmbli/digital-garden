@@ -1,108 +1,117 @@
 // app/ui/log-page-shell.tsx
-import Link from 'next/link'
-import { getDictionary } from '@/lib/dictionary'
-import type { LogPost } from '@/types/sanity'
-import type { Locale } from '@/i18n-config'
+'use client'
+
+import { useState } from 'react'
+import { type DevCollection } from '@/types/sanity'
+import { type Locale } from '@/i18n-config'
+import { type getDictionary } from '@/lib/dictionary'
+import { DevCollectionListCard } from './dev-collection-list-card'
 
 type DictionaryType = Awaited<ReturnType<typeof getDictionary>>
 
 interface LogPageShellProps {
-  dictionary: DictionaryType
-  posts: LogPost[]
+  collections: DevCollection[]
   lang: Locale
+  dictionary: DictionaryType
 }
 
-export function LogPageShell({ dictionary, posts, lang }: LogPageShellProps) {
-  // 格式化日期的辅助函数
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
+export function LogPageShell({
+  collections,
+  lang,
+  dictionary,
+}: LogPageShellProps) {
+  const [expandedCollections, setExpandedCollections] = useState<Set<string>>(
+    new Set()
+  )
+  const [isAllExpanded, setIsAllExpanded] = useState(false)
+
+  const toggleCollection = (collectionId: string) => {
+    const newExpanded = new Set(expandedCollections)
+    if (newExpanded.has(collectionId)) {
+      newExpanded.delete(collectionId)
+    } else {
+      newExpanded.add(collectionId)
+    }
+    setExpandedCollections(newExpanded)
+
+    // Update all expanded state
+    setIsAllExpanded(newExpanded.size === collections.length)
+  }
+
+  const toggleAllCollections = () => {
+    if (isAllExpanded) {
+      setExpandedCollections(new Set())
+      setIsAllExpanded(false)
+    } else {
+      setExpandedCollections(new Set(collections.map((c) => c._id)))
+      setIsAllExpanded(true)
+    }
   }
 
   return (
-    <div className="w-full py-12">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* 页面标题区域 */}
-        <div className="text-center mb-12">
-          <h1 className="text-display-sm md:text-display-md font-display font-semibold tracking-tight text-foreground">
-            {dictionary.develop.title}
-          </h1>
-          <p className="text-body-lg font-sans text-muted-foreground mt-6 leading-relaxed">
-            {dictionary.develop.description}
-          </p>
-          {/* 未来这里的搜索/筛选区 */}
-        </div>
-
-        {/* 文章列表区域 - 限制最大宽度 */}
-        <div className="max-w-4xl mx-auto">
-          {posts.length > 0 ? (
-            <div className="space-y-6">
-              {posts.map((post) => (
-                <Link
-                  key={post._id}
-                  href={`/${lang}/log/${post.slug}`}
-                  className="group block"
-                >
-                  <article className="p-6 border border-border rounded-lg transition-all duration-200 hover:border-border/80 hover:shadow-md hover:bg-muted/30">
-                    {/* 标题和日期区域 - 响应式布局 */}
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between sm:gap-4 mb-3">
-                      {/* 文章标题 */}
-                      <h2 className="text-heading-md font-display font-medium group-hover:text-primary transition-colors sm:flex-1 tracking-tight">
-                        {post.title}
-                      </h2>
-
-                      {/* 发布日期 - 响应式位置 */}
-                      <time
-                        dateTime={post.publishedAt}
-                        className="text-label-sm font-sans text-muted-foreground mt-1 sm:mt-0 sm:text-right sm:flex-shrink-0"
-                      >
-                        {formatDate(post.publishedAt)}
-                      </time>
-                    </div>
-
-                    {/* 文章摘要 */}
-                    {post.excerpt && (
-                      <p className="text-body-md font-sans text-muted-foreground leading-relaxed">
-                        {post.excerpt}
-                      </p>
-                    )}
-                  </article>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            /* 空状态 */
-            <div className="text-center py-12">
-              <div className="text-muted-foreground mb-4">
-                <svg
-                  className="mx-auto h-12 w-12 mb-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-heading-sm font-display font-medium text-foreground mb-2">
-                No posts yet
-              </h3>
-              <p className="text-body-md font-sans text-muted-foreground">
-                Check back later for new developer log entries.
-              </p>
-            </div>
-          )}
-        </div>
+    <div className="container mx-auto px-4 py-6">
+      {/* Header */}
+      <div className="text-center mb-4">
+        <h1 className="text-display-md text-foreground mb-4">
+          {dictionary.develop.title}
+        </h1>
+        <p className="text-body-md text-muted-foreground max-w-2xl mx-auto">
+          {dictionary.develop.description}
+        </p>
       </div>
+
+      {/* Collections List */}
+      {collections.length > 0 ? (
+        <div className="max-w-4xl mx-auto">
+          {/* Batch Controls */}
+          <div className="flex items-center justify-between mb-2 p-4 bg-muted/30 rounded-lg">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="expand-all"
+                checked={isAllExpanded}
+                onChange={toggleAllCollections}
+                className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
+              />
+              <label
+                htmlFor="expand-all"
+                className="text-body-sm font-medium text-foreground"
+              >
+                {isAllExpanded
+                  ? dictionary.develop.collapseAll
+                  : dictionary.develop.expandAll}{' '}
+                {dictionary.develop.collections}
+              </label>
+            </div>
+            <div className="text-body-sm text-muted-foreground">
+              {collections.length} {dictionary.develop.collections}
+            </div>
+          </div>
+
+          {/* Collections List */}
+          <div className="space-y-4">
+            {collections.map((collection) => (
+              <DevCollectionListCard
+                key={collection._id}
+                collection={collection}
+                lang={lang}
+                dictionary={dictionary}
+                isExpanded={expandedCollections.has(collection._id)}
+                onToggleExpand={() => toggleCollection(collection._id)}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <h3 className="text-display-sm text-muted-foreground mb-2">
+            {dictionary.develop.noCollections}
+          </h3>
+          <p className="text-body-md text-muted-foreground">
+            {dictionary.develop.noCollectionsDescription}
+          </p>
+        </div>
+      )}
     </div>
   )
 }

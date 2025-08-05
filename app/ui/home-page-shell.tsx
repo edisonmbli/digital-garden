@@ -23,7 +23,7 @@ export function HomePageShell({ collections, lang }: HomePageShellProps) {
       <div className="w-full py-4 bg-background/95">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            {/* <p className="mx-auto max-w-[700px] text-lg text-foreground/80 leading-relaxed">
+            {/* <p className="mx-auto max-w-[700px] text-body-lg text-foreground/80 leading-relaxed">
               {dictionary.homepage.description}
             </p> */}
           </div>

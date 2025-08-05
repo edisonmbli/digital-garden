@@ -19,7 +19,20 @@
   },
   "develop": {
     "title": "Developer Log",
-    "description": "Here, we fully record the construction process of this website from zero to one."
+    "description": "Record the construction process from 0 to 1",
+    "collections": "Tutorial Collections",
+    "noCollections": "No tutorial collections yet",
+    "noCollectionsDescription": "Check back later for new tutorial collections",
+    "logsCount": "articles",
+    "readMore": "Read More",
+    "backToCollection": "Back to Collection",
+    "otherArticles": "Other Articles in This Collection",
+    "publishedOn": "Published on",
+    "by": "by",
+    "expandAll": "Expand All",
+    "collapseAll": "Collapse All",
+    "articlesInCollection": "Articles in this collection",
+    "noArticlesInCollection": "No articles in this collection yet"
   },
   "clerk": {
     "signIn": {
@@ -89,6 +102,13 @@
     "submitting": "Submitting...",
     "loading": "Loading...",
     "error": "Error",
-    "success": "Success"
+    "success": "Success",
+    "tableOfContents": "Table of Contents"
+  },
+  "selfPromotion": {
+    "discoverMore": "Discover More",
+    "featuredWork": "Featured Work",
+    "goToHome": "Go to Home",
+    "tryProjectDemo": "Try the project demo"
   }
 }

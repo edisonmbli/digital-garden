@@ -41,12 +41,12 @@ function StatCard({
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-600">{title}</p>
+            <p className="text-body-sm font-medium text-gray-600">{title}</p>
             <p className="text-2xl font-bold text-gray-900">
               {value.toLocaleString()}
             </p>
             {description && (
-              <p className="text-xs text-gray-500 mt-1">{description}</p>
+              <p className="text-caption-xs text-gray-500 mt-1">{description}</p>
             )}
           </div>
           <div className={`p-3 rounded-full ${colorClasses[color]}`}>
@@ -221,7 +221,7 @@ export default function CommentsManagementPage() {
     <div className="container mx-auto py-8 space-y-8">
       {/* 统计面板 */}
       <div className="max-w-5xl mx-auto">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">评论统计</h2>
+        <h2 className="text-display-sm font-semibold text-gray-900 mb-4">评论统计</h2>
         <Suspense fallback={<LoadingStats />}>
           <CommentStats />
         </Suspense>

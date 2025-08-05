@@ -328,12 +328,12 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                       {/* 左侧：标题和描述 */}
                       <div className="flex-1 min-w-0">
                         {selectedPhoto.title && (
-                          <h3 className="font-medium text-lg mb-2 text-foreground tracking-tight leading-tight">
+                          <h3 className="text-body-lg font-medium mb-2 text-foreground">
                             {selectedPhoto.title}
                           </h3>
                         )}
                         {selectedPhoto.description && (
-                          <p className="text-sm text-muted-foreground leading-relaxed">
+                          <p className="text-body-sm text-muted-foreground">
                             {selectedPhoto.description}
                           </p>
                         )}
@@ -375,7 +375,7 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                     <div className="bg-background border-t border-border/20 px-6 py-4 space-y-4">
                       {/* 评论提交成功提示 */}
                       {showCommentSubmittedMessage && (
-                        <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 text-sm text-center rounded-md">
+                        <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 text-body-sm text-center rounded-md">
                           {dict.comments?.commentSubmittedSuccess ||
                             '评论已提交，审核后可对外展示'}
                         </div>
@@ -427,7 +427,7 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                       {selectedPhoto.post.commentsCount === 0 &&
                         !showCommentForm && (
                           <div className="flex items-center justify-center py-8 text-center text-muted-foreground">
-                            <p className="text-sm">
+                            <p className="text-body-sm">
                               {dict.comments?.noComments ||
                                 '还没有评论，来说点什么吧'}
                             </p>
@@ -473,12 +473,12 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                     {/* 中层：标题、描述和互动按钮区域 */}
                     <div className="bg-background p-4 flex-shrink-0">
                       {selectedPhoto.title && (
-                        <h3 className="font-bold text-base mb-3 text-foreground tracking-tight leading-tight">
+                        <h3 className="text-body-md font-semibold mb-3 text-foreground">
                           {selectedPhoto.title}
                         </h3>
                       )}
                       {selectedPhoto.description && (
-                        <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                        <p className="text-body-sm text-muted-foreground mb-3">
                           {selectedPhoto.description}
                         </p>
                       )}
@@ -520,7 +520,7 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                       <div className="bg-background px-4 pb-4 flex-shrink-0">
                         {/* 评论提交成功提示 */}
                         {showCommentSubmittedMessage && (
-                          <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 text-sm text-center rounded-md mb-4">
+                          <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 text-body-sm text-center rounded-md mb-4">
                             {dict.comments?.commentSubmittedSuccess ||
                               '评论已提交，审核后可对外展示'}
                           </div>
@@ -549,7 +549,7 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                               onClick={() => {
                                 setShowCommentForm(false)
                               }}
-                              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                              className="text-body-sm text-muted-foreground hover:text-foreground transition-colors"
                             >
                               取消
                             </button>
@@ -567,7 +567,7 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                         {selectedPhoto.post.commentsCount === 0 &&
                           !showCommentForm && (
                             <div className="flex items-center justify-center py-8 text-center text-muted-foreground">
-                              <p className="text-sm">
+                              <p className="text-body-sm">
                                 {dict.comments?.noComments ||
                                   '还没有评论，来说点什么吧'}
                               </p>

@@ -51,7 +51,7 @@ export function InfinitePhotoGrid({
 
       {/* 只有在"还有更多"时，才显示"加载中"的提示 */}
       <div ref={ref} className="mt-8 text-center">
-        <p className="text-sm font-sans text-muted-foreground">
+        <p className="text-body-sm font-sans text-muted-foreground">
           {hasMore
             ? isLoading
               ? dictionary.gallery.loading

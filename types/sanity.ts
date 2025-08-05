@@ -30,6 +30,31 @@ export type LogPost = {
   excerpt?: string
 }
 
+// DevCollection类型（开发教程合集）
+export type DevCollection = {
+  _id: string
+  name: MultilingualField
+  description?: MultilingualField
+  slug: string
+  coverImageUrl?: string | null
+  isFeatured?: boolean
+  orderRank?: string
+  logs?: LogPost[]
+  logsCount?: number // 当前语言下的文章数量
+}
+
+// DevCollection with logs count (for listing page)
+export type DevCollectionSummary = {
+  _id: string
+  name: MultilingualField
+  description?: MultilingualField
+  slug: string
+  coverImageUrl?: string | null
+  isFeatured?: boolean
+  logsCount: number
+  previewLogs: LogPost[] // 用于显示前几篇文章的预览
+}
+
 // 对应 getGroupAndPhotosBySlug 查询返回的对象
 export type GroupAndPhotos = {
   name: string
@@ -47,6 +72,7 @@ export type LogPostDetails = {
     name: string
     avatarUrl?: string
   }
+  mainImageUrl?: string
 }
 
 // 新增 Photo 类型定义
@@ -107,5 +133,24 @@ export type EnrichedPhoto = {
     isLikedByUser: boolean
     commentsCount: number
     hasUserCommented?: boolean
+  } | null
+}
+
+// 扩展 LogPost 类型，包含了Prisma Post数据、"扩充后"的日志类型
+export type EnrichedLogPost = LogPostDetails & {
+  // 关联的 Prisma Post 数据
+  post: {
+    id: string
+    likesCount: number
+    isLikedByUser: boolean
+    commentsCount: number
+    hasUserCommented?: boolean
+  } | null
+  // 所属合集信息
+  collection?: {
+    _id: string
+    name: string
+    slug: string
+    logs: LogPost[]
   } | null
 }

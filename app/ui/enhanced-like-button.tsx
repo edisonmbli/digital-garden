@@ -122,6 +122,7 @@ export function EnhancedLikeButton({
       size={variant === 'compact' ? 'sm' : 'default'}
       onClick={handleLike}
       disabled={isPending}
+      data-testid="like-button"
       className={`
         bg-gray-100/50 text-gray-600 border border-gray-200/50
         dark:bg-white/90 dark:text-gray-800 dark:border-gray-300 hover:dark:bg-white/90
@@ -138,7 +139,9 @@ export function EnhancedLikeButton({
     >
       <Heart
         className={`mr-2 h-4 w-4 transition-all duration-200 ${
-          optimisticIsLiked ? 'text-red-400 dark:text-red-500 fill-current scale-110' : ''
+          optimisticIsLiked
+            ? 'text-red-400 dark:text-red-500 fill-current scale-110'
+            : ''
         }`}
       />
       {isPending ? dictionary.common.submitting : buttonText}

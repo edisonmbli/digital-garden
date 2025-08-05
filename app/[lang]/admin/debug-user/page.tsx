@@ -53,7 +53,7 @@ export default function DebugUserPage() {
             </div>
             <div>
               <strong>完整 publicMetadata:</strong>
-              <pre className="mt-2 p-4 bg-gray-100 rounded text-sm overflow-auto">
+              <pre className="mt-2 p-4 bg-gray-100 rounded text-body-sm overflow-auto">
                 {JSON.stringify(user?.publicMetadata, null, 2)}
               </pre>
             </div>
@@ -66,7 +66,7 @@ export default function DebugUserPage() {
           <CardTitle>不安全元数据 (unsafeMetadata)</CardTitle>
         </CardHeader>
         <CardContent>
-          <pre className="p-4 bg-gray-100 rounded text-sm overflow-auto">
+          <pre className="p-4 bg-gray-100 rounded text-body-sm overflow-auto">
             {JSON.stringify(user?.unsafeMetadata, null, 2)}
           </pre>
         </CardContent>
@@ -77,7 +77,7 @@ export default function DebugUserPage() {
           <CardTitle>完整用户对象</CardTitle>
         </CardHeader>
         <CardContent>
-          <pre className="p-4 bg-gray-100 rounded text-sm overflow-auto max-h-96">
+          <pre className="p-4 bg-gray-100 rounded text-body-sm overflow-auto max-h-96">
             {JSON.stringify(user, null, 2)}
           </pre>
         </CardContent>

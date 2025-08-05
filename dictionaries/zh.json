@@ -2,7 +2,7 @@
   "header": {
     "title": "光影代码",
     "gallery": "影像馆",
-    "log": "开发者说",
+    "log": "开发日志",
     "about": "关于",
     "signIn": "登录"
   },
@@ -18,8 +18,21 @@
     "sign_in": "登录"
   },
   "develop": {
-    "title": "开发者日志",
-    "description": "在这里，我们完整地记录了这个网站从零到一的构建全过程。"
+    "title": "开发日志",
+    "description": "记录这个网站从0到1的构建全过程",
+    "collections": "教程合集",
+    "noCollections": "暂无教程合集",
+    "noCollectionsDescription": "稍后查看新的教程合集",
+    "logsCount": "篇文章",
+    "readMore": "阅读更多",
+    "backToCollection": "返回合集",
+    "otherArticles": "本合集的其他文章",
+    "publishedOn": "发布于",
+    "by": "作者",
+    "expandAll": "展开全部",
+    "collapseAll": "收起全部",
+    "articlesInCollection": "本合集包含的文章",
+    "noArticlesInCollection": "本合集暂无文章"
   },
   "clerk": {
     "signIn": {
@@ -113,6 +126,13 @@
     "submitting": "提交中...",
     "loading": "加载中...",
     "error": "错误",
-    "success": "成功"
+    "success": "成功",
+    "tableOfContents": "目录"
+  },
+  "selfPromotion": {
+    "discoverMore": "发现更多精彩",
+    "featuredWork": "精选作品",
+    "goToHome": "去首页",
+    "tryProjectDemo": "体验项目成品"
   }
 }

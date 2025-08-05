@@ -29,7 +29,7 @@ export function CommentSuccessToast({
   return (
     <div className="flex items-center justify-center p-4 bg-gray-50/80 border border-gray-200/50 rounded-md shadow-sm">
       <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-      <span className="text-sm text-gray-700">{message}</span>
+      <span className="text-body-sm text-gray-700">{message}</span>
     </div>
   )
 }

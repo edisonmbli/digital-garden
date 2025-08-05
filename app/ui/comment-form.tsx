@@ -138,7 +138,7 @@ export default function CommentForm({
       )}
 
       <div className="flex justify-between items-center mt-3">
-        <div className="text-xs text-muted-foreground">
+        <div className="text-label-sm text-muted-foreground">
           {content.length}/2000
         </div>
         <Button 

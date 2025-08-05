@@ -26,6 +26,7 @@ type SanityDocument = {
   publishedAt?: string
   excerpt?: string
   tags?: string[]
+  coverImageUrl?: string
   // Photo specific fields
   sanityAssetId?: string
   titleJson?: string
@@ -411,6 +412,153 @@ async function handleCollectionDelete(
     await recordWebhookCall(
       'delete',
       'collection',
+      payload._id,
+      false,
+      error instanceof Error ? error.message : 'Unknown error'
+    )
+    throw error
+  }
+}
+
+// DevCollection handlers
+async function handleDevCollectionCreate(
+  payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
+) {
+  // Extract i18n data from object-level structure
+  const nameObj = payload.name as { en?: string; zh?: string } | string | undefined
+  const descObj = payload.description as { en?: string; zh?: string } | string | undefined
+  
+  const nameEn = typeof nameObj === 'object' ? nameObj?.en || '' : payload.nameEn || ''
+  const nameZh = typeof nameObj === 'object' ? nameObj?.zh || '' : payload.nameZh || ''
+  const descriptionEn = typeof descObj === 'object' ? descObj?.en || null : payload.descriptionEn || null
+  const descriptionZh = typeof descObj === 'object' ? descObj?.zh || null : payload.descriptionZh || null
+
+  console.log('🆕 处理 DevCollection 创建操作', {
+    id: payload._id,
+    nameEn,
+    nameZh,
+    descriptionEn,
+    descriptionZh,
+    slug: payload.slug?.current,
+    isFeatured: payload.isFeatured,
+  })
+
+  try {
+    // Check if devCollection already exists
+    const existing = await prisma.devCollection.findUnique({
+      where: {
+        sanityId: payload._id,
+      },
+    })
+
+    if (existing) {
+      console.log('DevCollection already exists, skipping creation')
+      return
+    }
+
+    await prisma.devCollection.create({
+      data: {
+        sanityId: payload._id,
+        nameEn,
+        nameZh,
+        slug: payload.slug?.current || '',
+        descriptionEn,
+        descriptionZh,
+        isFeatured: payload.isFeatured || false,
+        coverImageUrl: payload.coverImageUrl || null,
+      },
+    })
+
+    console.log('✅ DevCollection created successfully')
+  } catch (error) {
+    console.error('❌ Error creating devCollection:', error)
+    throw error
+  }
+}
+
+async function handleDevCollectionUpdate(
+  payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
+) {
+  // Extract i18n data from object-level structure
+  const nameObj = payload.name as { en?: string; zh?: string } | string | undefined
+  const descObj = payload.description as { en?: string; zh?: string } | string | undefined
+  
+  const nameEn = typeof nameObj === 'object' ? nameObj?.en || '' : payload.nameEn || ''
+  const nameZh = typeof nameObj === 'object' ? nameObj?.zh || '' : payload.nameZh || ''
+  const descriptionEn = typeof descObj === 'object' ? descObj?.en || null : payload.descriptionEn || null
+  const descriptionZh = typeof descObj === 'object' ? descObj?.zh || null : payload.descriptionZh || null
+
+  console.log('📝 处理 DevCollection 更新操作', {
+    id: payload._id,
+    nameEn,
+    nameZh,
+    descriptionEn,
+    descriptionZh,
+    slug: payload.slug?.current,
+    isFeatured: payload.isFeatured,
+  })
+
+  try {
+    // Use upsert to handle both update and create cases
+    const result = await prisma.devCollection.upsert({
+      where: {
+        sanityId: payload._id,
+      },
+      update: {
+        nameEn,
+        nameZh,
+        slug: payload.slug?.current || '',
+        descriptionEn,
+        descriptionZh,
+        isFeatured: payload.isFeatured || false,
+        coverImageUrl: payload.coverImageUrl || null,
+      },
+      create: {
+        sanityId: payload._id,
+        nameEn,
+        nameZh,
+        slug: payload.slug?.current || '',
+        descriptionEn,
+        descriptionZh,
+        isFeatured: payload.isFeatured || false,
+        coverImageUrl: payload.coverImageUrl || null,
+      },
+    })
+
+    console.log(`✅ Upserted devCollection: ${result.id} (${result.nameEn})`)
+  } catch (error) {
+    console.error('❌ Error upserting devCollection:', error)
+    throw error
+  }
+}
+
+async function handleDevCollectionDelete(
+  payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
+) {
+  console.log('🗑️ 处理 DevCollection 删除操作', {
+    id: payload._id,
+    i18n_id: payload.i18n_id,
+  })
+
+  try {
+    // Soft delete - mark as deleted but keep the data
+    const updated = await prisma.devCollection.updateMany({
+      where: {
+        sanityId: payload._id,
+      },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+    })
+
+    console.log(`✅ Soft deleted ${updated.count} devCollection(s)`)
+    await recordWebhookCall('delete', 'devCollection', payload._id, true)
+  } catch (error) {
+    console.error('❌ Error deleting devCollection:', error)
+    await recordWebhookCall(
+      'delete',
+      'devCollection',
       payload._id,
       false,
       error instanceof Error ? error.message : 'Unknown error'
@@ -829,6 +977,20 @@ export async function POST(request: NextRequest) {
               break
             case 'delete':
               await handleCollectionDelete(documentWithI18n)
+              break
+          }
+          break
+
+        case 'devCollection':
+          switch (payload.operation) {
+            case 'create':
+              await handleDevCollectionCreate(documentWithI18n)
+              break
+            case 'update':
+              await handleDevCollectionUpdate(documentWithI18n)
+              break
+            case 'delete':
+              await handleDevCollectionDelete(documentWithI18n)
               break
           }
           break
