@@ -1,11 +1,22 @@
 // sanity-studio/schemas/log.ts
 
-import { defineField, defineType } from 'sanity'
+import {defineField, defineType} from 'sanity'
 
 export default defineType({
   name: 'log',
   title: 'Developer Log',
   type: 'document',
+  groups: [
+    {
+      name: 'content',
+      title: 'Content',
+      default: true,
+    },
+    {
+      name: 'seo',
+      title: 'SEO',
+    },
+  ],
   fields: [
     // 1. 语言字段 (由 i18n 插件自动管理)
     // 这个字段虽然在这里定义，但通常是只读或隐藏的，由插件在后台控制
@@ -21,12 +32,14 @@ export default defineType({
       name: 'title',
       title: 'Title',
       type: 'string',
+      group: 'content',
       validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'slug',
       title: 'Slug',
       type: 'slug',
+      group: 'content',
       options: {
         source: 'title',
         maxLength: 96,
@@ -37,12 +50,14 @@ export default defineType({
       name: 'publishedAt',
       title: 'Published at',
       type: 'datetime',
+      group: 'content',
       validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'mainImage',
       title: 'Main image',
       type: 'image',
+      group: 'content',
       options: {
         hotspot: true, // 开启图片焦点功能
       },
@@ -51,6 +66,7 @@ export default defineType({
       name: 'excerpt',
       title: 'Excerpt',
       type: 'text',
+      group: 'content',
       rows: 3,
       description: 'A short summary of the post for social media and previews.',
     }),
@@ -58,34 +74,35 @@ export default defineType({
       name: 'content',
       title: 'Content',
       type: 'array', // 使用 Portable Text 来实现富文本
+      group: 'content',
       of: [
         {
           type: 'block', // 标准的文本块
           // 自定义样式
           styles: [
-            { title: 'Normal', value: 'normal' },
-            { title: 'H1', value: 'h1' },
-            { title: 'H2', value: 'h2' },
-            { title: 'H3', value: 'h3' },
-            { title: 'H4', value: 'h4' },
-            { title: 'H5', value: 'h5' },
-            { title: 'H6', value: 'h6' },
-            { title: 'Quote', value: 'blockquote' },
+            {title: 'Normal', value: 'normal'},
+            {title: 'H1', value: 'h1'},
+            {title: 'H2', value: 'h2'},
+            {title: 'H3', value: 'h3'},
+            {title: 'H4', value: 'h4'},
+            {title: 'H5', value: 'h5'},
+            {title: 'H6', value: 'h6'},
+            {title: 'Quote', value: 'blockquote'},
           ],
           // 列表类型
           lists: [
-            { title: 'Bullet', value: 'bullet' },
-            { title: 'Numbered', value: 'number' },
+            {title: 'Bullet', value: 'bullet'},
+            {title: 'Numbered', value: 'number'},
           ],
           // 文本装饰器（inline 样式）
           marks: {
             // 基础装饰器
             decorators: [
-              { title: 'Strong', value: 'strong' },
-              { title: 'Emphasis', value: 'em' },
-              { title: 'Code', value: 'code' },
-              { title: 'Underline', value: 'underline' },
-              { title: 'Strike', value: 'strike-through' },
+              {title: 'Strong', value: 'strong'},
+              {title: 'Emphasis', value: 'em'},
+              {title: 'Code', value: 'code'},
+              {title: 'Underline', value: 'underline'},
+              {title: 'Strike', value: 'strike-through'},
               // 自定义高亮装饰器
               {
                 title: 'Highlight',
@@ -131,12 +148,12 @@ export default defineType({
                     type: 'string',
                     options: {
                       list: [
-                        { title: 'Red', value: 'red' },
-                        { title: 'Blue', value: 'blue' },
-                        { title: 'Green', value: 'green' },
-                        { title: 'Orange', value: 'orange' },
-                        { title: 'Purple', value: 'purple' },
-                        { title: 'Gray', value: 'gray' },
+                        {title: 'Red', value: 'red'},
+                        {title: 'Blue', value: 'blue'},
+                        {title: 'Green', value: 'green'},
+                        {title: 'Orange', value: 'orange'},
+                        {title: 'Purple', value: 'purple'},
+                        {title: 'Gray', value: 'gray'},
                       ],
                     },
                   },
@@ -155,10 +172,10 @@ export default defineType({
                     type: 'string',
                     options: {
                       list: [
-                        { title: 'Small', value: 'small' },
-                        { title: 'Normal', value: 'normal' },
-                        { title: 'Large', value: 'large' },
-                        { title: 'Extra Large', value: 'xl' },
+                        {title: 'Small', value: 'small'},
+                        {title: 'Normal', value: 'normal'},
+                        {title: 'Large', value: 'large'},
+                        {title: 'Extra Large', value: 'xl'},
                       ],
                     },
                   },
@@ -199,17 +216,17 @@ export default defineType({
               type: 'string',
               options: {
                 list: [
-                  { title: 'JavaScript', value: 'javascript' },
-                  { title: 'TypeScript', value: 'typescript' },
-                  { title: 'Python', value: 'python' },
-                  { title: 'Java', value: 'java' },
-                  { title: 'C++', value: 'cpp' },
-                  { title: 'HTML', value: 'html' },
-                  { title: 'CSS', value: 'css' },
-                  { title: 'JSON', value: 'json' },
-                  { title: 'Bash', value: 'bash' },
-                  { title: 'SQL', value: 'sql' },
-                  { title: 'Plain Text', value: 'text' },
+                  {title: 'JavaScript', value: 'javascript'},
+                  {title: 'TypeScript', value: 'typescript'},
+                  {title: 'Python', value: 'python'},
+                  {title: 'Java', value: 'java'},
+                  {title: 'C++', value: 'cpp'},
+                  {title: 'HTML', value: 'html'},
+                  {title: 'CSS', value: 'css'},
+                  {title: 'JSON', value: 'json'},
+                  {title: 'Bash', value: 'bash'},
+                  {title: 'SQL', value: 'sql'},
+                  {title: 'Plain Text', value: 'text'},
                 ],
               },
             },
@@ -231,7 +248,7 @@ export default defineType({
               subtitle: 'language',
               code: 'code',
             },
-            prepare({ title, subtitle, code }) {
+            prepare({title, subtitle, code}) {
               return {
                 title: title || 'Code Block',
                 subtitle: subtitle || 'Plain Text',
@@ -253,11 +270,11 @@ export default defineType({
               type: 'string',
               options: {
                 list: [
-                  { title: 'Info', value: 'info' },
-                  { title: 'Warning', value: 'warning' },
-                  { title: 'Error', value: 'error' },
-                  { title: 'Success', value: 'success' },
-                  { title: 'Note', value: 'note' },
+                  {title: 'Info', value: 'info'},
+                  {title: 'Warning', value: 'warning'},
+                  {title: 'Error', value: 'error'},
+                  {title: 'Success', value: 'success'},
+                  {title: 'Note', value: 'note'},
                 ],
               },
               initialValue: 'info',
@@ -274,12 +291,12 @@ export default defineType({
               of: [
                 {
                   type: 'block',
-                  styles: [{ title: 'Normal', value: 'normal' }],
+                  styles: [{title: 'Normal', value: 'normal'}],
                   marks: {
                     decorators: [
-                      { title: 'Strong', value: 'strong' },
-                      { title: 'Emphasis', value: 'em' },
-                      { title: 'Code', value: 'code' },
+                      {title: 'Strong', value: 'strong'},
+                      {title: 'Emphasis', value: 'em'},
+                      {title: 'Code', value: 'code'},
                     ],
                   },
                 },
@@ -291,7 +308,7 @@ export default defineType({
               title: 'title',
               type: 'type',
             },
-            prepare({ title, type }) {
+            prepare({title, type}) {
               const icons: Record<string, string> = {
                 info: 'ℹ️',
                 warning: '⚠️',
@@ -314,10 +331,74 @@ export default defineType({
       name: 'tags',
       title: 'Tags',
       type: 'array',
-      of: [{ type: 'string' }],
+      group: 'content',
+      of: [{type: 'string'}],
       options: {
         layout: 'tags',
       },
+    }),
+
+    // SEO 字段组
+    defineField({
+      name: 'seo',
+      title: 'SEO Settings',
+      type: 'object',
+      group: 'seo',
+      options: {
+        collapsible: true,
+        collapsed: false,
+      },
+      fields: [
+        {
+          name: 'metaTitle',
+          title: 'Meta Title',
+          type: 'string',
+          description: '推荐长度：50-60字符，用于搜索引擎结果页面标题。如果留空，将使用文章标题',
+          validation: (Rule) => Rule.max(60).warning('建议保持在60字符以内以获得最佳SEO效果'),
+        },
+        {
+          name: 'metaDescription',
+          title: 'Meta Description',
+          type: 'text',
+          rows: 3,
+          description: '推荐长度：150-160字符，简洁描述页面内容，显示在搜索结果中。如果留空，将使用文章摘要',
+          validation: (Rule) => Rule.max(160).warning('建议保持在160字符以内以获得最佳SEO效果'),
+        },
+        {
+          name: 'focusKeyword',
+          title: 'Focus Keyword',
+          type: 'string',
+          description: '主要关键词，用于内容优化指导',
+        },
+        {
+          name: 'socialImage',
+          title: 'Social Media Image',
+          type: 'image',
+          description: '推荐尺寸：1200x630px，用于社交媒体分享时的预览图。如果留空，将使用主图片',
+          options: {
+            hotspot: true,
+          },
+        },
+        {
+          name: 'canonicalUrl',
+          title: 'Canonical URL',
+          type: 'url',
+          description: '规范URL，用于避免重复内容问题（可选）',
+        },
+        {
+          name: 'noIndex',
+          title: 'No Index',
+          type: 'boolean',
+          description: '启用后，搜索引擎将不会索引此页面',
+          initialValue: false,
+        },
+        {
+          name: 'readingTime',
+          title: 'Estimated Reading Time',
+          type: 'number',
+          description: '预估阅读时间（分钟），可自动计算或手动设置',
+        },
+      ],
     }),
 
     // 3. 关联字段
@@ -340,8 +421,8 @@ export default defineType({
       media: 'mainImage',
     },
     prepare(selection) {
-      const { author } = selection
-      return { ...selection, subtitle: author && `by ${author}` }
+      const {author} = selection
+      return {...selection, subtitle: author && `by ${author}`}
     },
   },
 })

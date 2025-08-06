@@ -18,6 +18,52 @@ const nextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
+
+  // 安全头配置
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          // 防止点击劫持攻击
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          // 防止 MIME 类型嗅探
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          // XSS 保护
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+          // 引用者策略
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          // 权限策略
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+        ],
+      },
+      {
+        source: '/api/(.*)',
+        headers: [
+          // API 路由的额外安全头
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex',
+          },
+        ],
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig

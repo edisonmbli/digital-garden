@@ -6,6 +6,7 @@ import { PortableText, PortableTextComponents } from '@portabletext/react'
 import { PortableTextBlock } from '@portabletext/types'
 import { useEffect } from 'react'
 import { cn } from '@/lib/utils'
+import Image from 'next/image'
 import Prism from 'prismjs'
 
 // 导入常用语言支持
@@ -333,10 +334,13 @@ const components: PortableTextComponents = {
     image: ({ value }) => (
       <figure className="my-8 group">
         <div className="relative overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-          <img
+          <Image
             src={value.asset?.url}
             alt={value.alt || ''}
+            width={value.asset?.metadata?.dimensions?.width || 800}
+            height={value.asset?.metadata?.dimensions?.height || 600}
             className="w-full h-auto transition-transform duration-300 group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
             loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

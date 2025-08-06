@@ -69,10 +69,21 @@ export async function getTranslationMapAction(
 
 // 点赞/取消点赞的 Server Action
 export async function toggleLikeAction(postId: string) {
+  const startTime = Date.now()
+  const { userId } = await auth()
+  
+  // 导入日志系统
+  const { logger } = await import('@/lib/logger')
+  
+  logger.info('UserAction', '开始点赞操作', { 
+    postId, 
+    userId: userId || 'anonymous' 
+  })
+
   try {
     // 验证用户身份
-    const { userId } = await auth()
     if (!userId) {
+      logger.warn('UserAction', '未登录用户尝试点赞', { postId })
       return {
         success: false,
         error: '请先登录后再进行点赞操作',
@@ -82,6 +93,7 @@ export async function toggleLikeAction(postId: string) {
 
     // 基础验证
     if (!postId || typeof postId !== 'string') {
+      logger.warn('UserAction', '无效的帖子ID', { postId, userId })
       return {
         success: false,
         error: '无效的帖子ID',
@@ -99,6 +111,12 @@ export async function toggleLikeAction(postId: string) {
       const resetTimeMinutes = Math.ceil(
         (rateLimitResult.resetTime - Date.now()) / 60000
       )
+      logger.warn('UserAction', '点赞操作被限流', { 
+        postId, 
+        userId,
+        resetTime: rateLimitResult.resetTime,
+        resetTimeMinutes
+      })
       return {
         success: false,
         error: `操作过于频繁，请 ${resetTimeMinutes} 分钟后再试`,
@@ -112,13 +130,25 @@ export async function toggleLikeAction(postId: string) {
     // 重新验证相关的缓存标签
     revalidateTag(`post-interactions:${postId}`)
 
+    // 记录成功的审计日志和性能日志
+    logger.audit('UserAction', `用户${result.action}`, userId, { postId })
+    logger.performance('UserAction', 'toggleLike', Date.now() - startTime, {
+      postId,
+      userId,
+      action: result.action
+    })
+
     return {
       success: true,
       data: result,
       message: result.action === 'liked' ? '点赞成功' : '取消点赞成功',
     }
   } catch (error) {
-    console.error('Toggle like action error:', error)
+    logger.error('UserAction', '点赞操作失败', error as Error, { 
+      postId, 
+      userId,
+      duration: Date.now() - startTime 
+    })
     return {
       success: false,
       error: '操作失败，请稍后重试',
@@ -144,10 +174,25 @@ export async function createCommentAction(data: {
   postId: string
   parentId?: string
 }) {
+  const startTime = Date.now()
+  const { userId } = await auth()
+  
+  // 导入日志系统
+  const { logger } = await import('@/lib/logger')
+  
+  logger.info('CommentAction', '开始创建评论', { 
+    postId: data.postId,
+    parentId: data.parentId,
+    userId: userId || 'anonymous',
+    contentLength: data.content?.length || 0
+  })
+
   try {
     // 验证用户身份
-    const { userId } = await auth()
     if (!userId) {
+      logger.warn('CommentAction', '未登录用户尝试发表评论', { 
+        postId: data.postId 
+      })
       return {
         success: false,
         error: '请先登录后再发表评论',
@@ -158,6 +203,12 @@ export async function createCommentAction(data: {
     // 验证输入数据
     const contentValidation = commentContentSchema.safeParse(data.content)
     if (!contentValidation.success) {
+      logger.warn('CommentAction', '评论内容验证失败', { 
+        postId: data.postId,
+        userId,
+        error: contentValidation.error.issues[0].message,
+        contentLength: data.content?.length || 0
+      })
       return {
         success: false,
         error: contentValidation.error.issues[0].message,
@@ -166,6 +217,10 @@ export async function createCommentAction(data: {
     }
 
     if (!data.postId || typeof data.postId !== 'string') {
+      logger.warn('CommentAction', '无效的文章ID', { 
+        postId: data.postId,
+        userId 
+      })
       return {
         success: false,
         error: '无效的文章ID',
@@ -183,6 +238,12 @@ export async function createCommentAction(data: {
       const resetTimeMinutes = Math.ceil(
         (rateLimitResult.resetTime - Date.now()) / 60000
       )
+      logger.warn('CommentAction', '评论操作被限流', { 
+        postId: data.postId,
+        userId,
+        resetTime: rateLimitResult.resetTime,
+        resetTimeMinutes
+      })
       return {
         success: false,
         error: `评论过于频繁，请 ${resetTimeMinutes} 分钟后再试`,
@@ -191,6 +252,11 @@ export async function createCommentAction(data: {
     }
 
     // 反垃圾邮件检查
+    logger.debug('CommentAction', '开始垃圾邮件检查', { 
+      postId: data.postId,
+      userId 
+    })
+    
     const spamCheckResult = await checkSpam({
       content: contentValidation.data,
       userId: userId,
@@ -199,6 +265,11 @@ export async function createCommentAction(data: {
     })
 
     if (spamCheckResult.isSpam) {
+      logger.warn('CommentAction', '评论被识别为垃圾信息', { 
+        postId: data.postId,
+        userId,
+        reason: spamCheckResult.reason 
+      })
       return {
         success: false,
         error: `内容被识别为垃圾信息: ${spamCheckResult.reason}`,
@@ -218,11 +289,29 @@ export async function createCommentAction(data: {
     }
 
     // 创建评论
+    logger.debug('CommentAction', '开始创建评论记录', { 
+      postId: data.postId,
+      userId 
+    })
+    
     const comment = await commentsDal.createComment(commentInput)
 
     // 重新验证相关的缓存标签
     revalidateTag(`post-comments:${data.postId}`)
     revalidateTag(`post-interactions:${data.postId}`)
+
+    // 记录成功的审计日志和性能日志
+    logger.audit('CommentAction', '用户发表评论', userId, { 
+      postId: data.postId,
+      commentId: comment.id,
+      isReply: !!data.parentId 
+    })
+    
+    logger.performance('CommentAction', 'createComment', Date.now() - startTime, {
+      postId: data.postId,
+      userId,
+      commentId: comment.id
+    })
 
     return {
       success: true,
@@ -230,7 +319,11 @@ export async function createCommentAction(data: {
       message: data.parentId ? '回复发表成功' : '评论发表成功',
     }
   } catch (error) {
-    console.error('Create comment action error:', error)
+    logger.error('CommentAction', '创建评论失败', error as Error, { 
+      postId: data.postId,
+      userId,
+      duration: Date.now() - startTime 
+    })
     return {
       success: false,
       error: '发表评论失败，请稍后重试',
@@ -367,7 +460,6 @@ export async function deleteCommentAction(commentId: string, reason?: string) {
 
     // 检查权限：只有评论作者或管理员可以删除
     if (existingComment.userId !== userId) {
-      // TODO: 这里可以添加管理员权限检查
       return {
         success: false,
         error: '您只能删除自己的评论',
@@ -423,14 +515,7 @@ export async function approveCommentAction(commentId: string, reason?: string) {
       }
     }
 
-    // TODO: 添加管理员权限检查
-    // if (!isAdmin(user)) {
-    //   return {
-    //     success: false,
-    //     error: '您没有审核权限',
-    //     code: 'FORBIDDEN'
-    //   }
-    // }
+
 
     if (!commentId || typeof commentId !== 'string') {
       return {
@@ -494,8 +579,6 @@ export async function rejectCommentAction(commentId: string, reason?: string) {
       }
     }
 
-    // TODO: 添加管理员权限检查
-
     if (!commentId || typeof commentId !== 'string') {
       return {
         success: false,
@@ -558,8 +641,6 @@ export async function pinCommentAction(commentId: string) {
       }
     }
 
-    // TODO: 添加管理员权限检查
-
     if (!commentId || typeof commentId !== 'string') {
       return {
         success: false,
@@ -611,8 +692,6 @@ export async function unpinCommentAction(commentId: string) {
         code: 'UNAUTHORIZED',
       }
     }
-
-    // TODO: 添加管理员权限检查
 
     if (!commentId || typeof commentId !== 'string') {
       return {

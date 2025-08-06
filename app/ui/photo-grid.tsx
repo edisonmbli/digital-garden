@@ -248,14 +248,6 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
             <div
               className="rounded-lg overflow-hidden cursor-pointer"
               onClick={() => {
-                console.log('🔍 Debug: Selected photo data:', {
-                  photoId: photo._id,
-                  post: photo.post,
-                  hasPost: !!photo.post,
-                  postFields: photo.post
-                    ? Object.keys(photo.post)
-                    : 'No post data',
-                })
                 setSelectedPhoto(photo)
                 setShowCommentForm(false) // 重置评论表单状态
               }}

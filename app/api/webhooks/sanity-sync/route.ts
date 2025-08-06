@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isValidSignature, SIGNATURE_HEADER_NAME } from '@sanity/webhook'
 import { client } from '@/sanity/client'
 import prisma from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // The simplified payload from the webhook
 // Define a more accurate type for the document part of the payload
@@ -61,10 +62,17 @@ async function checkRateLimit(): Promise<boolean> {
       },
     })
 
-    // console.log(`📊 Recent webhook calls: ${recentCalls}`)
-    return recentCalls < rateLimit
+    const isAllowed = recentCalls < rateLimit
+
+    logger.debug('WebhookRateLimit', '检查Webhook限流状态', {
+      recentCalls,
+      rateLimit,
+      isAllowed,
+    })
+
+    return isAllowed
   } catch (error) {
-    console.error('Rate limit check failed:', error)
+    logger.error('WebhookRateLimit', '限流检查失败', error as Error)
     return true // Allow on error to avoid blocking legitimate requests
   }
 }
@@ -87,7 +95,8 @@ async function recordWebhookCall(
         error,
       },
     })
-    console.log('📊 Webhook call recorded:', {
+
+    logger.info('WebhookRecord', 'Webhook调用记录已保存', {
       operation,
       documentType,
       documentId,
@@ -95,7 +104,13 @@ async function recordWebhookCall(
       error,
     })
   } catch (err) {
-    console.error('❌ Failed to record webhook call:', err)
+    logger.error('WebhookRecord', '保存Webhook调用记录失败', err as Error, {
+      operation,
+      documentType,
+      documentId,
+      success,
+      error,
+    })
     // 不抛出错误，避免影响主要的 webhook 处理流程
   }
 }
@@ -106,11 +121,11 @@ async function getI18nInfo(documentId: string): Promise<{
   related_document_ids: string[]
 }> {
   if (!documentId) {
-    console.warn('⚠️ getI18nInfo called with no documentId.')
+    logger.warn('WebhookI18n', 'getI18nInfo调用时缺少documentId')
     return { i18n_id: '', i18n_lang: null, related_document_ids: [] }
   }
 
-  console.log(`🔍 Getting i18n info for document: ${documentId}`)
+  logger.debug('WebhookI18n', '开始获取文档国际化信息', { documentId })
 
   const query = `
     {
@@ -281,13 +296,27 @@ async function handleCollectionCreate(
   payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
 ) {
   // Extract i18n data from object-level structure
-  const nameObj = payload.name as { en?: string; zh?: string } | string | undefined
-  const descObj = payload.description as { en?: string; zh?: string } | string | undefined
-  
-  const nameEn = typeof nameObj === 'object' ? nameObj?.en || '' : payload.nameEn || ''
-  const nameZh = typeof nameObj === 'object' ? nameObj?.zh || '' : payload.nameZh || ''
-  const descriptionEn = typeof descObj === 'object' ? descObj?.en || null : payload.descriptionEn || null
-  const descriptionZh = typeof descObj === 'object' ? descObj?.zh || null : payload.descriptionZh || null
+  const nameObj = payload.name as
+    | { en?: string; zh?: string }
+    | string
+    | undefined
+  const descObj = payload.description as
+    | { en?: string; zh?: string }
+    | string
+    | undefined
+
+  const nameEn =
+    typeof nameObj === 'object' ? nameObj?.en || '' : payload.nameEn || ''
+  const nameZh =
+    typeof nameObj === 'object' ? nameObj?.zh || '' : payload.nameZh || ''
+  const descriptionEn =
+    typeof descObj === 'object'
+      ? descObj?.en || null
+      : payload.descriptionEn || null
+  const descriptionZh =
+    typeof descObj === 'object'
+      ? descObj?.zh || null
+      : payload.descriptionZh || null
 
   console.log('🆕 处理 Collection 创建操作', {
     id: payload._id,
@@ -335,13 +364,27 @@ async function handleCollectionUpdate(
   payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
 ) {
   // Extract i18n data from object-level structure
-  const nameObj = payload.name as { en?: string; zh?: string } | string | undefined
-  const descObj = payload.description as { en?: string; zh?: string } | string | undefined
-  
-  const nameEn = typeof nameObj === 'object' ? nameObj?.en || '' : payload.nameEn || ''
-  const nameZh = typeof nameObj === 'object' ? nameObj?.zh || '' : payload.nameZh || ''
-  const descriptionEn = typeof descObj === 'object' ? descObj?.en || null : payload.descriptionEn || null
-  const descriptionZh = typeof descObj === 'object' ? descObj?.zh || null : payload.descriptionZh || null
+  const nameObj = payload.name as
+    | { en?: string; zh?: string }
+    | string
+    | undefined
+  const descObj = payload.description as
+    | { en?: string; zh?: string }
+    | string
+    | undefined
+
+  const nameEn =
+    typeof nameObj === 'object' ? nameObj?.en || '' : payload.nameEn || ''
+  const nameZh =
+    typeof nameObj === 'object' ? nameObj?.zh || '' : payload.nameZh || ''
+  const descriptionEn =
+    typeof descObj === 'object'
+      ? descObj?.en || null
+      : payload.descriptionEn || null
+  const descriptionZh =
+    typeof descObj === 'object'
+      ? descObj?.zh || null
+      : payload.descriptionZh || null
 
   console.log('📝 处理 Collection 更新操作', {
     id: payload._id,
@@ -425,13 +468,27 @@ async function handleDevCollectionCreate(
   payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
 ) {
   // Extract i18n data from object-level structure
-  const nameObj = payload.name as { en?: string; zh?: string } | string | undefined
-  const descObj = payload.description as { en?: string; zh?: string } | string | undefined
-  
-  const nameEn = typeof nameObj === 'object' ? nameObj?.en || '' : payload.nameEn || ''
-  const nameZh = typeof nameObj === 'object' ? nameObj?.zh || '' : payload.nameZh || ''
-  const descriptionEn = typeof descObj === 'object' ? descObj?.en || null : payload.descriptionEn || null
-  const descriptionZh = typeof descObj === 'object' ? descObj?.zh || null : payload.descriptionZh || null
+  const nameObj = payload.name as
+    | { en?: string; zh?: string }
+    | string
+    | undefined
+  const descObj = payload.description as
+    | { en?: string; zh?: string }
+    | string
+    | undefined
+
+  const nameEn =
+    typeof nameObj === 'object' ? nameObj?.en || '' : payload.nameEn || ''
+  const nameZh =
+    typeof nameObj === 'object' ? nameObj?.zh || '' : payload.nameZh || ''
+  const descriptionEn =
+    typeof descObj === 'object'
+      ? descObj?.en || null
+      : payload.descriptionEn || null
+  const descriptionZh =
+    typeof descObj === 'object'
+      ? descObj?.zh || null
+      : payload.descriptionZh || null
 
   console.log('🆕 处理 DevCollection 创建操作', {
     id: payload._id,
@@ -480,13 +537,27 @@ async function handleDevCollectionUpdate(
   payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
 ) {
   // Extract i18n data from object-level structure
-  const nameObj = payload.name as { en?: string; zh?: string } | string | undefined
-  const descObj = payload.description as { en?: string; zh?: string } | string | undefined
-  
-  const nameEn = typeof nameObj === 'object' ? nameObj?.en || '' : payload.nameEn || ''
-  const nameZh = typeof nameObj === 'object' ? nameObj?.zh || '' : payload.nameZh || ''
-  const descriptionEn = typeof descObj === 'object' ? descObj?.en || null : payload.descriptionEn || null
-  const descriptionZh = typeof descObj === 'object' ? descObj?.zh || null : payload.descriptionZh || null
+  const nameObj = payload.name as
+    | { en?: string; zh?: string }
+    | string
+    | undefined
+  const descObj = payload.description as
+    | { en?: string; zh?: string }
+    | string
+    | undefined
+
+  const nameEn =
+    typeof nameObj === 'object' ? nameObj?.en || '' : payload.nameEn || ''
+  const nameZh =
+    typeof nameObj === 'object' ? nameObj?.zh || '' : payload.nameZh || ''
+  const descriptionEn =
+    typeof descObj === 'object'
+      ? descObj?.en || null
+      : payload.descriptionEn || null
+  const descriptionZh =
+    typeof descObj === 'object'
+      ? descObj?.zh || null
+      : payload.descriptionZh || null
 
   console.log('📝 处理 DevCollection 更新操作', {
     id: payload._id,
@@ -914,16 +985,6 @@ export async function POST(request: NextRequest) {
 
     // 3. 解析 Payload
     const payload: SanityWebhookPayload = JSON.parse(body)
-
-    // 🔍 DEBUG: 完整记录payload结构
-    console.log(
-      '🔍 [DEBUG] ==================== WEBHOOK PAYLOAD ===================='
-    )
-    console.log('🔍 [DEBUG] 完整 Webhook Payload:')
-    console.log(JSON.stringify(payload, null, 2))
-    console.log(
-      '🔍 [DEBUG] ==================== WEBHOOK PAYLOAD ===================='
-    )
 
     // This is the crucial change
     const document =

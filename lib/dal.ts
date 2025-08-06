@@ -207,22 +207,74 @@ export const getTranslationsBySlug = cache(
 // --- Prisma Queries ---
 
 export const getLikesAndCommentsForPost = cache(async (postId: string) => {
-  // 我们通过 Sanity 的 _id (存在 Post.contentId) 来查找我们自己的 Post
+  // 优化查询：使用更精确的字段选择和预加载策略
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    include: {
+    select: {
+      id: true,
+      sanityDocumentId: true,
+      contentType: true,
       likes: {
-        select: { userId: true },
+        select: { 
+          userId: true,
+          createdAt: true 
+        },
       },
       comments: {
-        include: {
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+          updatedAt: true,
+          status: true,
+          isDeleted: true,
           user: {
-            select: { name: true, avatarUrl: true },
+            select: { 
+              id: true,
+              name: true, 
+              avatarUrl: true 
+            },
           },
-          replies: true, // 预加载回复
+          // 优化：只预加载必要的回复字段
+          replies: {
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
+              status: true,
+              isDeleted: true,
+              user: {
+                select: { 
+                  id: true,
+                  name: true, 
+                  avatarUrl: true 
+                },
+              },
+            },
+            where: {
+              status: 'APPROVED',
+              isDeleted: false,
+            },
+            orderBy: { createdAt: 'asc' },
+          },
         },
-        where: { parentId: null }, // 只获取顶级评论
+        where: { 
+          parentId: null,
+          status: 'APPROVED',
+          isDeleted: false,
+        },
         orderBy: { createdAt: 'desc' },
+      },
+      _count: {
+        select: {
+          likes: true,
+          comments: {
+            where: {
+              status: 'APPROVED',
+              isDeleted: false,
+            },
+          },
+        },
       },
     },
   })
@@ -338,12 +390,22 @@ export const getCollectionAndPhotosBySlug = cache(
     const start = (page - 1) * PHOTOS_PER_PAGE
     const end = start + PHOTOS_PER_PAGE
 
-    console.log('🔍 Debug: Query parameters:', { slug, lang, start, end })
-
-    // 1. 从 Sanity 获取基础的照片内容数据（新schema不再有language字段）
+    // 1. 从 Sanity 获取基础的照片内容数据（包含SEO字段）
     const query = groq`*[_type == "collection" && slug.current == $slug][0] {
+      _id,
       "name": coalesce(name.${lang}, name.en, ""),
       "description": coalesce(description.${lang}, description.en, ""),
+      "slug": slug.current,
+      updatedAt,
+      // SEO 字段（多语言支持）
+      seo {
+        metaTitle,
+        metaDescription,
+        focusKeyword,
+        socialImage,
+        canonicalUrl,
+        noIndex
+      },
       "photos": photos[${start}...${end}]-> {
         _id,
         "title": coalesce(title.${lang}, title.en, ""),
@@ -353,22 +415,12 @@ export const getCollectionAndPhotosBySlug = cache(
       }
     }`
 
-    console.log('🔍 Debug: GROQ Query:', query)
-
     const collectionDataFromSanity = await sanityClient.fetch<GroupAndPhotos>(
       query,
       { slug }
     )
 
-    console.log('🔍 Debug: Sanity query result:', {
-      hasResult: !!collectionDataFromSanity,
-      name: collectionDataFromSanity?.name,
-      photosCount: collectionDataFromSanity?.photos?.length,
-      firstPhotoId: collectionDataFromSanity?.photos?.[0]?._id,
-    })
-
     if (!collectionDataFromSanity || !collectionDataFromSanity.photos) {
-      console.log('❌ Debug: No collection data found from Sanity')
       return null
     }
 
@@ -378,25 +430,24 @@ export const getCollectionAndPhotosBySlug = cache(
     )
     const { userId } = await auth()
 
-    console.log('🔍 Debug: Photo IDs from Sanity:', photoContentIds)
-    console.log('🔍 Debug: Current user ID:', userId)
-
-    // 简化查询，直接获取需要的数据
+    // 优化查询：批量获取照片交互数据，减少数据传输
     const photoesInfoFromDb = await prisma.post.findMany({
       where: {
         sanityDocumentId: { in: photoContentIds },
         contentType: 'photo',
-        isDeleted: false, // 过滤掉已软删除的记录
+        isDeleted: false,
       },
       select: {
         id: true,
         sanityDocumentId: true,
-        likes: userId
-          ? {
-              where: { userId },
-              select: { id: true },
-            }
-          : false,
+        // 条件性查询用户点赞状态
+        ...(userId && {
+          likes: {
+            where: { userId },
+            select: { id: true },
+            take: 1, // 只需要知道是否存在
+          },
+        }),
         _count: {
           select: {
             likes: true,
@@ -404,19 +455,12 @@ export const getCollectionAndPhotosBySlug = cache(
               where: {
                 status: 'APPROVED',
                 isDeleted: false,
+                parentId: null, // 只计算顶级评论
               },
             },
           },
         },
       },
-    })
-
-    console.log('🔍 Debug: Posts found in Prisma:', {
-      totalFound: photoesInfoFromDb.length,
-      foundIds: photoesInfoFromDb.map((p) => p.sanityDocumentId),
-      missingIds: photoContentIds.filter(
-        (id) => !photoesInfoFromDb.find((p) => p.sanityDocumentId === id)
-      ),
     })
 
     // 3. 将 Prisma 数据，转换为一个易于查找的 Map（使用 sanityDocumentId 作为 key）
@@ -428,15 +472,6 @@ export const getCollectionAndPhotosBySlug = cache(
     const enrichedPhotos: EnrichedPhoto[] = collectionDataFromSanity.photos.map(
       (photo: Photo) => {
         const photoData = photoesMap.get(photo._id) // 使用 Sanity 的 _id 来查找对应的 Post 记录
-
-        console.log('🔍 Debug: Building enriched photo:', {
-          photoId: photo._id,
-          hasPhotoData: !!photoData,
-          photoDataFields: photoData ? Object.keys(photoData) : 'No photo data',
-          likesCount: photoData?._count.likes,
-          commentsCount: photoData?._count.comments,
-          userLikes: photoData?.likes,
-        })
 
         return {
           ...photo,
@@ -480,7 +515,6 @@ export async function ensureLogPostExists(sanityDocumentId: string, authorId: st
         isDeleted: false,
       },
     })
-    console.log('✅ Created new Post record for log:', sanityDocumentId)
     return newPost
   }
 
@@ -490,33 +524,36 @@ export async function ensureLogPostExists(sanityDocumentId: string, authorId: st
 // 获取log文章及其交互数据（参考getCollectionAndPhotosBySlug的模式）
 export const getLogPostWithInteractions = cache(
   async (slug: string, lang: Locale): Promise<EnrichedLogPost | null> => {
-    console.log('🔍 Debug: getLogPostWithInteractions parameters:', { slug, lang })
-
-    // 1. 从 Sanity 获取基础的log内容数据
+    // 1. 从 Sanity 获取基础的log内容数据（包含SEO字段）
     const query = groq`*[_type == "log" && slug.current == $slug && language == $lang][0] {
       _id,
       title,
+      excerpt,
       content,
       publishedAt,
+      "slug": slug.current,
+      language,
+      tags,
       "author": author->{ name, "avatarUrl": image.asset->url },
-      "mainImageUrl": mainImage.asset->url
+      "mainImageUrl": mainImage.asset->url,
+      // SEO 字段（单语言）
+      seo {
+        metaTitle,
+        metaDescription,
+        focusKeyword,
+        socialImage,
+        canonicalUrl,
+        noIndex,
+        readingTime
+      }
     }`
-
-    console.log('🔍 Debug: GROQ Query for log:', query)
 
     const logDataFromSanity = await sanityClient.fetch<LogPostDetails>(
       query,
       { slug, lang }
     )
 
-    console.log('🔍 Debug: Sanity log query result:', {
-      hasResult: !!logDataFromSanity,
-      title: logDataFromSanity?.title,
-      logId: logDataFromSanity?._id,
-    })
-
     if (!logDataFromSanity) {
-      console.log('❌ Debug: No log data found from Sanity')
       return null
     }
 
@@ -529,10 +566,6 @@ export const getLogPostWithInteractions = cache(
     await ensureLogPostExists(logDataFromSanity._id, authorId)
 
     // 4. 从 Postgres 获取交互数据
-
-    console.log('🔍 Debug: Log ID from Sanity:', logDataFromSanity._id)
-    console.log('🔍 Debug: Current user ID:', userId)
-
     // 分步查询以避免复杂的类型问题
     const logInfoFromDb = await prisma.post.findUnique({
       where: {
@@ -566,14 +599,6 @@ export const getLogPostWithInteractions = cache(
         })
       : null
 
-    console.log('🔍 Debug: Post found in Prisma:', {
-      hasLogData: !!logInfoFromDb,
-      logDataFields: logInfoFromDb ? Object.keys(logInfoFromDb) : 'No log data',
-      likesCount: logInfoFromDb?._count.likes,
-      commentsCount: logInfoFromDb?._count.comments,
-      userLiked: !!userLike,
-    })
-
     // 4. 获取所属合集信息
     const collectionQuery = groq`*[_type == "devCollection" && $logId in logs[]._ref][0] {
       _id,
@@ -594,12 +619,6 @@ export const getLogPostWithInteractions = cache(
       lang,
     })
 
-    console.log('🔍 Debug: Collection data:', {
-      hasCollection: !!collectionData,
-      collectionName: collectionData?.name,
-      logsCount: collectionData?.logs?.length,
-    })
-
     // 5. 合并数据并返回 EnrichedLogPost
     const enrichedLogPost: EnrichedLogPost = {
       ...logDataFromSanity,
@@ -609,7 +628,7 @@ export const getLogPostWithInteractions = cache(
             likesCount: logInfoFromDb._count.likes,
             commentsCount: logInfoFromDb._count.comments,
             isLikedByUser: !!userLike,
-            hasUserCommented: false, // TODO: 可以后续添加用户是否评论过的逻辑
+            hasUserCommented: false,
           }
         : null,
       collection: collectionData
@@ -629,8 +648,6 @@ export const getLogPostWithInteractions = cache(
 // 获取当前log所属合集的其他文章列表（用于左侧导航）
 export const getCollectionLogsBySlug = cache(
   async (logSlug: string, lang: Locale) => {
-    console.log('🔍 Debug: getCollectionLogsBySlug parameters:', { logSlug, lang })
-
     // 1. 先通过log slug找到对应的log _id
     const logQuery = groq`*[_type == "log" && slug.current == $logSlug && language == $lang][0] {
       _id
@@ -642,7 +659,6 @@ export const getCollectionLogsBySlug = cache(
     )
 
     if (!logData) {
-      console.log('❌ Debug: No log found for slug:', logSlug)
       return null
     }
 
@@ -664,12 +680,6 @@ export const getCollectionLogsBySlug = cache(
     const collectionData = await sanityClient.fetch(collectionQuery, {
       logId: logData._id,
       lang,
-    })
-
-    console.log('🔍 Debug: Collection logs result:', {
-      hasCollection: !!collectionData,
-      collectionName: collectionData?.name,
-      logsCount: collectionData?.logs?.length,
     })
 
     return collectionData
