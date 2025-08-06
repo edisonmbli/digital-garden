@@ -80,6 +80,15 @@ export default defineType({
       type: 'array',
       of: [{ type: 'reference', to: { type: 'photo' } }],
     }),
+    // 排序字段 - orderable-document-list 插件需要使用 orderRank 字段名
+    defineField({
+      name: 'orderRank',
+      title: 'Order Rank',
+      type: 'string',
+      description:
+        'Used by the orderable document list plugin for drag-and-drop sorting.',
+      hidden: true, // 隐藏此字段，因为排序通过拖拽完成
+    }),
   ],
   preview: {
     select: {

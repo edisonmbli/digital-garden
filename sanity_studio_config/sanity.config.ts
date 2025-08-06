@@ -20,10 +20,19 @@ export default defineConfig({
         S.list()
           .title('Content')
           .items([
+            // 可拖拽排序的 Collections
+            orderableDocumentListDeskItem({
+              type: 'collection',
+              title: 'Collections',
+              S,
+              context,
+              filter: '_type == "collection"',
+            }),
+
             // 可拖拽排序的 Dev Collections
             orderableDocumentListDeskItem({
               type: 'devCollection',
-              title: 'Dev Collections (可拖拽排序)',
+              title: 'Dev Collections',
               S,
               context,
               filter: '_type == "devCollection"',
@@ -32,9 +41,10 @@ export default defineConfig({
             S.divider(),
 
             // 添加其他默认文档类型
-            ...S.documentTypeListItems().filter(
-              (listItem) => listItem.getId() !== 'devCollection'
-            ),
+            ...S.documentTypeListItems().filter((listItem) => {
+              const id = listItem.getId()
+              return id && !['collection', 'devCollection'].includes(id)
+            }),
           ]),
     }),
     visionTool(),

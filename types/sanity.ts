@@ -16,6 +16,7 @@ export type Collection = {
   slug: string
   coverImageUrl?: string | null
   isFeatured: boolean
+  orderRank?: string
 }
 
 // 对应 getFeaturedGroups 查询返回的数组中的单个对象（保持向后兼容）

@@ -51,16 +51,16 @@ const components: PortableTextComponents = {
           className="group relative scroll-mt-20 text-display-sm sm:text-display-lg font-bold tracking-tight mt-16 mb-3 [&:first-child]:mt-0 pl-4 sm:pl-6"
         >
           {/* 前缀图标 - 向左突出并居中对齐 */}
-          <span 
+          <span
             className="absolute -left-2 sm:-left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 select-none transition-colors duration-200 group-hover:text-slate-600 dark:group-hover:text-slate-300"
             aria-hidden="true"
           >
-            <svg 
-              className="w-6 h-6 sm:w-8 sm:h-8" 
-              fill="currentColor" 
+            <svg
+              className="w-6 h-6 sm:w-8 sm:h-8"
+              fill="currentColor"
               viewBox="0 0 24 24"
             >
-              <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+              <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
             </svg>
           </span>
           {children}
@@ -73,18 +73,18 @@ const components: PortableTextComponents = {
         <h2
           id={id}
           className="group relative scroll-mt-20 text-body-base sm:text-display-sm font-semibold tracking-tight mt-14 mb-2 [&:first-child]:mt-0  pl-4 sm:pl-6"
-        >          
-        {/* 前缀图标 - 向左突出并居中对齐 */}
-          <span 
+        >
+          {/* 前缀图标 - 向左突出并居中对齐 */}
+          <span
             className="absolute -left-2 sm:-left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 select-none transition-colors duration-200 group-hover:text-slate-600 dark:group-hover:text-slate-300"
             aria-hidden="true"
           >
-            <svg 
-              className="w-6 h-6 sm:w-8 sm:h-8" 
-              fill="currentColor" 
+            <svg
+              className="w-6 h-6 sm:w-8 sm:h-8"
+              fill="currentColor"
               viewBox="0 0 24 24"
             >
-              <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+              <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
             </svg>
           </span>
           {children}
@@ -137,7 +137,7 @@ const components: PortableTextComponents = {
     },
     normal: ({ children }) => {
       return (
-        <p className="text-body-sm sm:text-body-base leading-6 [&:not(:first-child)]:mt-2">
+        <p className="text-body-sm sm:text-body-sm leading-6 [&:not(:first-child)]:mt-2">
           {children}
         </p>
       )
@@ -443,7 +443,7 @@ const components: PortableTextComponents = {
       return (
         <div
           className={cn(
-            'my-4 p-2 border rounded-lg shadow-sm',
+            'my-4 p-4 border rounded-lg shadow-sm',
             currentType.container,
             currentType.leftBorder,
             'border-l-4'
@@ -452,15 +452,15 @@ const components: PortableTextComponents = {
           {value.title && (
             <div
               className={cn(
-                'flex items-center gap-2 font-semibold mb-2',
+                'flex items-center gap-2 font-semibold',
                 currentType.title
               )}
             >
               <span className="text-body-lg">{currentType.icon}</span>
-              <span>{value.title}</span>
+              <span className="text-body-md">{value.title}</span>
             </div>
           )}
-          <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:ml-4 [&_ol]:ml-4 [&_li]:marker:text-slate-400 dark:[&_li]:marker:text-slate-500">
+          <div className="text-body-sm leading-relaxed [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_p]:text-body-sm [&_p]:leading-relaxed [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:ml-0 [&_ol]:ml-0 [&_li]:text-body-sm [&_li]:leading-relaxed [&_li]:marker:text-slate-400 dark:[&_li]:marker:text-slate-500 [&_strong]:font-semibold [&_em]:italic [&_code]:text-xs [&_code]:bg-slate-100 [&_code]:dark:bg-slate-800 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded">
             <PortableText value={value.content} components={components} />
           </div>
         </div>

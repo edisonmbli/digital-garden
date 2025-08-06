@@ -20,13 +20,14 @@ import type {
 
 // 只获取那些被标记为"精选"的影像组，用于首页
 export const getHeroCollections = cache(async () => {
-  const query = groq`*[_type == "collection" && isFeatured == true] | order(_createdAt desc) {
+  const query = groq`*[_type == "collection" && isFeatured == true] | order(orderRank) {
     _id,
     "name": name,
     "description": description,
     "slug": slug.current,
     "coverImageUrl": coverImage.asset->url,
-    isFeatured
+    isFeatured,
+    orderRank
   }`
 
   return sanityClient.fetch(query)
@@ -34,13 +35,14 @@ export const getHeroCollections = cache(async () => {
 
 // 获取所有的影像组（未来支持分页），用于 /gallery 列表页
 export const getAllCollections = cache(async () => {
-  const query = groq`*[_type == "collection"] | order(_createdAt desc) {
+  const query = groq`*[_type == "collection"] | order(orderRank) {
     _id,
     "name": name,
     "description": description,
     "slug": slug.current,
     "coverImageUrl": coverImage.asset->url,
-    isFeatured
+    isFeatured,
+    orderRank
   }`
 
   return sanityClient.fetch(query)

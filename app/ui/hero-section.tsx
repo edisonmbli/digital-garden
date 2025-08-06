@@ -210,7 +210,7 @@ export function HeroSection({ collections, lang }: HeroSectionProps) {
                 {/* 悬停时显示的Collection名称 */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-10">
                   <div className="bg-white/40 backdrop-blur-sm px-9 py-3 rounded-lg shadow-lg transform transition-transform group-hover:scale-105">
-                    <h1 className="text-heading-xl lg:text-heading-2xl font-display font-medium text-gray-900 tracking-wide whitespace-nowrap">
+                    <h1 className="text-display-md lg:text-display-lg font-display font-medium text-gray-900 tracking-wide whitespace-nowrap">
                       {getCollectionName(currentCollection)}
                     </h1>
                   </div>
@@ -281,15 +281,15 @@ export function HeroSection({ collections, lang }: HeroSectionProps) {
                 isTransitioning
                   ? 'bg-blue-500/60'
                   : isAutoPlaying
-                  ? 'bg-green-500/60 auto-playing'
-                  : 'bg-yellow-500/60'
+                    ? 'bg-green-500/60 auto-playing'
+                    : 'bg-yellow-500/60'
               }`}
               title={
                 isTransitioning
                   ? '切换中...'
                   : isAutoPlaying
-                  ? '自动播放中（从左到右）'
-                  : '已暂停'
+                    ? '自动播放中（从左到右）'
+                    : '已暂停'
               }
             />
           </div>

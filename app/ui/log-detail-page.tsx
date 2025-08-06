@@ -131,17 +131,17 @@ export function LogDetailPage({
         >
           ← {dictionary.develop.title}
         </Link>
-        {collection && (
-          <div className="text-body-base pt-16 font-medium text-foreground">
-            {typeof collection.name === 'string'
-              ? collection.name
-              : (collection.name as Record<string, string>)?.[lang] ||
-                (collection.name as Record<string, string>)?.en ||
-                'Collection'}
-          </div>
-        )}
       </nav>
-
+      {/* 合集名称 */}
+      {collection && (
+        <div className="text-body-base pt-10 font-medium text-foreground">
+          {typeof collection.name === 'string'
+            ? collection.name
+            : (collection.name as Record<string, string>)?.[lang] ||
+              (collection.name as Record<string, string>)?.en ||
+              'Collection'}
+        </div>
+      )}
       {/* 合集中的所有文章 */}
       {allLogsInCollection && allLogsInCollection.length > 0 && (
         <div>
@@ -176,6 +176,12 @@ export function LogDetailPage({
           </div>
         </div>
       )}
+      {/* 自推广卡片 */}
+      <SelfPromotionCard
+        imageUrl={enrichedLogPost.mainImageUrl}
+        lang={lang}
+        className="pt-8"
+      />
     </div>
   )
 
@@ -197,7 +203,7 @@ export function LogDetailPage({
           <aside className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-8">
               {/* 计算偏移 */}
-              <div className="pt-14">
+              <div className="pt-2">
                 <SidebarContent />
               </div>
             </div>
@@ -208,7 +214,7 @@ export function LogDetailPage({
             <article className="max-w-3xl mx-auto">
               {/* 文章标题 */}
               <header className="mb-8 text-center">
-                <h1 className="text-display-md text-foreground mb-4">
+                <h1 className="text-display-sm md:text-display-md text-foreground mb-4">
                   {enrichedLogPost.title}
                 </h1>
                 <div className="text-body-sm text-muted-foreground space-x-4">
@@ -333,10 +339,10 @@ export function LogDetailPage({
                 <TableOfContentsContent />
               </div>
               {/* 推广卡片放在sticky容器内的底部 */}
-              <SelfPromotionCard
+              {/* <SelfPromotionCard
                 imageUrl={enrichedLogPost.mainImageUrl}
                 lang={lang}
-              />
+              /> */}
             </div>
           </aside>
         </div>

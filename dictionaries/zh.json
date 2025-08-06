@@ -1,6 +1,6 @@
 {
   "header": {
-    "title": "光影代码",
+    "title": "黑客与画册",
     "gallery": "影像馆",
     "log": "开发日志",
     "about": "关于",
@@ -11,7 +11,7 @@
     "source_code_available_on_": "源代码请看这里 👉"
   },
   "homepage": {
-    "title": "光影代码 (Code in Light)",
+    "title": "黑客与画册 (Code in Light)",
     "description": "展示个人摄影作品的线上画廊，built-in-public",
     "enter_button": "查看更多",
     "featured_collection": "精选系列",
@@ -37,7 +37,7 @@
   "clerk": {
     "signIn": {
       "start": {
-        "title": "登录光影代码",
+        "title": "登录黑客与画册",
         "subtitle": "欢迎回来！",
         "actionText": "还没有账户？",
         "actionLink": "注册"
@@ -130,9 +130,9 @@
     "tableOfContents": "目录"
   },
   "selfPromotion": {
-    "discoverMore": "发现更多精彩",
+    "discoverMore": "更多精彩瞬间",
     "featuredWork": "精选作品",
     "goToHome": "去首页",
-    "tryProjectDemo": "体验项目成品"
+    "tryProjectDemo": "体验项目demo"
   }
 }
