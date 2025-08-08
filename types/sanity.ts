@@ -156,3 +156,30 @@ export type EnrichedLogPost = LogPostDetails & {
     logs: LogPost[]
   } | null
 }
+
+// 社交链接类型
+export type SocialLink = {
+  platform: 'twitter' | 'linkedin' | 'github' | 'website' | 'email' | 'other'
+  url: string
+  label?: string
+}
+
+// Author 类型定义
+export type Author = {
+  _id: string
+  name: string
+  slug: string
+  imageUrl?: string
+  bio: {
+    zh?: PortableTextBlock[]
+    en?: PortableTextBlock[]
+  }
+  // SEO 字段
+  metaTitle?: MultilingualField
+  metaDescription?: MultilingualField
+  focusKeyword?: MultilingualField
+  socialImageUrl?: string
+  canonicalUrl?: string
+  noIndex?: boolean
+  socialLinks?: SocialLink[]
+}

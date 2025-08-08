@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Languages } from 'lucide-react'
 import { getTranslationMapAction } from '@/lib/actions'
+import { logger } from '@/lib/logger'
 import { useState } from 'react'
 
 export function LanguageSwitcher() {
@@ -43,7 +44,7 @@ export function LanguageSwitcher() {
           return `/${locale}/gallery/${targetSlug}`
         }
       } catch (error) {
-        console.error('Failed to get translation map:', error)
+        logger.error('LanguageSwitcher', 'Failed to get translation map for collection', error as Error)
       } finally {
         setIsLoading(false)
       }
@@ -65,7 +66,7 @@ export function LanguageSwitcher() {
           return `/${locale}/log/${targetSlug}`
         }
       } catch (error) {
-        console.error('Failed to get translation map:', error)
+        logger.error('LanguageSwitcher', 'Failed to get translation map for log', error as Error)
       } finally {
         setIsLoading(false)
       }

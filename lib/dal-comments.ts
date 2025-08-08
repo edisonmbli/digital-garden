@@ -1,6 +1,7 @@
 // lib/dal-comments.ts
 import { cache } from 'react'
 import prisma from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { 
   CommentDTO, 
   CommentQueryOptions, 
@@ -653,7 +654,7 @@ export async function batchModerateComments(
       }
       success++
     } catch (error) {
-      console.error(`Failed to moderate comment ${id}:`, error)
+      logger.error('DALComments', `Failed to moderate comment ${id}`, error as Error)
       failed++
     }
   }
@@ -976,7 +977,7 @@ export async function batchUpdateComments(
       success++
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '未知错误'
-      console.error(`Failed to ${action} comment ${id}:`, error)
+      logger.error('DALComments', `Failed to ${action} comment ${id}`, error as Error)
       errors.push(`评论 ${id}: ${errorMessage}`)
       failed++
     }
@@ -1168,7 +1169,7 @@ export async function testAllFields() {
     
     return { success: true, comment }
   } catch (error) {
-    console.error('All fields test failed:', error)
+    logger.error('DALComments', 'All fields test failed', error as Error)
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
   }
 }
@@ -1181,7 +1182,7 @@ export async function testDatabaseConnection() {
     const count = await prisma.comment.count()
     return { success: true, count }
   } catch (error) {
-    console.error('Database connection test failed:', error)
+    logger.error('DALComments', 'Database connection test failed', error as Error)
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
   }
 }

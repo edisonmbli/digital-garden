@@ -5,6 +5,7 @@ import { groq } from 'next-sanity'
 import { auth } from '@clerk/nextjs/server'
 import prisma from './prisma'
 import { client as sanityClient } from '@/sanity/client'
+import { logger } from './logger'
 import type { Locale } from '@/i18n-config'
 import type {
   DevCollection,
@@ -14,6 +15,7 @@ import type {
   LogPostDetails,
   EnrichedPhoto,
   EnrichedLogPost,
+  Author,
 } from '@/types/sanity'
 
 // --- Sanity Queries ---
@@ -198,7 +200,7 @@ export const getTranslationsBySlug = cache(
 
       return translations
     } catch (error) {
-      console.error('Error fetching translations:', error)
+      logger.error('DAL', 'Error fetching translations', error as Error)
       return []
     }
   }
@@ -685,3 +687,29 @@ export const getCollectionLogsBySlug = cache(
     return collectionData
   }
 )
+
+// 获取作者信息（用于 about 页面）
+export const getAuthorBySlug = cache(async (slug: string): Promise<Author | null> => {
+  const query = groq`*[_type == "author" && slug.current == $slug][0] {
+    _id,
+    name,
+    "slug": slug.current,
+    "imageUrl": image.asset->url,
+    bio,
+    // SEO 字段
+    metaTitle,
+    metaDescription,
+    focusKeyword,
+    "socialImageUrl": socialImage.asset->url,
+    canonicalUrl,
+    noIndex,
+    socialLinks
+  }`
+
+  const author = await sanityClient.fetch<Author | null>(
+    query, 
+    { slug },
+    { next: { tags: ['author-data'] } }
+  )
+  return author
+})

@@ -1,6 +1,7 @@
 import { type Metadata } from 'next'
 import { type Locale } from '@/i18n-config'
 import { urlFor } from '@/sanity/image'
+import type { Author } from '@/types/sanity'
 
 // SEO相关类型定义
 interface SEOFields {
@@ -525,4 +526,119 @@ function extractTextFromContent(content: unknown, maxLength: number = 160): stri
   }
   
   return ''
+}
+
+// 智能SEO内容生成 - Author类型（用于 about 页面）
+export function generateAuthorSEO({
+  author,
+  lang,
+  path,
+}: {
+  author: Author
+  lang: Locale
+  path: string
+}): Metadata {
+  // 多层级回退策略
+  const title = 
+    author.metaTitle?.[lang] || // 1. 优先使用对应语言的SEO标题
+    author.metaTitle?.en || // 2. 回退到英文SEO标题
+    `${author.name} - About` || // 3. 使用作者名称
+    (lang === 'zh' ? '关于我' : 'About Me') // 4. 最终回退
+
+  const description = 
+    author.metaDescription?.[lang] || // 1. 优先使用对应语言的SEO描述
+    author.metaDescription?.en || // 2. 回退到英文SEO描述
+    extractTextFromContent(author.bio[lang], 160) || // 3. 从简介提取
+    extractTextFromContent(author.bio.en, 160) || // 4. 从英文简介提取
+    generateAutoAuthorDescription(author, lang) // 5. 自动生成描述
+
+  // 社交图片处理
+  const socialImage = author.socialImageUrl || author.imageUrl
+  const ogImage = socialImage || '/og-image.jpg'
+
+  // 规范URL处理
+  const canonicalUrl = 
+    author.canonicalUrl ||
+    `${SEO_CONFIG.siteUrl}/${lang}${path}`
+
+  // 关键词处理
+  const focusKeyword = author.focusKeyword?.[lang] || author.focusKeyword?.en
+  const keywords = focusKeyword 
+    ? [focusKeyword, author.name, ...SEO_CONFIG.keywords[lang]]
+    : [author.name, ...SEO_CONFIG.keywords[lang]]
+
+  // noIndex处理
+  const noIndex = author.noIndex || false
+
+  // 构建结构化数据
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: author.name,
+    url: canonicalUrl,
+    ...(author.imageUrl && { image: author.imageUrl }),
+    ...(description && { description }),
+    ...(author.socialLinks && {
+      sameAs: author.socialLinks.map(link => link.url)
+    }),
+  }
+
+  return {
+    title,
+    description,
+    keywords,
+    alternates: {
+      canonical: canonicalUrl,
+      languages: {
+        'en': `/en${path}`,
+        'zh': `/zh${path}`,
+      },
+    },
+    openGraph: {
+      type: 'profile',
+      locale: lang === 'zh' ? 'zh_CN' : 'en_US',
+      url: canonicalUrl,
+      siteName: SEO_CONFIG.siteName,
+      title,
+      description,
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: `${author.name} - Profile Photo`,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      creator: SEO_CONFIG.social.twitter,
+      images: [ogImage],
+    },
+    robots: {
+      index: !noIndex,
+      follow: !noIndex,
+      googleBot: {
+        index: !noIndex,
+        follow: !noIndex,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    other: {
+      'application/ld+json': JSON.stringify(structuredData),
+    },
+  }
+}
+
+// 辅助函数：自动生成Author描述
+function generateAutoAuthorDescription(author: Author, lang: Locale): string {
+  const templates = {
+    en: `Learn more about ${author.name}. Discover their background, expertise, and creative journey in photography and web development.`,
+    zh: `了解更多关于${author.name}的信息。探索他们在摄影和网页开发方面的背景、专业知识和创作历程。`,
+  }
+  return templates[lang]
 }

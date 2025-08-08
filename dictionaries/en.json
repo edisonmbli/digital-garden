@@ -2,7 +2,7 @@
   "header": {
     "title": "Code in Light",
     "gallery": "Gallery",
-    "log": "Develop",
+    "log": "Develop Log",
     "about": "About",
     "signIn": "Sign In"
   },
@@ -110,5 +110,14 @@
     "featuredWork": "Featured Work",
     "goToHome": "Go to Home",
     "tryProjectDemo": "Try the project demo"
+  },
+  "about": {
+    "title": "About This Project",
+    "noBioContent": "No content available.",
+    "contactEmail": "Contact Email",
+    "copied": "Copied!",
+    "copy": "Copy",
+    "openEmail": "Open Email",
+    "close": "Close"
   }
 }

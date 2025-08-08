@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function GET() {
   try {
@@ -23,7 +24,7 @@ export async function GET() {
       }
     })
   } catch (error) {
-    console.error('获取 Post ID 失败:', error)
+    logger.error('API', '获取 Post ID 失败', error as Error)
     return NextResponse.json(
       { success: false, error: '查询失败' },
       { status: 500 }

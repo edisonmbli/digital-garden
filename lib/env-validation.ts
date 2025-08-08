@@ -4,6 +4,8 @@
  * 确保所有必需的环境变量都已正确设置
  */
 
+import { logger } from './logger'
+
 interface EnvConfig {
   name: string
   required: boolean
@@ -154,25 +156,27 @@ export function validateEnvironmentVariables(): ValidationResult {
  */
 export function printValidationResult(result: ValidationResult): void {
   if (process.env.NODE_ENV === 'development') {
-    console.log('\n🔍 环境变量验证结果:')
-    console.log(`总计: ${result.summary.total} | 必需: ${result.summary.required} | 已设置: ${result.summary.present} | 缺失: ${result.summary.missing}`)
+    logger.info('EnvValidation', '🔍 环境变量验证结果', {
+      summary: `总计: ${result.summary.total} | 必需: ${result.summary.required} | 已设置: ${result.summary.present} | 缺失: ${result.summary.missing}`
+    })
     
     if (result.errors.length > 0) {
-      console.log('\n❌ 错误:')
-      result.errors.forEach(error => console.log(error))
+      result.errors.forEach(error => {
+        logger.error('EnvValidation', error)
+      })
     }
     
     if (result.warnings.length > 0) {
-      console.log('\n⚠️  警告:')
-      result.warnings.forEach(warning => console.log(warning))
+      result.warnings.forEach(warning => {
+        logger.warn('EnvValidation', warning)
+      })
     }
     
     if (result.isValid) {
-      console.log('\n✅ 所有必需的环境变量都已正确设置')
+      logger.info('EnvValidation', '✅ 所有必需的环境变量都已正确设置')
     } else {
-      console.log('\n❌ 环境变量配置不完整，请检查上述错误')
+      logger.error('EnvValidation', '❌ 环境变量配置不完整，请检查上述错误')
     }
-    console.log('')
   }
 }
 

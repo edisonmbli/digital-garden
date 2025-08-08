@@ -4,6 +4,7 @@
 import { z } from 'zod'
 import * as commentsDal from '@/lib/dal-comments'
 import type { CreateCommentInput, UpdateCommentInput } from '@/types'
+import { logger } from './logger'
 
 // 测试用的创建评论Action（跳过身份验证）
 export async function testCreateCommentAction(input: {
@@ -52,7 +53,7 @@ export async function testCreateCommentAction(input: {
       data: comment
     }
   } catch (error) {
-    console.error('Test create comment action error:', error)
+    logger.error('TestActions', 'Test create comment action error', error as Error)
     return {
       success: false,
       error: '发表评论失败，请稍后重试',
@@ -101,7 +102,7 @@ export async function testUpdateCommentAction(commentId: string, input: {
       data: comment
     }
   } catch (error) {
-    console.error('Test update comment action error:', error)
+    logger.error('TestActions', 'Test update comment action error', error as Error)
     return {
       success: false,
       error: '更新评论失败，请稍后重试',
@@ -133,7 +134,7 @@ export async function testDeleteCommentAction(commentId: string, userId?: string
       data: comment
     }
   } catch (error) {
-    console.error('Test delete comment action error:', error)
+    logger.error('TestActions', 'Test delete comment action error', error as Error)
     return {
       success: false,
       error: '删除评论失败，请稍后重试',
@@ -165,7 +166,7 @@ export async function testApproveCommentAction(commentId: string, reason?: strin
       data: comment
     }
   } catch (error) {
-    console.error('Test approve comment action error:', error)
+    logger.error('TestActions', 'Test approve comment action error', error as Error)
     return {
       success: false,
       error: '审核操作失败，请稍后重试',
@@ -197,7 +198,7 @@ export async function testRejectCommentAction(commentId: string, reason?: string
       data: comment
     }
   } catch (error) {
-    console.error('Test reject comment action error:', error)
+    logger.error('TestActions', 'Test reject comment action error', error as Error)
     return {
       success: false,
       error: '审核操作失败，请稍后重试',
@@ -229,7 +230,7 @@ export async function testPinCommentAction(commentId: string, userId?: string) {
       data: comment
     }
   } catch (error) {
-    console.error('Test pin comment action error:', error)
+    logger.error('TestActions', 'Test pin comment action error', error as Error)
     return {
       success: false,
       error: '置顶操作失败，请稍后重试',
@@ -261,7 +262,7 @@ export async function testUnpinCommentAction(commentId: string) {
       data: comment
     }
   } catch (error) {
-    console.error('Test unpin comment action error:', error)
+    logger.error('TestActions', 'Test unpin comment action error', error as Error)
     return {
       success: false,
       error: '取消置顶操作失败，请稍后重试',

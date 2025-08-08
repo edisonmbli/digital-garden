@@ -39,6 +39,7 @@ import {
 } from '@/lib/admin-actions'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
+import { logger } from '@/lib/logger'
 
 // 客户端时间格式化组件，避免 Hydration 错误
 function ClientTimeAgo({ date }: { date: string | Date }) {
@@ -52,7 +53,7 @@ function ClientTimeAgo({ date }: { date: string | Date }) {
       try {
         setTimeAgo(formatDistanceToNow(new Date(date), { addSuffix: true, locale: zhCN }))
       } catch (error) {
-        console.error('Error formatting time:', error)
+        logger.error('CommentsManagement', 'Error formatting time', error as Error)
         setTimeAgo('时间格式错误')
       }
     }
@@ -312,8 +313,8 @@ export function CommentsManagementPanel({
         toast.error(result.error)
       }
     } catch (error) {
-      console.error('回复失败:', error)
-      toast.error('回复失败，请重试')
+      logger.error('CommentsManagement', '回复失败', error as Error)
+      toast.error('回复失败')
     } finally {
       setIsLoading(false)
     }
@@ -471,7 +472,7 @@ export function CommentsManagementPanel({
         // 优先返回中文标题，其次英文，最后返回默认值
         return parsedTitle?.zh || parsedTitle?.en || parsedTitle?.title || '无标题照片'
       } catch (error) {
-        console.error('Error parsing photo title:', error)
+        logger.error('CommentsManagement', 'Error parsing photo title', error as Error)
         return '无标题照片'
       }
     } else if (comment.post.contentType === 'log' && comment.post.logs?.length) {

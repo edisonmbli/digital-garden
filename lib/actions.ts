@@ -6,6 +6,7 @@ import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import * as dal from './dal'
 import * as commentsDal from './dal-comments'
+import { logger } from './logger'
 import { type Locale } from '@/i18n-config'
 import { checkRateLimit } from './rate-limit'
 import { checkSpam } from './anti-spam'
@@ -58,7 +59,7 @@ export async function getTranslationMapAction(
       return acc
     }, {} as Record<string, string>)
   } catch (error) {
-    console.error('Failed to fetch translation map:', error)
+    logger.error('Actions', 'Failed to fetch translation map', error as Error)
     return {}
   }
 }
@@ -418,7 +419,7 @@ export async function updateCommentAction(
       message: '评论更新成功',
     }
   } catch (error) {
-    console.error('Update comment action error:', error)
+    logger.error('Actions', 'Update comment action error', error as Error)
     return {
       success: false,
       error: '更新评论失败，请稍后重试',
@@ -489,7 +490,7 @@ export async function deleteCommentAction(commentId: string, reason?: string) {
       message: '评论删除成功',
     }
   } catch (error) {
-    console.error('Delete comment action error:', error)
+    logger.error('Actions', 'Delete comment action error', error as Error)
     return {
       success: false,
       error: '删除评论失败，请稍后重试',
@@ -557,7 +558,7 @@ export async function approveCommentAction(commentId: string, reason?: string) {
       message: '评论审核通过',
     }
   } catch (error) {
-    console.error('Approve comment action error:', error)
+    logger.error('Actions', 'Approve comment action error', error as Error)
     return {
       success: false,
       error: '审核操作失败，请稍后重试',
@@ -619,7 +620,7 @@ export async function rejectCommentAction(commentId: string, reason?: string) {
       message: '评论已被拒绝',
     }
   } catch (error) {
-    console.error('Reject comment action error:', error)
+    logger.error('Actions', 'Reject comment action error', error as Error)
     return {
       success: false,
       error: '审核操作失败，请稍后重试',
@@ -671,7 +672,7 @@ export async function pinCommentAction(commentId: string) {
       message: '评论置顶成功',
     }
   } catch (error) {
-    console.error('Pin comment action error:', error)
+    logger.error('Actions', 'Pin comment action error', error as Error)
     return {
       success: false,
       error: '置顶操作失败，请稍后重试',
@@ -723,7 +724,7 @@ export async function unpinCommentAction(commentId: string) {
       message: '取消置顶成功',
     }
   } catch (error) {
-    console.error('Unpin comment action error:', error)
+    logger.error('Actions', 'Unpin comment action error', error as Error)
     return {
       success: false,
       error: '取消置顶操作失败，请稍后重试',
@@ -761,7 +762,7 @@ export async function commentAction(postId: string, formData: FormData) {
       return { error: result.error }
     }
   } catch (error) {
-    console.error('Failed to create comment:', error)
+    logger.error('Actions', 'Failed to create comment', error as Error)
     return { error: 'Failed to create comment.' }
   }
 }
@@ -816,7 +817,7 @@ export async function getCommentsAction({
       },
     }
   } catch (error) {
-    console.error('Error fetching comments:', error)
+    logger.error('Actions', 'Error fetching comments', error as Error)
     return {
       success: false,
       error: 'Failed to fetch comments',

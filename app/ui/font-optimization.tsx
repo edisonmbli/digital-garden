@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { logger } from '@/lib/logger'
 
 // 字体预加载配置
 const FONT_PRELOAD_CONFIG = [
@@ -43,7 +44,7 @@ export function FontOptimization() {
         font.load().then(() => {
           document.fonts.add(font)
         }).catch((error) => {
-          console.warn('Font preload failed:', href, error)
+          logger.warn('FontOptimization', 'Font preload failed', { href, error: error instanceof Error ? error.message : String(error) })
         })
       })
 
@@ -125,7 +126,7 @@ export function trackFontPerformance() {
     const observer = new PerformanceObserver((list) => {
       list.getEntries().forEach((entry) => {
         if (entry.name.includes('font')) {
-          console.log('Font loading performance:', {
+          logger.info('FontOptimization', 'Font loading performance', {
             name: entry.name,
             duration: entry.duration,
             startTime: entry.startTime,

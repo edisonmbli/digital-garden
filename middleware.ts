@@ -4,6 +4,7 @@ import { i18n } from './i18n-config'
 import { match as matchLocale } from '@formatjs/intl-localematcher'
 import Negotiator from 'negotiator'
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { logger } from './lib/logger'
 
 /**
  * @description 获取请求中最匹配的地域语言。
@@ -26,7 +27,7 @@ function getLocale(request: NextRequest): string {
     return matchLocale(languages, i18n.locales, i18n.defaultLocale)
   } catch (error) {
     // 如果 locale 匹配失败，返回默认语言
-    console.warn('Locale matching failed, using default locale:', error)
+    logger.warn('Middleware', 'Locale matching failed, using default locale', { error: error instanceof Error ? error.message : String(error) })
     return i18n.defaultLocale
   }
 }

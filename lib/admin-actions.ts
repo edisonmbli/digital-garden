@@ -7,6 +7,7 @@ import prisma from '@/lib/prisma'
 import * as commentsDal from '@/lib/dal-comments'
 import { getSpamStats, getBlockedIPs, unblockIP, cleanupExpiredData } from '@/lib/anti-spam'
 import { CommentStatus } from '@/types'
+import { logger } from './logger'
 
 /**
  * 检查当前用户是否为管理员
@@ -472,7 +473,7 @@ export async function getCommentsForAdminAction(options: {
       message: '评论列表获取完成'
     }
   } catch (error) {
-    console.error('获取评论列表失败:', error)
+    logger.error('AdminActions', '获取评论列表失败', error as Error)
     return {
       success: false,
       error: '获取评论列表失败',

@@ -7,6 +7,7 @@ import { CommentItem } from './comment-item'
 import { Loader2 } from 'lucide-react'
 import { useI18n } from '@/app/context/i18n-provider'
 import { getCommentsAction } from '@/lib/actions'
+import { logger } from '@/lib/logger'
 
 interface CommentListProps {
   postId: string
@@ -61,7 +62,7 @@ export function CommentList({
       setHasMore(result.data.hasMore)
       setInitialized(true)
     } catch (error) {
-      console.error('Error loading comments:', error)
+      logger.error('CommentList', 'Error loading comments', error as Error)
     } finally {
       setLoading(false)
     }

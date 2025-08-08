@@ -7,6 +7,7 @@ import {
   unblockIPAction,
   cleanupSpamDataAction,
 } from '@/lib/admin-actions'
+import { logger } from '@/lib/logger'
 
 interface SpamStats {
   blockedIPs: number
@@ -60,7 +61,7 @@ export default function SpamManagementPanel() {
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取数据失败')
-      console.error('获取反恶意攻击数据失败:', err)
+      logger.error('SpamManagement', '获取反恶意攻击数据失败', err as Error)
     } finally {
       setLoading(false)
     }
@@ -75,7 +76,7 @@ export default function SpamManagementPanel() {
       await fetchData()
     } catch (err) {
       setError(err instanceof Error ? err.message : '解封IP失败')
-      console.error('解封IP失败:', err)
+      logger.error('SpamManagement', '解封IP失败', err as Error)
     }
   }
 
@@ -88,7 +89,7 @@ export default function SpamManagementPanel() {
       await fetchData()
     } catch (err) {
       setError(err instanceof Error ? err.message : '清理数据失败')
-      console.error('清理数据失败:', err)
+      logger.error('SpamManagement', '清理数据失败', err as Error)
     }
   }
 

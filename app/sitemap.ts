@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { getAllCollections, getLogPosts } from '@/lib/dal'
+import { logger } from '@/lib/logger'
 import { type Locale } from '@/i18n-config'
 
 // 安全的日期创建函数
@@ -99,7 +100,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     
     return [...staticUrls, ...collectionUrls, ...logUrls]
   } catch (error) {
-    console.error('Error generating sitemap:', error)
+    logger.error('Sitemap', 'Error generating sitemap', error as Error)
     // 如果动态内容获取失败，至少返回静态页面
     return staticUrls
   }

@@ -138,13 +138,13 @@ const components: PortableTextComponents = {
     },
     normal: ({ children }) => {
       return (
-        <p className="text-body-sm sm:text-body-sm leading-6 [&:not(:first-child)]:mt-2">
+        <p className="text-body-sm sm:text-body-sm leading-6 [&:not(:first-child)]:mt-4">
           {children}
         </p>
       )
     },
     blockquote: ({ children }) => (
-      <blockquote className="relative border-l-4 border-slate-300 dark:border-slate-600 bg-slate-50/50 dark:bg-slate-900/30 pl-6 pr-4 py-2 my-2 rounded-r-lg">
+      <blockquote className="relative border-l-4 border-blue-300/60 dark:border-blue-400/80 bg-slate-200/40 dark:bg-zinc-400/20 pl-6 pr-4 py-2 my-2 rounded-r-lg">
         <div className="absolute top-2 left-2 text-slate-400 dark:text-slate-500 text-body-lg leading-none">
           &ldquo;
         </div>

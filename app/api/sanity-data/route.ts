@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { client } from '../../../sanity/client'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 })
     }
   } catch (error) {
-    console.error('Sanity API Error:', error)
+    logger.error('API', 'Sanity API Error', error as Error)
     return NextResponse.json(
       { error: 'Failed to fetch data from Sanity' },
       { status: 500 }

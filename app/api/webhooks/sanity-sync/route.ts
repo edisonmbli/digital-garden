@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isValidSignature, SIGNATURE_HEADER_NAME } from '@sanity/webhook'
+import { revalidateTag } from 'next/cache'
 import { client } from '@/sanity/client'
 import prisma from '@/lib/prisma'
 import { logger } from '@/lib/logger'
@@ -32,6 +33,17 @@ type SanityDocument = {
   sanityAssetId?: string
   titleJson?: string
   descriptionJson?: string
+  // Author specific fields
+  bio?: Array<Record<string, unknown>> // PortableText blocks
+  socialLinks?: Array<{
+    platform: string
+    url: string
+  }>
+  profileImage?: {
+    asset: {
+      _ref: string
+    }
+  }
 }
 
 // Define the webhook payload based on beforeState/afterState
@@ -138,7 +150,7 @@ async function getI18nInfo(documentId: string): Promise<{
   `
   const params = { documentId }
   try {
-    console.log(`🔍 Executing GROQ query with timeout for ${documentId}...`)
+    logger.debug('WebhookI18n', 'Executing GROQ query with timeout', { documentId })
 
     const queryPromise = client.fetch(query, params)
     const timeoutPromise = new Promise((_, reject) =>
@@ -151,21 +163,21 @@ async function getI18nInfo(documentId: string): Promise<{
 
     const result = await Promise.race([queryPromise, timeoutPromise])
 
-    console.log(
-      `📊 i18n query result for ${documentId}:`,
-      JSON.stringify(result, null, 2)
-    )
+    logger.debug('WebhookI18n', 'i18n query result', { 
+      documentId, 
+      result: JSON.stringify(result, null, 2) 
+    })
 
     const i18n_id = result?.i18n_metadata?.i18n_id || documentId
     const related_document_ids = result?.i18n_metadata
       ?.related_document_ids || [documentId]
     const i18n_lang = result?.i18n_lang || null
 
-    console.log(
-      `📋 Final i18n info: i18n_id=${i18n_id}, lang=${i18n_lang}, related_ids=${related_document_ids.join(
-        ', '
-      )}`
-    )
+    logger.debug('WebhookI18n', 'Final i18n info extracted', {
+      i18n_id,
+      i18n_lang,
+      related_document_ids
+    })
 
     return {
       i18n_id,
@@ -173,13 +185,11 @@ async function getI18nInfo(documentId: string): Promise<{
       related_document_ids,
     }
   } catch (error) {
-    console.error(`❌ Error fetching i18n info for ${documentId}:`, error)
-    console.log(`🔄 Falling back to document ID as i18n_id for ${documentId}`)
+    logger.error('WebhookI18n', 'Error fetching i18n info', error as Error, { documentId })
+    logger.info('WebhookI18n', 'Falling back to document ID as i18n_id', { documentId })
 
     try {
-      console.log(
-        `🔍 Attempting to get language info only for ${documentId}...`
-      )
+      logger.debug('WebhookI18n', 'Attempting to get language info only', { documentId })
       const langQuery = `*[_id==$documentId][0].language`
       const langResult = await Promise.race([
         client.fetch(langQuery, params),
@@ -190,17 +200,14 @@ async function getI18nInfo(documentId: string): Promise<{
           )
         ),
       ])
-      console.log(`📋 Language fallback result: ${langResult}`)
+      logger.debug('WebhookI18n', 'Language fallback result', { documentId, langResult })
       return {
         i18n_id: documentId,
         i18n_lang: langResult || null,
         related_document_ids: [documentId],
       }
     } catch (langError) {
-      console.error(
-        `❌ Language fallback also failed for ${documentId}:`,
-        langError
-      )
+      logger.error('WebhookI18n', 'Language fallback also failed', langError as Error, { documentId })
       return {
         i18n_id: documentId,
         i18n_lang: null,
@@ -217,11 +224,11 @@ async function consolidateLogI18nRecords(
   language: string
 ): Promise<{ postId: string; shouldCreateLog: boolean }> {
   return await prisma.$transaction(async (tx) => {
-    console.log(
-      `🔍 Consolidating log i18n records: i18n_id=${i18n_id}, related_ids=${related_document_ids.join(
-        ', '
-      )}, lang=${language}`
-    )
+    logger.debug('WebhookLogI18n', 'Consolidating log i18n records', {
+      i18n_id,
+      related_document_ids,
+      language
+    })
 
     // 1. Find an existing post using either the i18n_id or any of the related document IDs
     let existingPost = await tx.post.findFirst({
@@ -233,20 +240,23 @@ async function consolidateLogI18nRecords(
     })
 
     if (existingPost) {
-      console.log(
-        `📋 Found existing post ${existingPost.id} with sanityDocumentId ${existingPost.sanityDocumentId}`
-      )
+      logger.debug('WebhookLogI18n', 'Found existing post', {
+        postId: existingPost.id,
+        sanityDocumentId: existingPost.sanityDocumentId
+      })
 
       // If the post is not using the main i18n_id, update it
       if (existingPost.sanityDocumentId !== i18n_id) {
-        console.log(
-          `🔄 Migrating post ${existingPost.id} from ${existingPost.sanityDocumentId} to ${i18n_id}`
-        )
+        logger.info('WebhookLogI18n', 'Migrating post to use i18n_id', {
+          postId: existingPost.id,
+          from: existingPost.sanityDocumentId,
+          to: i18n_id
+        })
         existingPost = await tx.post.update({
           where: { id: existingPost.id },
           data: { sanityDocumentId: i18n_id },
         })
-        console.log(`✅ Post updated to use i18n_id: ${existingPost.id}`)
+        logger.info('WebhookLogI18n', 'Post updated to use i18n_id', { postId: existingPost.id })
       }
 
       // Check if a log entry for this language already exists
@@ -259,11 +269,11 @@ async function consolidateLogI18nRecords(
         },
       })
 
-      console.log(
-        `Existing log for postId ${
-          existingPost.id
-        } and lang ${language}: ${!!existingLog}`
-      )
+      logger.debug('WebhookLogI18n', 'Checked existing log', {
+        postId: existingPost.id,
+        language,
+        hasExistingLog: !!existingLog
+      })
 
       return {
         postId: existingPost.id,
@@ -272,9 +282,7 @@ async function consolidateLogI18nRecords(
     }
 
     // 2. No existing post found, create a new one with the main i18n_id
-    console.log(
-      `🆕 No existing post found. Creating new post with i18n_id: ${i18n_id}`
-    )
+    logger.info('WebhookLogI18n', 'No existing post found, creating new post', { i18n_id })
     const newPost = await tx.post.create({
       data: {
         sanityDocumentId: i18n_id, // Use the translation group ID
@@ -283,7 +291,7 @@ async function consolidateLogI18nRecords(
       },
     })
 
-    console.log(`✅ New post created: ${newPost.id}`)
+    logger.info('WebhookLogI18n', 'New post created', { postId: newPost.id })
 
     return {
       postId: newPost.id,
@@ -318,12 +326,10 @@ async function handleCollectionCreate(
       ? descObj?.zh || null
       : payload.descriptionZh || null
 
-  console.log('🆕 处理 Collection 创建操作', {
+  logger.info('WebhookCollection', 'Processing Collection create operation', {
     id: payload._id,
     nameEn,
     nameZh,
-    descriptionEn,
-    descriptionZh,
     slug: payload.slug?.current,
     isFeatured: payload.isFeatured,
   })
@@ -337,7 +343,7 @@ async function handleCollectionCreate(
     })
 
     if (existing) {
-      console.log('Collection already exists, skipping creation')
+      logger.debug('WebhookCollection', 'Collection already exists, skipping creation', { id: payload._id })
       return
     }
 
@@ -353,9 +359,9 @@ async function handleCollectionCreate(
       },
     })
 
-    console.log('✅ Collection created successfully')
+    logger.info('WebhookCollection', 'Collection created successfully', { id: payload._id })
   } catch (error) {
-    console.error('❌ Error creating collection:', error)
+    logger.error('WebhookCollection', 'Error creating collection', error as Error, { id: payload._id })
     throw error
   }
 }
@@ -386,12 +392,10 @@ async function handleCollectionUpdate(
       ? descObj?.zh || null
       : payload.descriptionZh || null
 
-  console.log('📝 处理 Collection 更新操作', {
+  logger.info('WebhookCollection', 'Processing Collection update operation', {
     id: payload._id,
     nameEn,
     nameZh,
-    descriptionEn,
-    descriptionZh,
     slug: payload.slug?.current,
     isFeatured: payload.isFeatured,
   })
@@ -421,9 +425,13 @@ async function handleCollectionUpdate(
       },
     })
 
-    console.log(`✅ Upserted collection: ${result.id} (${result.nameEn})`)
+    logger.info('WebhookCollection', 'Collection upserted successfully', { 
+      id: payload._id, 
+      resultId: result.id, 
+      nameEn: result.nameEn 
+    })
   } catch (error) {
-    console.error('❌ Error upserting collection:', error)
+    logger.error('WebhookCollection', 'Error upserting collection', error as Error, { id: payload._id })
     throw error
   }
 }
@@ -431,7 +439,7 @@ async function handleCollectionUpdate(
 async function handleCollectionDelete(
   payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
 ) {
-  console.log('🗑️ 处理 Collection 删除操作', {
+  logger.info('WebhookCollection', 'Processing Collection delete operation', {
     id: payload._id,
     i18n_id: payload.i18n_id,
   })
@@ -448,10 +456,13 @@ async function handleCollectionDelete(
       },
     })
 
-    console.log(`✅ Soft deleted ${updated.count} collection(s)`)
+    logger.info('WebhookCollection', 'Collection soft deleted successfully', { 
+      id: payload._id, 
+      count: updated.count 
+    })
     await recordWebhookCall('delete', 'collection', payload._id, true)
   } catch (error) {
-    console.error('❌ Error deleting collection:', error)
+    logger.error('WebhookCollection', 'Error deleting collection', error as Error, { id: payload._id })
     await recordWebhookCall(
       'delete',
       'collection',
@@ -490,12 +501,10 @@ async function handleDevCollectionCreate(
       ? descObj?.zh || null
       : payload.descriptionZh || null
 
-  console.log('🆕 处理 DevCollection 创建操作', {
+  logger.info('WebhookDevCollection', 'Processing DevCollection create operation', {
     id: payload._id,
     nameEn,
     nameZh,
-    descriptionEn,
-    descriptionZh,
     slug: payload.slug?.current,
     isFeatured: payload.isFeatured,
   })
@@ -509,7 +518,7 @@ async function handleDevCollectionCreate(
     })
 
     if (existing) {
-      console.log('DevCollection already exists, skipping creation')
+      logger.debug('WebhookDevCollection', 'DevCollection already exists, skipping creation', { id: payload._id })
       return
     }
 
@@ -526,9 +535,9 @@ async function handleDevCollectionCreate(
       },
     })
 
-    console.log('✅ DevCollection created successfully')
+    logger.info('WebhookDevCollection', 'DevCollection created successfully', { id: payload._id })
   } catch (error) {
-    console.error('❌ Error creating devCollection:', error)
+    logger.error('WebhookDevCollection', 'Error creating devCollection', error as Error, { id: payload._id })
     throw error
   }
 }
@@ -559,12 +568,10 @@ async function handleDevCollectionUpdate(
       ? descObj?.zh || null
       : payload.descriptionZh || null
 
-  console.log('📝 处理 DevCollection 更新操作', {
+  logger.info('WebhookDevCollection', 'Processing DevCollection update operation', {
     id: payload._id,
     nameEn,
     nameZh,
-    descriptionEn,
-    descriptionZh,
     slug: payload.slug?.current,
     isFeatured: payload.isFeatured,
   })
@@ -596,9 +603,13 @@ async function handleDevCollectionUpdate(
       },
     })
 
-    console.log(`✅ Upserted devCollection: ${result.id} (${result.nameEn})`)
+    logger.info('WebhookDevCollection', 'DevCollection upserted successfully', { 
+      id: payload._id, 
+      resultId: result.id, 
+      nameEn: result.nameEn 
+    })
   } catch (error) {
-    console.error('❌ Error upserting devCollection:', error)
+    logger.error('WebhookDevCollection', 'Error upserting devCollection', error as Error, { id: payload._id })
     throw error
   }
 }
@@ -606,7 +617,7 @@ async function handleDevCollectionUpdate(
 async function handleDevCollectionDelete(
   payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
 ) {
-  console.log('🗑️ 处理 DevCollection 删除操作', {
+  logger.info('WebhookDevCollection', 'Processing DevCollection delete operation', {
     id: payload._id,
     i18n_id: payload.i18n_id,
   })
@@ -623,10 +634,13 @@ async function handleDevCollectionDelete(
       },
     })
 
-    console.log(`✅ Soft deleted ${updated.count} devCollection(s)`)
+    logger.info('WebhookDevCollection', 'DevCollection soft deleted successfully', { 
+      id: payload._id, 
+      count: updated.count 
+    })
     await recordWebhookCall('delete', 'devCollection', payload._id, true)
   } catch (error) {
-    console.error('❌ Error deleting devCollection:', error)
+    logger.error('WebhookDevCollection', 'Error deleting devCollection', error as Error, { id: payload._id })
     await recordWebhookCall(
       'delete',
       'devCollection',
@@ -645,7 +659,7 @@ async function handleLogCreate(
     related_document_ids: string[]
   }
 ) {
-  console.log('🆕 处理 Log 创建操作', {
+  logger.info('WebhookLog', 'Processing Log create operation', {
     id: payload._id,
     i18n_id: payload.i18n_id,
     lang: payload.i18n_lang,
@@ -663,9 +677,10 @@ async function handleLogCreate(
     )
 
     if (!shouldCreateLog) {
-      console.log(
-        'Log entry for this language already exists, skipping creation'
-      )
+      logger.debug('WebhookLog', 'Log entry for this language already exists, skipping creation', {
+        id: payload._id,
+        language
+      })
       return
     }
 
@@ -682,9 +697,9 @@ async function handleLogCreate(
       },
     })
 
-    console.log('✅ Log created successfully')
+    logger.info('WebhookLog', 'Log created successfully', { id: payload._id, postId, language })
   } catch (error) {
-    console.error('❌ Error creating log:', error)
+    logger.error('WebhookLog', 'Error creating log', error as Error, { id: payload._id })
     throw error
   }
 }
@@ -696,7 +711,7 @@ async function handleLogUpdate(
     related_document_ids: string[]
   }
 ) {
-  console.log('📝 处理 Log 更新操作', {
+  logger.info('WebhookLog', 'Processing Log update operation', {
     id: payload._id,
     i18n_id: payload.i18n_id,
     lang: payload.i18n_lang,
@@ -728,7 +743,7 @@ async function handleLogUpdate(
           language: language,
         },
       })
-      console.log('✅ Log created during update operation')
+      logger.info('WebhookLog', 'Log created during update operation', { id: payload._id, postId, language })
     } else {
       // Update existing log entry
       await prisma.log.updateMany({
@@ -746,10 +761,10 @@ async function handleLogUpdate(
           tags: payload.tags || [],
         },
       })
-      console.log('✅ Log updated successfully')
+      logger.info('WebhookLog', 'Log updated successfully', { id: payload._id, postId, language })
     }
   } catch (error) {
-    console.error('❌ Error updating log:', error)
+    logger.error('WebhookLog', 'Error updating log', error as Error, { id: payload._id })
     throw error
   }
 }
@@ -757,7 +772,7 @@ async function handleLogUpdate(
 async function handleLogDelete(
   payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
 ) {
-  console.log('🗑️ 处理 Log 删除操作', {
+  logger.info('WebhookLog', 'Processing Log delete operation', {
     id: payload._id,
     i18n_id: payload.i18n_id,
   })
@@ -776,12 +791,13 @@ async function handleLogDelete(
       },
     })
 
-    console.log(
-      `✅ Soft deleted ${updated.count} log post(s) for document: ${documentId}`
-    )
+    logger.info('WebhookLog', 'Log post soft deleted successfully', {
+      documentId,
+      count: updated.count
+    })
     await recordWebhookCall('delete', 'log', documentId, true)
   } catch (error) {
-    console.error('❌ Error deleting log:', error)
+    logger.error('WebhookLog', 'Error deleting log', error as Error, { id: payload._id })
     await recordWebhookCall(
       'delete',
       'log',
@@ -802,10 +818,10 @@ async function handlePhotoCreate(
     ? JSON.stringify(payload.description)
     : null
 
-  console.log('🆕 处理 Photo 创建操作', {
+  logger.info('WebhookPhoto', 'Processing Photo create operation', {
     id: payload._id,
-    titleJson,
-    descriptionJson,
+    hasTitle: !!titleJson,
+    hasDescription: !!descriptionJson,
   })
 
   try {
@@ -834,7 +850,7 @@ async function handlePhotoCreate(
     })
 
     if (existingPhoto) {
-      console.log('Photo already exists, skipping creation')
+      logger.debug('WebhookPhoto', 'Photo already exists, skipping creation', { id: payload._id })
       return
     }
 
@@ -848,9 +864,9 @@ async function handlePhotoCreate(
       },
     })
 
-    console.log('✅ Photo created successfully')
+    logger.info('WebhookPhoto', 'Photo created successfully', { id: payload._id, postId: post.id })
   } catch (error) {
-    console.error('❌ Error creating photo:', error)
+    logger.error('WebhookPhoto', 'Error creating photo', error as Error, { id: payload._id })
     throw error
   }
 }
@@ -864,10 +880,10 @@ async function handlePhotoUpdate(
     ? JSON.stringify(payload.description)
     : null
 
-  console.log('📝 处理 Photo 更新操作', {
+  logger.info('WebhookPhoto', 'Processing Photo update operation', {
     id: payload._id,
-    titleJson,
-    descriptionJson,
+    hasTitle: !!titleJson,
+    hasDescription: !!descriptionJson,
   })
 
   try {
@@ -880,7 +896,7 @@ async function handlePhotoUpdate(
     })
 
     if (!post) {
-      console.log('Post not found, creating new one')
+      logger.debug('WebhookPhoto', 'Post not found, creating new one', { id: payload._id })
       await handlePhotoCreate(payload)
       return
     }
@@ -907,9 +923,9 @@ async function handlePhotoUpdate(
       })
     }
 
-    console.log('✅ Photo updated successfully')
+    logger.info('WebhookPhoto', 'Photo updated successfully', { id: payload._id, postId: post.id })
   } catch (error) {
-    console.error('❌ Error updating photo:', error)
+    logger.error('WebhookPhoto', 'Error updating photo', error as Error, { id: payload._id })
     throw error
   }
 }
@@ -917,7 +933,7 @@ async function handlePhotoUpdate(
 async function handlePhotoDelete(
   payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
 ) {
-  console.log('🗑️ 处理 Photo 删除操作', {
+  logger.info('WebhookPhoto', 'Processing Photo delete operation', {
     id: payload._id,
   })
 
@@ -935,12 +951,13 @@ async function handlePhotoDelete(
       },
     })
 
-    console.log(
-      `✅ Soft deleted ${updated.count} photo post(s) for document: ${documentId}`
-    )
+    logger.info('WebhookPhoto', 'Photo post soft deleted successfully', {
+      documentId,
+      count: updated.count
+    })
     await recordWebhookCall('delete', 'photo', documentId, true)
   } catch (error) {
-    console.error('❌ Error deleting photo:', error)
+    logger.error('WebhookPhoto', 'Error deleting photo', error as Error, { id: payload._id })
     await recordWebhookCall(
       'delete',
       'photo',
@@ -952,12 +969,72 @@ async function handlePhotoDelete(
   }
 }
 
+// Author handlers
+async function handleAuthorCreate(
+  payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
+) {
+  logger.info('WebhookAuthor', 'Processing Author create operation', {
+    id: payload._id,
+    slug: payload.slug?.current,
+  })
+
+  try {
+    // Author documents don't need database storage in this system
+    // They are fetched directly from Sanity when needed
+    // Just trigger revalidation for about pages
+    revalidateTag('author-data')
+
+    logger.info('WebhookAuthor', 'Author created, about pages revalidated', { id: payload._id })
+  } catch (error) {
+    logger.error('WebhookAuthor', 'Error handling author creation', error as Error, { id: payload._id })
+    throw error
+  }
+}
+
+async function handleAuthorUpdate(
+  payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
+) {
+  logger.info('WebhookAuthor', 'Processing Author update operation', {
+    id: payload._id,
+    slug: payload.slug?.current,
+  })
+
+  try {
+    // Trigger revalidation for about pages when author data changes
+    revalidateTag('author-data')
+
+    logger.info('WebhookAuthor', 'Author updated, about pages revalidated', { id: payload._id })
+  } catch (error) {
+    logger.error('WebhookAuthor', 'Error handling author update', error as Error, { id: payload._id })
+    throw error
+  }
+}
+
+async function handleAuthorDelete(
+  payload: SanityDocument & { i18n_id: string; i18n_lang: string | null }
+) {
+  logger.info('WebhookAuthor', 'Processing Author delete operation', {
+    id: payload._id,
+    slug: payload.slug?.current,
+  })
+
+  try {
+    // Trigger revalidation for about pages when author is deleted
+    revalidateTag('author-data')
+
+    logger.info('WebhookAuthor', 'Author deleted, about pages revalidated', { id: payload._id })
+  } catch (error) {
+    logger.error('WebhookAuthor', 'Error handling author deletion', error as Error, { id: payload._id })
+    throw error
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // 1. Rate limiting check
     const withinRateLimit = await checkRateLimit()
     if (!withinRateLimit) {
-      console.warn('🚫 Webhook rate limit exceeded')
+      logger.warn('WebhookMain', 'Webhook rate limit exceeded')
       return NextResponse.json(
         { error: 'Rate limit exceeded' },
         { status: 429 }
@@ -969,7 +1046,7 @@ export async function POST(request: NextRequest) {
     const body = await request.text()
 
     if (!process.env.SANITY_WEBHOOK_SECRET) {
-      console.error('🚨 SANITY_WEBHOOK_SECRET is not set')
+      logger.error('WebhookMain', 'SANITY_WEBHOOK_SECRET is not set')
       return NextResponse.json(
         { error: 'Server configuration error' },
         { status: 500 }
@@ -991,23 +1068,18 @@ export async function POST(request: NextRequest) {
       payload.operation === 'delete' ? payload.beforeState : payload.afterState
 
     if (!document) {
-      console.error(
-        'Webhook error: Document data is missing in payload',
-        payload
-      )
+      logger.error('WebhookMain', 'Document data is missing in payload', new Error('Missing document'), { payload })
       return NextResponse.json(
         { error: 'Document data is missing in payload' },
         { status: 400 }
       )
     }
 
-    console.log(
-      `📥 Sanity ${payload.operation} webhook received for document:`,
-      {
-        type: document._type,
-        id: document._id,
-      }
-    )
+    logger.info('WebhookMain', 'Sanity webhook received', {
+      operation: payload.operation,
+      type: document._type,
+      id: document._id,
+    })
 
     // 4. Get i18n info
     const { i18n_id, i18n_lang, related_document_ids } = await getI18nInfo(
@@ -1084,16 +1156,31 @@ export async function POST(request: NextRequest) {
           }
           break
 
+        case 'author':
+          switch (payload.operation) {
+            case 'create':
+              await handleAuthorCreate(documentWithI18n)
+              break
+            case 'update':
+              await handleAuthorUpdate(documentWithI18n)
+              break
+            case 'delete':
+              await handleAuthorDelete(documentWithI18n)
+              break
+          }
+          break
+
         default:
-          console.warn(`Unhandled document type: ${document._type}`)
+          logger.warn('WebhookMain', 'Unhandled document type', { type: document._type })
       }
     } catch (err) {
       success = false
       error = err instanceof Error ? err.message : 'Unknown error'
-      console.error(
-        `❌ Error handling ${payload.operation} for ${document._type}:`,
-        err
-      )
+      logger.error('WebhookMain', 'Error handling webhook operation', err as Error, {
+        operation: payload.operation,
+        type: document._type,
+        id: document._id
+      })
     }
 
     // Record the webhook call
@@ -1119,7 +1206,7 @@ export async function POST(request: NextRequest) {
       documentId: document._id,
     })
   } catch (error) {
-    console.error('Webhook error:', error)
+    logger.error('WebhookMain', 'Webhook processing error', error as Error)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
