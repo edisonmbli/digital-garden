@@ -72,6 +72,13 @@ export default async function LogPostPage({
   // 获取翻译映射 - 暂时使用空对象，后续可以实现
   const translationMap: Record<string, string> = {}
 
+  // 获取版权数据
+  const copyrightData = {
+    title: dictionary.copyright?.tutorial?.title,
+    content: dictionary.copyright?.tutorial?.content,
+    minimal: dictionary.copyright?.tutorial?.minimal,
+  }
+
   // 生成结构化数据 - 使用与metadata相同的description逻辑
   let structuredDescription = ''
   if (enrichedLogPost.excerpt) {
@@ -133,6 +140,7 @@ export default async function LogPostPage({
           }
         }}
         translationMap={translationMap}
+        copyrightData={copyrightData}
       />
     </>
   )

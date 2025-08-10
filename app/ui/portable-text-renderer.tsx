@@ -1,34 +1,12 @@
 // app/ui/portable-text-renderer.tsx
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { PortableText, PortableTextComponents } from '@portabletext/react'
 import { PortableTextBlock } from '@portabletext/types'
-import { useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
-import Prism from 'prismjs'
-
-// 导入常用语言支持
-import 'prismjs/components/prism-javascript'
-import 'prismjs/components/prism-typescript'
-import 'prismjs/components/prism-jsx'
-import 'prismjs/components/prism-tsx'
-import 'prismjs/components/prism-css'
-import 'prismjs/components/prism-scss'
-import 'prismjs/components/prism-json'
-import 'prismjs/components/prism-bash'
-import 'prismjs/components/prism-shell-session'
-import 'prismjs/components/prism-markdown'
-import 'prismjs/components/prism-yaml'
-import 'prismjs/components/prism-sql'
-import 'prismjs/components/prism-python'
-import 'prismjs/components/prism-java'
-import 'prismjs/components/prism-go'
-import 'prismjs/components/prism-rust'
-
-// 导入主题样式
-import 'prismjs/themes/prism-tomorrow.css'
+import { Highlight, themes } from 'prism-react-renderer'
 
 interface PortableTextRendererProps {
   content: PortableTextBlock[]
@@ -353,15 +331,10 @@ const components: PortableTextComponents = {
       </figure>
     ),
 
-    // 代码块
+    // 代码块 - 使用语法高亮
     codeBlock: ({ value }) => {
       const language = value.language || 'text'
       const code = value.code || ''
-
-      // 使用Prism进行语法高亮
-      const highlightedCode = Prism.languages[language]
-        ? Prism.highlight(code, Prism.languages[language], language)
-        : code
 
       return (
         <div className="my-2 group">
@@ -378,19 +351,31 @@ const components: PortableTextComponents = {
             </div>
           )}
           <div className="relative">
-            <pre
-              className={cn(
-                'overflow-x-auto bg-gray-300/20 dark:bg-gray-100/10 p-2 text-code-sm font-mono',
-                'border border-slate-200 dark:border-slate-700',
-                value.filename ? 'rounded-b-lg' : 'rounded-lg',
-                'scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
+            <Highlight
+               theme={themes.github}
+               code={code}
+               language={language}
+             >
+               {({ style, tokens, getLineProps, getTokenProps }) => (
+                <pre
+                  className={cn(
+                    'overflow-x-auto bg-gray-300/20 dark:bg-gray-100/10 p-2 text-code-sm font-mono',
+                    'border border-slate-200 dark:border-slate-700',
+                    value.filename ? 'rounded-b-lg' : 'rounded-lg',
+                    'scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
+                  )}
+                  style={style}
+                >
+                  {tokens.map((line, i) => (
+                    <div key={i} {...getLineProps({ line })}>
+                      {line.map((token, key) => (
+                        <span key={key} {...getTokenProps({ token })} />
+                      ))}
+                    </div>
+                  ))}
+                </pre>
               )}
-            >
-              <code
-                className="text-slate-800 dark:text-slate-200"
-                dangerouslySetInnerHTML={{ __html: highlightedCode }}
-              />
-            </pre>
+            </Highlight>
             {!value.filename && language && language !== 'text' && (
               <div className="absolute top-2 right-2 text-caption-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-gray-600/50 px-2 py-1 rounded uppercase">
                 {language}
@@ -533,9 +518,8 @@ export function PortableTextRenderer({
   content,
   onHeadingsExtracted,
 }: PortableTextRendererProps) {
-  // 提取标题并通知父组件
   useEffect(() => {
-    if (onHeadingsExtracted) {
+    if (onHeadingsExtracted && content) {
       const headings = extractHeadings(content)
       onHeadingsExtracted(headings)
     }

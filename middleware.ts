@@ -5,6 +5,13 @@ import { match as matchLocale } from '@formatjs/intl-localematcher'
 import Negotiator from 'negotiator'
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { logger } from './lib/logger'
+import { 
+  isImageRequest, 
+  isSanityImage, 
+  checkImageReferer, 
+  logImageAccess, 
+  createHotlinkProtectionResponse 
+} from './lib/image-protection'
 
 /**
  * @description 获取请求中最匹配的地域语言。
@@ -41,6 +48,20 @@ const isProtectedRoute = createRouteMatcher([
 // 导出我们的主中间件函数，由 Clerk 的 clerkMiddleware 进行包装
 export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname
+  
+  // --- 步骤零：图片防盗链保护 (Image Protection First) ---
+  // 检查是否为图片请求，如果是则进行防盗链检查
+  if (isImageRequest(pathname) || isSanityImage(pathname)) {
+    const isAllowed = checkImageReferer(req)
+    
+    // 记录访问日志
+    logImageAccess(req, isAllowed)
+    
+    // 如果不允许访问，返回防盗链保护响应
+    if (!isAllowed) {
+      return createHotlinkProtectionResponse()
+    }
+  }
   
   // --- 步骤一：优先处理认证 (Authentication First) ---
   // 检查当前请求的路径是否在我们定义的"受保护列表"中

@@ -3,7 +3,7 @@ const nextConfig = {
   // 优化 Framer Motion 的打包
   transpilePackages: ['framer-motion'],
 
-  // 图片优化配置 - 添加 Sanity CDN 域名
+  // 图片优化配置 - 添加 Sanity CDN 和 Unsplash 域名
   images: {
     remotePatterns: [
       {
@@ -11,6 +11,12 @@ const nextConfig = {
         hostname: 'cdn.sanity.io',
         port: '',
         pathname: '/images/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        port: '',
+        pathname: '/**',
       },
     ],
     // 可选：图片质量和格式优化

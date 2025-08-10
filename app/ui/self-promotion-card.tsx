@@ -66,7 +66,7 @@ export function SelfPromotionCard({
       {/* 图片卡片 */}
       <Link
         href={`/${lang}`}
-        className="block group relative overflow-hidden rounded-lg border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-lg"
+        className="block group relative overflow-hidden rounded-sm hover:border-primary/50 transition-all duration-300 hover:shadow-lg"
       >
         <div
           className={cn(
@@ -109,7 +109,7 @@ export function SelfPromotionCard({
         </div>
 
         {/* 底部文案 */}
-        <div className="p-3 bg-background/95 backdrop-blur-sm">
+        <div className="py-4 bg-background/95 backdrop-blur-sm">
           <p className="text-body-sm font-medium text-foreground group-hover:text-primary transition-colors">
             {dictionary.selfPromotion.goToHome}
           </p>

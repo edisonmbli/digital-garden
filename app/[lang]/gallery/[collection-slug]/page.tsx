@@ -8,6 +8,8 @@ import { notFound } from 'next/navigation'
 import { client as sanityClient } from '@/sanity/client'
 import { groq } from 'next-sanity'
 import { InfinitePhotoGrid } from '@/app/ui/infinite-photo-grid'
+import { CopyrightNotice } from '@/app/ui/copyright-notice'
+import { getDictionary } from '@/lib/dictionary'
 
 // --- 静态路径生成 ---
 export async function generateStaticParams() {
@@ -67,6 +69,9 @@ export default async function CollectionPage({
     notFound()
   }
 
+  // 获取字典数据
+  const dict = await getDictionary(lang)
+
   // 生成结构化数据
   const structuredData = generateStructuredData({
     type: 'ImageGallery',
@@ -97,7 +102,18 @@ export default async function CollectionPage({
             <InfinitePhotoGrid
               initialPhotos={initialGroupData.photos}
               collectionSlug={collectionSlug}
+              collectionId={initialGroupData._id}
               lang={lang}
+            />
+            {/* 版权声明 */}
+            <CopyrightNotice 
+              contentType="photo" 
+              className="mt-16"
+              copyrightData={{
+                title: dict.copyright?.photo?.title,
+                content: dict.copyright?.photo?.content,
+                minimal: dict.copyright?.photo?.minimal,
+              }}
             />
           </main>
         </div>

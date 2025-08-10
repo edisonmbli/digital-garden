@@ -58,6 +58,7 @@ export type DevCollectionSummary = {
 
 // 对应 getGroupAndPhotosBySlug 查询返回的对象
 export type GroupAndPhotos = {
+  _id: string
   name: string
   description: string
   photos: Photo[]

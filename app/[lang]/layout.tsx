@@ -99,7 +99,7 @@ export default async function RootLayout({
                     {children}
                   </PageTransitionRecommended>
                 </main>
-                <Footer dictionary={dictionary} />
+                <Footer dictionary={dictionary} lang={lang} />
               </div>
             </I18nProvider>
             <Toaster richColors />

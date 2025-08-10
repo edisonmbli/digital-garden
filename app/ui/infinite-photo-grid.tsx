@@ -12,12 +12,14 @@ import { type EnrichedPhoto } from '@/types/sanity'
 interface InfinitePhotoGridProps {
   initialPhotos: EnrichedPhoto[]
   collectionSlug: string
+  collectionId: string
   lang: Locale
 }
 
 export function InfinitePhotoGrid({
   initialPhotos,
   collectionSlug,
+  collectionId,
   lang,
 }: InfinitePhotoGridProps) {
   const [photos, setPhotos] = useState(initialPhotos)
@@ -47,16 +49,17 @@ export function InfinitePhotoGrid({
 
   return (
     <>
-      <PhotoGrid photos={photos} />
+      <PhotoGrid photos={photos} collectionId={collectionId} />
 
       {/* 只有在"还有更多"时，才显示"加载中"的提示 */}
-      <div ref={ref} className="mt-16 text-center">
+      <div ref={ref} className="mt-8 text-center">
         <p className="text-body-xs font-sans text-muted-foreground">
           {hasMore
             ? isLoading
               ? dictionary.gallery.loading
               : ''
-            : dictionary.gallery.allPhotosLoaded}
+            : // : dictionary.gallery.allPhotosLoaded}
+              ''}
         </p>
       </div>
     </>

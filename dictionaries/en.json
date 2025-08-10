@@ -8,7 +8,7 @@
   },
   "footer": {
     "built_in_public_by_": "Built-in-public by Edison.",
-    "source_code_available_on_": "The source code is available on "
+    "terms_of_use": "Terms of Use"
   },
   "homepage": {
     "title": "Code in Light",
@@ -119,5 +119,164 @@
     "copy": "Copy",
     "openEmail": "Open Email",
     "close": "Close"
+  },
+  "protection": {
+    "title": "Intellectual Property Protection Demo",
+    "description": "This page demonstrates the multi-layered IP protection measures implemented in Digital Garden AI, including image protection, content protection, and access logging.",
+    "featuresOverview": "Protection Features Overview",
+    "overview": {
+      "title": "Protection Features Overview"
+    },
+    "imageProtection": {
+      "title": "Image Protection",
+      "description": "Prevent malicious downloading and theft of images",
+      "features": [
+        "Disable right-click menu",
+        "Disable drag and save",
+        "Disable text selection",
+        "Dynamic watermark addition",
+        "Anti-hotlinking protection"
+      ]
+    },
+    "contentProtection": {
+      "title": "Content Protection",
+      "description": "Prevent bulk copying of tutorial content",
+      "features": [
+        "Disable developer tools",
+        "Disable copy shortcuts",
+        "Disable text selection",
+        "Disable print function",
+        "Access behavior monitoring"
+      ]
+    },
+    "accessMonitoring": {
+      "title": "Access Monitoring",
+      "description": "Real-time recording and analysis of access behavior",
+      "features": [
+        "Access log recording",
+        "IP address tracking",
+        "User behavior analysis",
+        "Abnormal access detection",
+        "Real-time alert mechanism"
+      ]
+    },
+    "imageDemo": {
+      "title": "Image Protection Demo",
+      "testLabel": "Test Instructions:",
+      "testInstructions": "Try right-clicking on the image below, dragging to save, or selecting the image. You'll find these operations are disabled. The image also has a dynamic watermark to prevent theft.",
+      "demoLabel": "Demo",
+      "compareLabel": "Compare",
+      "protectedImage": "Protected Image",
+      "normalImage": "Normal Image (Unprotected)",
+      "normalImageNote": "This image has no protection measures and can be right-clicked and saved normally"
+    },
+    "contentDemo": {
+      "title": "Content Protection Demo",
+      "testLabel": "Test Instructions:",
+      "testInstructions": "The content area below has protection measures enabled. Try selecting text, copying content, or using developer tools - you'll find these operations are restricted.",
+      "protectedContent": "Protected Technical Tutorial Content",
+      "contentDescription": "This is a demonstration technical tutorial snippet showcasing content protection features",
+      "tutorialTitle": "Next.js Performance Optimization Tips",
+      "tutorialIntro": "In modern web development, performance optimization is crucial. Next.js provides multiple built-in optimization features, including automatic code splitting, image optimization, static generation, and more. Here are some practical optimization tips:",
+      "tutorialSections": [
+        {
+          "title": "1. Image Optimization",
+          "content": "Using Next.js Image component automatically optimizes image formats, sizes, and loading methods. It supports lazy loading, responsive images, and modern format conversion."
+        },
+        {
+          "title": "2. Code Splitting",
+          "content": "Next.js automatically performs code splitting, ensuring each page only loads necessary code. You can also use dynamic imports to further optimize bundle size."
+        },
+        {
+          "title": "3. Static Generation",
+          "content": "For content that doesn't change frequently, using Static Site Generation (SSG) can significantly improve page loading speed. Combined with Incremental Static Regeneration (ISR), you can update content while maintaining performance."
+        }
+      ]
+    },
+    "learnMore": "Learn More",
+    "learnMoreDescription": "View the complete terms of use and copyright policy to understand your rights and obligations",
+    "viewTerms": "View Terms of Use"
+  },
+  "terms": {
+    "title": "Terms of Use & Copyright Notice",
+    "subtitle": "Content Usage Guidelines & Intellectual Property Protection Policy",
+    "copyright": {
+      "title": "Copyright Notice",
+      "notice": "All content on this site (including but not limited to photography works, technical tutorials, articles, code examples) is original content protected by the Copyright Law of the People's Republic of China and relevant international copyright laws."
+    },
+    "photography": {
+      "title": "Photography Usage Guidelines",
+      "allowed": "Permitted Uses",
+      "allowedItems": [
+        "Personal learning and appreciation",
+        "Non-commercial sharing (with attribution)",
+        "Academic research and educational use (with authorization)"
+      ],
+      "prohibited": "Prohibited Uses",
+      "prohibitedItems": [
+        "Unauthorized commercial use",
+        "Bulk downloading or scraping",
+        "Use after removing watermarks",
+        "Claiming as your own original work",
+        "Use for AI model training (without explicit authorization)"
+      ]
+    },
+    "tutorials": {
+      "title": "Technical Tutorial Usage Guidelines",
+      "encouraged": "Encouraged Uses",
+      "encouragedItems": [
+        "Learning and practicing techniques from tutorials",
+        "Applying relevant code in projects (with attribution)",
+        "Sharing learning insights with others",
+        "Providing improvement suggestions and feedback"
+      ],
+      "prohibited": "Prohibited Uses",
+      "prohibitedItems": [
+        "Complete copying of tutorial content to other platforms",
+        "Unauthorized commercial training use",
+        "Publishing after removing author information",
+        "Malicious distribution or tampering with content"
+      ]
+    },
+    "authorization": {
+      "title": "Authorization Request",
+      "description": "If you need to use content from this site for the following purposes, please contact us in advance for authorization:",
+      "purposes": [
+        "Commercial use (including but not limited to advertising, marketing, product display)",
+        "Publication use (books, magazines, newspapers, etc.)",
+        "Large-scale educational training",
+        "Media reporting and news use"
+      ],
+      "contact": "Contact:",
+      "contactNote": "Please detail the purpose, scope, and duration of use in your email"
+    },
+    "technicalProtection": {
+      "title": "Technical Protection Measures",
+      "notice": "This site has implemented multiple technical protection measures, including but not limited to anti-hotlinking, access logging, content protection, etc. Any attempt to bypass these protection measures may violate relevant laws and regulations."
+    },
+    "legalResponsibility": {
+      "title": "Legal Responsibility",
+      "description": "Violations of these terms of use may result in the following legal consequences:",
+      "consequences": [
+        "Civil compensation liability",
+        "Administrative penalties",
+        "Criminal prosecution if constituting a crime"
+      ],
+      "rights": "This site reserves the right to protect its legitimate rights and interests through legal means."
+    },
+    "lastUpdated": "These terms of use were last updated on:",
+    "updateNotice": "This site reserves the right to modify these terms at any time. Modified terms will be published on the website"
+  },
+  "copyright": {
+    "photo": {
+      "title": "Image Copyright Notice",
+      "content": "All photography works on this site are original content protected by copyright law. Unauthorized downloading, copying, reproduction, or commercial use is prohibited. Please contact the author for authorization if needed.",
+      "minimal": "© Original photography, copyright protected"
+    },
+    "tutorial": {
+      "title": "Content Copyright Notice",
+      "content": "This tutorial content is original technical sharing protected by copyright law. Learning and discussion are welcome, but unauthorized reproduction, copying, or commercial use is prohibited. Please cite the source when referencing.",
+      "minimal": "© Original tutorial content, learning welcome, commercial use prohibited"
+    }
   }
 }

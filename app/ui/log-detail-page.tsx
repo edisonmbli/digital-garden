@@ -13,8 +13,17 @@ import { CommentList } from '@/app/ui/comment-list'
 import AuthModal from '@/app/ui/auth-modal'
 import { FloatingActionMenu } from '@/app/ui/floating-action-menu'
 import { SelfPromotionCard } from '@/app/ui/self-promotion-card'
+import { ProtectedContent } from '@/app/ui/protected-content'
+import { CopyrightNotice } from '@/app/ui/copyright-notice'
+
 import { type EnrichedLogPost } from '@/types/sanity'
 import { type Locale } from '@/i18n-config'
+
+interface CopyrightData {
+  title?: string
+  content?: string
+  minimal?: string
+}
 
 interface LogDetailPageProps {
   enrichedLogPost: EnrichedLogPost
@@ -40,6 +49,7 @@ interface LogDetailPageProps {
   }
   lang: Locale
   translationMap: Record<string, string>
+  copyrightData?: CopyrightData
 }
 
 export function LogDetailPage({
@@ -50,6 +60,7 @@ export function LogDetailPage({
   dictionary,
   lang,
   translationMap,
+  copyrightData,
 }: LogDetailPageProps) {
   const [headings, setHeadings] = useState<HeadingItem[]>([])
 
@@ -122,66 +133,74 @@ export function LogDetailPage({
 
   // 左侧导航内容
   const SidebarContent = () => (
-    <div className="space-y-2">
-      {/* 面包屑导航 */}
-      <nav className="space-y-2">
-        <Link
-          href={`/${lang}/log`}
-          className="text-body-sm text-muted-foreground hover:text-primary transition-colors block"
-        >
-          ← {dictionary.develop.title}
-        </Link>
-      </nav>
-      {/* 合集名称 */}
-      {collection && (
-        <div className="text-body-base pt-10 font-medium text-foreground">
-          {typeof collection.name === 'string'
-            ? collection.name
-            : (collection.name as Record<string, string>)?.[lang] ||
-              (collection.name as Record<string, string>)?.en ||
-              'Collection'}
-        </div>
-      )}
-      {/* 合集中的所有文章 */}
-      {allLogsInCollection && allLogsInCollection.length > 0 && (
-        <div>
-          <div className="space-y-2">
-            {allLogsInCollection.map(
-              (log: {
-                _id: string
-                title: string
-                slug: string
-                publishedAt: string
-              }) => {
-                const isCurrentLog = log.slug === currentLogSlug
-                return (
-                  <Link
-                    key={log._id}
-                    href={`/${lang}/log/${log.slug}`}
-                    className={`block px-2 py-1 rounded-md transition-colors ${
-                      isCurrentLog
-                        ? 'bg-primary/10 text-primary font-semibold border border-primary/20'
-                        : 'text-muted-foreground hover:text-primary hover:bg-muted/50'
-                    }`}
-                  >
-                    <div
-                      className={`text-body-sm line-clamp-2 ${isCurrentLog ? 'font-medium' : 'font-base'}`}
-                    >
-                      {log.title}
-                    </div>
-                  </Link>
-                )
-              }
-            )}
+    <div className="flex flex-col h-full">
+      {/* 上方内容区域 */}
+      <div className="flex-shrink-0 space-y-2">
+        {/* 面包屑导航 */}
+        <nav className="space-y-2">
+          <Link
+            href={`/${lang}/log`}
+            className="text-body-sm text-muted-foreground hover:text-primary transition-colors block"
+          >
+            ← {dictionary.develop.title}
+          </Link>
+        </nav>
+        {/* 合集名称 */}
+        {collection && (
+          <div className="text-body-base pt-10 font-medium text-foreground">
+            {typeof collection.name === 'string'
+              ? collection.name
+              : (collection.name as Record<string, string>)?.[lang] ||
+                (collection.name as Record<string, string>)?.en ||
+                'Collection'}
           </div>
-        </div>
-      )}
-      {/* 自推广卡片 */}
-      <SelfPromotionCard
-        imageUrl={enrichedLogPost.mainImageUrl}
-        lang={lang}
-        className="pt-8"
-      />
+        )}
+        {/* 合集中的所有文章 */}
+        {allLogsInCollection && allLogsInCollection.length > 0 && (
+          <div>
+            <div className="space-y-2">
+              {allLogsInCollection.map(
+                (log: {
+                  _id: string
+                  title: string
+                  slug: string
+                  publishedAt: string
+                }) => {
+                  const isCurrentLog = log.slug === currentLogSlug
+                  return (
+                    <Link
+                      key={log._id}
+                      href={`/${lang}/log/${log.slug}`}
+                      className={`block px-2 py-1 rounded-md transition-colors ${
+                        isCurrentLog
+                          ? 'bg-primary/10 text-primary font-semibold border border-primary/20'
+                          : 'text-muted-foreground hover:text-primary hover:bg-muted/50'
+                      }`}
+                    >
+                      <div
+                        className={`text-body-sm line-clamp-2 ${isCurrentLog ? 'font-medium' : 'font-base'}`}
+                      >
+                        {log.title}
+                      </div>
+                    </Link>
+                  )
+                }
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* 弹性空间 */}
+      <div className="flex-grow"></div>
+      
+      {/* 底部自推广卡片 */}
+      <div className="flex-shrink-0">
+        <SelfPromotionCard
+          imageUrl={enrichedLogPost.mainImageUrl}
+          lang={lang}
+        />
+      </div>
     </div>
   )
 
@@ -201,9 +220,8 @@ export function LogDetailPage({
         <div className="flex gap-8">
           {/* 左侧导航 - 桌面端 */}
           <aside className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-8">
-              {/* 计算偏移 */}
-              <div className="pt-2">
+            <div className="sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto bg-background/95 backdrop-blur-sm">
+              <div className="p-2 h-full">
                 <SidebarContent />
               </div>
             </div>
@@ -238,15 +256,26 @@ export function LogDetailPage({
               </header>
 
               {/* 文章内容 */}
-              <div className="prose prose-lg dark:prose-invert max-w-none">
-                <PortableTextRenderer
-                  content={enrichedLogPost.content}
-                  onHeadingsExtracted={handleHeadingsExtracted}
+              <ProtectedContent showWatermark={true}>
+                <div className="prose prose-lg dark:prose-invert max-w-none">
+                  <PortableTextRenderer
+                    content={enrichedLogPost.content}
+                    onHeadingsExtracted={handleHeadingsExtracted}
+                  />
+                </div>
+              </ProtectedContent>
+
+              {/* 版权声明 */}
+              <div className="mt-16">
+                <CopyrightNotice 
+                  contentType="tutorial" 
+                  variant="default" 
+                  copyrightData={copyrightData}
                 />
               </div>
 
               {/* 交互区域 */}
-              <section className="mt-12 pt-8 border-t border-border">
+              <section className="mt-2 pt-8 border-t border-border">
                 {/* 点赞和评论按钮 */}
                 {enrichedLogPost.post && (
                   <div className="flex items-center justify-end space-x-3 mb-6">

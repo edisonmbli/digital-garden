@@ -4,8 +4,10 @@
 import { FadeIn } from '@/app/ui/fade-in'
 import { useState, useCallback, useEffect, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import clsx from 'clsx'
-import Image from 'next/image'
+import { useUser } from '@clerk/nextjs'
+
+import ProtectedImage from '@/app/ui/protected-image'
+// import { CopyrightNotice } from '@/app/ui/copyright-notice'
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -25,7 +27,13 @@ import {
   getModalStyles,
 } from '@/hooks/use-optimal-modal-size'
 
-export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
+export function PhotoGrid({ 
+  photos, 
+  collectionId 
+}: { 
+  photos: EnrichedPhoto[]
+  collectionId: string 
+}) {
   const [selectedPhoto, setSelectedPhoto] = useState<EnrichedPhoto | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [pendingPhoto, setPendingPhoto] = useState<EnrichedPhoto | null>(null)
@@ -43,6 +51,7 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
 
   const dict = useI18n()
   const router = useRouter()
+  const { user } = useUser()
 
   // 动态计算模态框最优尺寸
   const optimalModalSize = useOptimalModalSize(
@@ -252,7 +261,7 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                 setShowCommentForm(false) // 重置评论表单状态
               }}
             >
-              <Image
+              <ProtectedImage
                 src={photo.imageUrl}
                 alt={photo.title || 'A photo from the collection'}
                 width={photo.metadata?.dimensions.width}
@@ -260,6 +269,11 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                 className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
                 placeholder="blur"
                 blurDataURL={photo.metadata?.lqip}
+                showWatermark={false}
+                userId={user?.id}
+                postId={photo.post?.id}
+                collectionId={collectionId}
+                hasWatermark={false}
               />
             </div>
           </FadeIn>
@@ -303,7 +317,7 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                     className="flex-shrink-0 pt-3 bg-white/90 dark:pt-0 dark:bg-background flex items-center justify-center"
                     style={modalStyles.photo}
                   >
-                    <Image
+                    <ProtectedImage
                       src={selectedPhoto.imageUrl}
                       alt={selectedPhoto.title || 'A photo from the collection'}
                       width={selectedPhoto.metadata?.dimensions.width || 800}
@@ -311,6 +325,11 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                       className="max-w-full max-h-full object-contain"
                       sizes="90vw"
                       priority
+                      showWatermark={true}
+                      userId={user?.id}
+                      postId={selectedPhoto.post?.id}
+                      collectionId={collectionId}
+                      hasWatermark={true}
                     />
                   </div>
 
@@ -360,6 +379,11 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                         </div>
                       )}
                     </div>
+                    
+                    {/* 版权声明 */}
+                    {/* <div className="px-6 py-2 border-t border-border/10">
+                      <CopyrightNotice contentType="photo" variant="minimal" />
+                    </div> */}
                   </div>
 
                   {/* 下层：评论区域 - 在整体滚动中自然展开 */}
@@ -439,15 +463,10 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                     ref={mobileScrollContainerRef}
                     className="flex-1 overflow-y-auto"
                   >
-                    {/* 上层：图片显示区域 - 动态调整高度，横屏照片减少黑边 */}
+                    {/* 上层：图片显示区域 - 使用自适应容器 */}
                     {/* 拍立得效果的白色边框容器 pt-3 bg-whiter/90 */}
-                    <div
-                      className={clsx(
-                        'relative pt-3 bg-white/90 dark:bg-background flex items-center justify-center flex-shrink-0',
-                        isLandscape ? 'h-[35vh]' : 'h-[60vh]'
-                      )}
-                    >
-                      <Image
+                    <div className="pt-3 bg-white/90 dark:bg-background flex items-center justify-center flex-shrink-0">
+                      <ProtectedImage
                         src={selectedPhoto.imageUrl}
                         alt={
                           selectedPhoto.title || 'A photo from the collection'
@@ -456,9 +475,16 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                         height={
                           selectedPhoto.metadata?.dimensions.height || 600
                         }
-                        className="max-w-full max-h-full object-contain"
+                        className="rounded-lg"
                         sizes="100vw"
                         priority
+                        showWatermark={true}
+                        adaptiveContainer={true}
+                        maxHeight={isLandscape ? '35vh' : '60vh'}
+                        userId={user?.id}
+                        postId={selectedPhoto.post?.id}
+                        collectionId={collectionId}
+                        hasWatermark={true}
                       />
                     </div>
 
@@ -505,6 +531,11 @@ export function PhotoGrid({ photos }: { photos: EnrichedPhoto[] }) {
                           </div>
                         </div>
                       )}
+                      
+                      {/* 版权声明 */}
+                      {/* <div className="border-t border-border/10 pt-3">
+                        <CopyrightNotice contentType="photo" variant="minimal" />
+                      </div> */}
                     </div>
 
                     {/* 下层：评论区域 */}

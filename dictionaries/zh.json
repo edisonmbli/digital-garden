@@ -8,7 +8,7 @@
   },
   "footer": {
     "built_in_public_by_": "Built-in-public by Edison.",
-    "source_code_available_on_": "源代码请看这里 👉"
+    "terms_of_use": "查看使用条款"
   },
   "homepage": {
     "title": "黑客与画册 (Code in Light)",
@@ -143,5 +143,164 @@
     "copy": "复制",
     "openEmail": "打开邮件",
     "close": "关闭"
+  },
+  "protection": {
+    "title": "知识产权保护演示",
+    "description": "本页面展示了 Digital Garden AI 实施的多层次知识产权保护措施，包括图片保护、内容保护和访问日志记录。",
+    "featuresOverview": "保护功能概览",
+    "overview": {
+      "title": "保护功能概览"
+    },
+    "imageProtection": {
+      "title": "图片保护",
+      "description": "防止图片被恶意下载和盗用",
+      "features": [
+        "禁用右键菜单",
+        "禁用拖拽保存", 
+        "禁用选择复制",
+        "动态水印添加",
+        "防盗链检查"
+      ]
+    },
+    "contentProtection": {
+      "title": "内容保护",
+      "description": "防止教程内容被批量复制",
+      "features": [
+        "禁用开发者工具",
+        "禁用复制快捷键",
+        "禁用文本选择",
+        "禁用打印功能",
+        "访问行为监控"
+      ]
+    },
+    "accessMonitoring": {
+      "title": "访问监控",
+      "description": "实时记录和分析访问行为",
+      "features": [
+        "访问日志记录",
+        "IP 地址追踪",
+        "用户行为分析",
+        "异常访问检测",
+        "实时告警机制"
+      ]
+    },
+    "imageDemo": {
+      "title": "图片保护演示",
+      "testLabel": "测试说明：",
+      "testInstructions": "尝试右键点击下方图片、拖拽保存或选择图片，你会发现这些操作都被禁用了。图片还添加了动态水印，防止盗用。",
+      "demoLabel": "演示",
+      "compareLabel": "对比",
+      "protectedImage": "受保护的图片",
+      "normalImage": "普通图片（未保护）",
+      "normalImageNote": "此图片没有保护措施，可以正常右键保存"
+    },
+    "contentDemo": {
+      "title": "内容保护演示",
+      "testLabel": "测试说明：",
+      "testInstructions": "下方的内容区域启用了保护措施。尝试选择文本、复制内容或使用开发者工具，你会发现这些操作受到限制。",
+      "protectedContent": "受保护的技术教程内容",
+      "contentDescription": "这是一段演示性的技术教程内容，展示内容保护功能",
+      "tutorialTitle": "Next.js 性能优化技巧",
+      "tutorialIntro": "在现代 Web 开发中，性能优化是至关重要的。Next.js 提供了多种内置的优化功能，包括自动代码分割、图片优化、静态生成等。以下是一些实用的优化技巧：",
+      "tutorialSections": [
+        {
+          "title": "1. 图片优化",
+          "content": "使用 Next.js 的 Image 组件可以自动优化图片格式、尺寸和加载方式。它支持懒加载、响应式图片和现代格式转换。"
+        },
+        {
+          "title": "2. 代码分割",
+          "content": "Next.js 会自动进行代码分割，确保每个页面只加载必要的代码。您还可以使用动态导入来进一步优化包大小。"
+        },
+        {
+          "title": "3. 静态生成",
+          "content": "对于不经常变化的内容，使用静态生成（SSG）可以显著提高页面加载速度。结合增量静态再生（ISR）可以在保持性能的同时更新内容。"
+        }
+      ]
+    },
+    "learnMore": "了解更多",
+    "learnMoreDescription": "查看完整的使用条款和版权政策，了解您的权利和义务",
+    "viewTerms": "查看使用条款"
+  },
+  "terms": {
+    "title": "使用条款与版权声明",
+    "subtitle": "内容使用规范与知识产权保护政策",
+    "copyright": {
+      "title": "版权声明",
+      "notice": "本站所有内容（包括但不限于摄影作品、技术教程、文章、代码示例）均为原创内容，受《中华人民共和国著作权法》及相关国际版权法律保护。"
+    },
+    "photography": {
+      "title": "摄影作品使用规范",
+      "allowed": "允许的使用方式",
+      "allowedItems": [
+        "个人学习和欣赏",
+        "非商业性质的分享（需注明出处）",
+        "学术研究和教育用途（需获得授权）"
+      ],
+      "prohibited": "禁止的使用方式",
+      "prohibitedItems": [
+        "未经授权的商业使用",
+        "批量下载或爬取",
+        "去除水印后使用",
+        "声称为自己的原创作品",
+        "用于训练 AI 模型（未经明确授权）"
+      ]
+    },
+    "tutorials": {
+      "title": "技术教程使用规范",
+      "encouraged": "鼓励的使用方式",
+      "encouragedItems": [
+        "学习和实践教程中的技术",
+        "在项目中应用相关代码（需注明出处）",
+        "与他人分享学习心得",
+        "提出改进建议和反馈"
+      ],
+      "prohibited": "禁止的使用方式",
+      "prohibitedItems": [
+        "完整复制教程内容到其他平台",
+        "未经授权的商业培训使用",
+        "去除原作者信息后发布",
+        "恶意传播或篡改内容"
+      ]
+    },
+    "authorization": {
+      "title": "授权申请",
+      "description": "如需将本站内容用于以下用途，请提前联系获得授权：",
+      "purposes": [
+        "商业用途(包括但不限于广告、营销、产品展示)",
+        "出版物使用(书籍、杂志、报纸等)",
+        "大规模教育培训",
+        "媒体报道和新闻使用"
+      ],
+      "contact": "联系方式：",
+      "contactNote": "请在邮件中详细说明使用目的、范围和期限"
+    },
+    "technicalProtection": {
+      "title": "技术保护措施",
+      "notice": "本站已实施多重技术保护措施，包括但不限于防盗链、访问日志记录、内容保护等。任何试图绕过这些保护措施的行为都可能违反相关法律法规。"
+    },
+    "legalResponsibility": {
+      "title": "法律责任",
+      "description": "违反本使用条款的行为可能面临以下法律后果：",
+      "consequences": [
+        "承担民事赔偿责任",
+        "面临行政处罚",
+        "构成犯罪的，依法追究刑事责任"
+      ],
+      "rights": "本站保留通过法律途径维护自身合法权益的权利。"
+    },
+    "lastUpdated": "本使用条款最后更新时间：",
+    "updateNotice": "本站保留随时修改本条款的权利，修改后的条款将在网站上公布"
+  },
+  "copyright": {
+    "photo": {
+      "title": "图片版权声明",
+      "content": "本站所有摄影作品均为原创内容，未经授权，禁止下载、复制、转载或用于商业用途。如需使用，请联系作者获得授权。",
+      "minimal": "© 原创摄影作品，受版权保护"
+    },
+    "tutorial": {
+      "title": "内容版权声明",
+      "content": "本教程内容为原创技术分享，欢迎学习交流，但禁止未经授权的转载、复制或商业使用。引用请注明出处。",
+      "minimal": "© 原创教程内容，欢迎学习，禁止商用"
+    }
   }
 }
