@@ -199,6 +199,10 @@ export default defineType({
                   {title: 'GitHub', value: 'github'},
                   {title: 'Website', value: 'website'},
                   {title: 'Email', value: 'email'},
+                  {title: 'Rednote', value: 'rednote'},
+                  {title: 'Instagram', value: 'instagram'},
+                  {title: 'Wechat', value: 'wechat'},
+                  {title: 'Weibo', value: 'weibo'},
                   {title: 'Other', value: 'other'},
                 ],
               },
@@ -206,8 +210,31 @@ export default defineType({
             {
               name: 'url',
               title: 'URL',
-              type: 'url',
-              validation: (Rule) => Rule.required(),
+              type: 'string',
+              validation: (Rule) =>
+                Rule.required().custom((value, context) => {
+                  if (!value) return 'URL is required'
+
+                  const platform = (context.parent as { platform?: string })?.platform
+
+                  if (platform === 'email') {
+                    // Email validation
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                    if (!emailRegex.test(value as string)) {
+                      return 'Please enter a valid email address'
+                    }
+                  } else {
+                    // URL validation for other platforms
+                    try {
+                      new URL(value as string)
+                    } catch {
+                      return 'Please enter a valid URL'
+                    }
+                  }
+
+                  return true
+                }),
+              description: '根据平台类型输入相应格式：Email 输入邮箱地址，其他平台输入完整 URL',
             },
             {
               name: 'label',

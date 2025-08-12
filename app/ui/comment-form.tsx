@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, Send } from 'lucide-react'
 import { useI18n } from '@/app/context/i18n-provider'
 import { useAuth } from '@clerk/nextjs'
+import { analytics } from '@/lib/analytics-logger'
 
 interface CommentFormProps {
   postId: string
@@ -51,6 +52,13 @@ export default function CommentForm({
     }
 
     if (!isSignedIn) {
+      // 追踪未登录用户的评论尝试
+      analytics.track('comment_attempt_unauthenticated', {
+        postId,
+        page: window.location.pathname,
+        contentLength: content.trim().length
+      })
+      
       setError(dict.auth?.signInToComment || 'Please sign in to comment')
       return
     }
@@ -60,32 +68,89 @@ export default function CommentForm({
     if (onSubmit) {
       // 使用自定义提交处理器（用于回复）
       try {
-        await onSubmit(content.trim())
-        setContent('')
-      } catch {
+        // 追踪回复提交开始
+         analytics.trackComment(postId, {
+           action: 'reply_start',
+           parentId,
+           contentLength: content.trim().length,
+           isCompact: compact
+         })
+         
+          await onSubmit(content.trim())
+          setContent('')
+         
+         // 追踪回复提交成功
+         analytics.trackComment(postId, {
+           action: 'reply_success',
+           parentId,
+           contentLength: content.trim().length,
+           isCompact: compact
+         })
+       } catch (error) {
+         // 追踪回复提交失败
+         analytics.trackComment(postId, {
+           action: 'reply_error',
+           parentId,
+           error: error instanceof Error ? error.message : 'Unknown error',
+           contentLength: content.trim().length,
+           isCompact: compact
+         })
+        
         setError('Failed to submit comment')
       }
     } else {
       // 使用默认的Server Action
+      // 追踪评论提交开始
+      analytics.trackComment(postId, {
+        action: 'submit_start',
+        contentLength: content.trim().length,
+        isCompact: compact
+      })
+      
       startTransition(async () => {
         try {
           const result = await createCommentAction({
-            content: content.trim(),
             postId,
+            content: content.trim(),
             parentId
           })
+          
+          setError('')
 
           if (result.success) {
+            // 追踪评论提交成功
+            analytics.trackComment(postId, {
+              action: 'submit_success',
+              commentId: result.data?.id,
+              contentLength: content.trim().length,
+              isCompact: compact
+            })
+            
             setContent('')
-            // 不再显示toast，改为通过回调处理
             // 调用成功回调
             if (onSubmitSuccess) {
               onSubmitSuccess()
             }
           } else {
+            // 追踪评论提交失败
+            analytics.trackComment(postId, {
+              action: 'submit_error',
+              error: result.error,
+              contentLength: content.trim().length,
+              isCompact: compact
+            })
+            
             setError(result.error || 'Failed to submit comment')
           }
-        } catch {
+        } catch (error) {
+          // 追踪评论提交异常
+          analytics.trackComment(postId, {
+            action: 'submit_exception',
+            error: error instanceof Error ? error.message : 'Unknown error',
+            contentLength: content.trim().length,
+            isCompact: compact
+          })
+          
           setError('An unexpected error occurred')
         }
       })

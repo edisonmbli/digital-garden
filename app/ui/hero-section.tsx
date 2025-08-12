@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { FeaturedGroup } from '@/types/sanity'
 import { Locale } from '@/i18n-config'
+import { analytics } from '@/lib/analytics-logger'
 
 interface HeroSectionProps {
   collections: FeaturedGroup[]
@@ -114,6 +115,16 @@ export function HeroSection({ collections, lang }: HeroSectionProps) {
 
   // 跳转到collection页面
   const goToCollection = (collection: FeaturedGroup) => {
+    // 追踪集合点击
+    analytics.track('collection_click', {
+      collectionId: collection._id,
+      collectionSlug: collection.slug,
+      collectionName: getCollectionName(collection),
+      language: lang,
+      source: 'hero_section',
+      position: 'main_image'
+    })
+    
     router.push(`/${lang}/gallery/${collection.slug}`)
   }
 

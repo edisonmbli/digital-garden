@@ -7,6 +7,7 @@ import { useUser } from '@clerk/nextjs'
 import { toggleLikeAction } from '@/lib/actions'
 import { toast } from 'sonner'
 import { useI18n } from '@/app/context/i18n-provider'
+import { analytics } from '@/lib/analytics-logger'
 
 interface EnhancedLikeButtonProps {
   postId: string
@@ -36,6 +37,12 @@ export function EnhancedLikeButton({
   const handleLike = () => {
     // 如果用户未登录，触发认证流程
     if (!isSignedIn) {
+      // 追踪未登录用户的点赞尝试
+      analytics.track('like_attempt_unauthenticated', {
+        postId,
+        page: window.location.pathname
+      })
+      
       if (onAuthRequired) {
         onAuthRequired()
       } else {
@@ -50,6 +57,13 @@ export function EnhancedLikeButton({
 
     setOptimisticIsLiked(newIsLiked)
     setOptimisticLikes(newLikesCount)
+
+    // 追踪点赞事件
+    analytics.trackLike(postId, newIsLiked ? 'like' : 'unlike', {
+      previousLikesCount: optimisticLikes,
+      newLikesCount,
+      variant
+    })
 
     // 执行实际的服务器操作
     startTransition(async () => {

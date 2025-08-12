@@ -26,6 +26,7 @@ import {
   useOptimalModalSize,
   getModalStyles,
 } from '@/hooks/use-optimal-modal-size'
+import { analytics } from '@/lib/analytics-logger'
 
 export function PhotoGrid({ 
   photos, 
@@ -259,6 +260,16 @@ export function PhotoGrid({
               onClick={() => {
                 setSelectedPhoto(photo)
                 setShowCommentForm(false) // 重置评论表单状态
+                
+                // 追踪照片浏览
+                analytics.trackPostView(photo._id, 'photo', {
+                  title: photo.title,
+                  collectionId,
+                  hasDescription: !!photo.description,
+                  dimensions: photo.metadata?.dimensions,
+                  likesCount: photo.post?.likesCount || 0,
+                  commentsCount: photo.post?.commentsCount || 0
+                })
               }}
             >
               <ProtectedImage

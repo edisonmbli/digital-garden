@@ -13,6 +13,7 @@ import { getDictionary } from '@/lib/dictionary'
 
 // --- 静态路径生成 ---
 export async function generateStaticParams() {
+  // 构建时使用生产客户端获取已发布的内容
   const query = groq`*[_type == "collection" && defined(slug.current)]{ "slug": slug.current }`
   const results = await sanityClient.fetch<{ slug: string }[]>(query)
 

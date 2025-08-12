@@ -149,30 +149,57 @@ async function CommentsPanel({
   })
 
   // 类型转换以匹配 Comment 接口
-  const initialComments =
-    commentsResult.success && commentsResult.data?.comments
-      ? commentsResult.data.comments.map((comment) => ({
+  // 由于 AdminComment 和 Comment 接口存在结构差异，需要进行数据转换
+  const initialComments = commentsResult.success && commentsResult.data?.comments
+    ? commentsResult.data.comments.map((comment) => {
+        // 解析 titleJson 字符串为对象
+        const parseTitleJson = (titleJson: string | null): Record<string, string> | null => {
+          if (!titleJson) return null
+          try {
+            return typeof titleJson === 'string' ? JSON.parse(titleJson) : titleJson
+          } catch {
+            return null
+          }
+        }
+
+        return {
           ...comment,
+          createdAt: comment.createdAt instanceof Date ? comment.createdAt.toISOString() : comment.createdAt,
           post: {
             ...comment.post,
             contentType: comment.post.contentType as 'photo' | 'log',
             photo: comment.post.photo
               ? {
-                  titleJson: comment.post.photo.titleJson
-                    ? ((typeof comment.post.photo.titleJson === 'string'
-                        ? JSON.parse(comment.post.photo.titleJson)
-                        : comment.post.photo.titleJson) as Record<
-                        string,
-                        string
-                      >)
-                    : null,
+                  titleJson: parseTitleJson(comment.post.photo.titleJson),
                   sanityAssetId: comment.post.photo.sanityAssetId || '',
                 }
               : null,
             logs: comment.post.logs || [],
           },
-        }))
-      : []
+          _count: {
+            replies: comment.replies?.length || 0,
+          },
+          replies: comment.replies?.map((reply) => ({
+            ...reply,
+            createdAt: reply.createdAt instanceof Date ? reply.createdAt.toISOString() : reply.createdAt,
+            post: {
+              ...comment.post,
+              contentType: comment.post.contentType as 'photo' | 'log',
+              photo: comment.post.photo
+                ? {
+                    titleJson: parseTitleJson(comment.post.photo.titleJson),
+                    sanityAssetId: comment.post.photo.sanityAssetId || '',
+                  }
+                : null,
+              logs: comment.post.logs || [],
+            },
+            _count: {
+              replies: 0,
+            },
+          })) || [],
+        }
+      }) as Parameters<typeof CommentsManagementPanel>[0]['initialComments']
+    : []
 
   const initialPagination = commentsResult.success
     ? commentsResult.data?.pagination || {

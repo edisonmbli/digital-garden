@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
@@ -15,6 +15,7 @@ import { FloatingActionMenu } from '@/app/ui/floating-action-menu'
 import { SelfPromotionCard } from '@/app/ui/self-promotion-card'
 import { ProtectedContent } from '@/app/ui/protected-content'
 import { CopyrightNotice } from '@/app/ui/copyright-notice'
+import { analytics } from '@/lib/analytics-logger'
 
 import { type EnrichedLogPost } from '@/types/sanity'
 import { type Locale } from '@/i18n-config'
@@ -73,6 +74,18 @@ export function LogDetailPage({
 
   // 悬浮菜单状态
   const [showMobileOutline, setShowMobileOutline] = useState(false)
+
+  // 追踪页面浏览
+  useEffect(() => {
+    analytics.trackPostView(enrichedLogPost._id, 'log', {
+      title: enrichedLogPost.title,
+      collection: collection?.name,
+      language: lang,
+      hasMainImage: !!enrichedLogPost.mainImageUrl,
+      wordCount: enrichedLogPost.content ? JSON.stringify(enrichedLogPost.content).length : 0,
+      author: enrichedLogPost.author?.name
+    })
+  }, [enrichedLogPost._id, enrichedLogPost.title, enrichedLogPost.mainImageUrl, enrichedLogPost.content, collection?.name, lang, enrichedLogPost.author?.name])
 
   // 处理从 PortableTextRenderer 提取的标题
   const handleHeadingsExtracted = useCallback(

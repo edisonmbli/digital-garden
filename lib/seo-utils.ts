@@ -48,20 +48,28 @@ interface PortableTextBlock {
 
 // SEO配置常量
 export const SEO_CONFIG = {
-  siteName: 'Digital Garden AI',
+  siteName: 'Code In Light',
   siteDescription: {
     en: 'A digital garden showcasing photography collections and development tutorials. Explore visual stories and learn web development through practical guides.',
-    zh: '数字花园AI - 展示摄影作品集和开发教程的创意空间。探索视觉故事，通过实用指南学习网页开发。',
+    zh: '黑客与画册 - 展示摄影作品集和开发教程的创意空间。探索视觉故事，通过实战学习Nextjs项目开发。',
   },
-  siteUrl: process.env.NEXT_PUBLIC_BASE_URL || 'https://your-domain.com',
-  author: 'Your Name',
+  siteUrl: process.env.NEXT_PUBLIC_BASE_URL || 'https://edisonmbli.com',
+  author: 'Edison Li',
   keywords: {
-    en: ['photography', 'web development', 'tutorials', 'digital garden', 'creative coding', 'Next.js'],
-    zh: ['摄影', '网页开发', '教程', '数字花园', '创意编程', 'Next.js'],
+    en: [
+      'photography',
+      'web development',
+      'tutorials',
+      'indie hacker',
+      'AI coding',
+      'Next.js',
+    ],
+    zh: ['摄影', '网站开发', '教程', '独立黑客', 'AI编码', 'Next.js'],
   },
   social: {
-    twitter: '@yourusername',
-    github: 'https://github.com/yourusername',
+    twitter: '@edisonmbli',
+    instagram: '@edisonmbli',
+    github: 'https://github.com/edisonmbli',
   },
 }
 
@@ -69,7 +77,7 @@ export const SEO_CONFIG = {
 export function generateBaseMetadata(lang: Locale): Metadata {
   const description = SEO_CONFIG.siteDescription[lang]
   const keywords = SEO_CONFIG.keywords[lang]
-  
+
   return {
     title: {
       template: `%s | ${SEO_CONFIG.siteName}`,
@@ -84,8 +92,8 @@ export function generateBaseMetadata(lang: Locale): Metadata {
     alternates: {
       canonical: `/${lang}`,
       languages: {
-        'en': '/en',
-        'zh': '/zh',
+        en: '/en',
+        zh: '/zh',
       },
     },
     openGraph: {
@@ -152,15 +160,15 @@ export function generatePageMetadata({
 }): Metadata {
   const url = `${SEO_CONFIG.siteUrl}/${lang}${path}`
   const ogImage = image || '/og-image.jpg'
-  
+
   return {
     title,
     description,
     alternates: {
       canonical: url,
       languages: {
-        'en': `/en${path}`,
-        'zh': `/zh${path}`,
+        en: `/en${path}`,
+        zh: `/zh${path}`,
       },
     },
     openGraph: {
@@ -290,46 +298,46 @@ export function generateCollectionSEO({
   path: string
 }): Metadata {
   // 多层级回退策略
-  const title = 
+  const title =
     collection.seo?.[lang]?.metaTitle || // 1. 优先使用对应语言的SEO标题
     collection.seo?.en?.metaTitle || // 2. 回退到英文SEO标题
     collection.name || // 3. 使用已处理的名称
     collection.title || // 4. 使用通用标题
     'Photography Collection' // 5. 最终回退
 
-  const description = 
+  const description =
     collection.seo?.[lang]?.metaDescription || // 1. 优先使用对应语言的SEO描述
     collection.seo?.en?.metaDescription || // 2. 回退到英文SEO描述
     collection.description || // 3. 使用已处理的描述
     generateAutoDescription(collection, lang) // 4. 自动生成描述
 
   // 社交图片处理
-  const socialImage = 
-    collection.seo?.[lang]?.socialImage || 
+  const socialImage =
+    collection.seo?.[lang]?.socialImage ||
     collection.seo?.en?.socialImage ||
     collection.coverImage
 
-  const ogImage = socialImage 
+  const ogImage = socialImage
     ? urlFor(socialImage).width(1200).height(630).url()
     : '/og-image.jpg'
 
   // 规范URL处理
-  const canonicalUrl = 
+  const canonicalUrl =
     collection.seo?.[lang]?.canonicalUrl ||
     collection.seo?.en?.canonicalUrl ||
     `${SEO_CONFIG.siteUrl}/${lang}${path}`
 
   // 关键词处理
-  const focusKeyword = 
-    collection.seo?.[lang]?.focusKeyword ||
-    collection.seo?.en?.focusKeyword
+  const focusKeyword =
+    collection.seo?.[lang]?.focusKeyword || collection.seo?.en?.focusKeyword
 
-  const keywords = focusKeyword 
+  const keywords = focusKeyword
     ? [focusKeyword, ...SEO_CONFIG.keywords[lang]]
     : SEO_CONFIG.keywords[lang]
 
   // noIndex处理
-  const noIndex = collection.seo?.[lang]?.noIndex || collection.seo?.en?.noIndex || false
+  const noIndex =
+    collection.seo?.[lang]?.noIndex || collection.seo?.en?.noIndex || false
 
   return {
     title,
@@ -338,8 +346,8 @@ export function generateCollectionSEO({
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        'en': `/en${path}`,
-        'zh': `/zh${path}`,
+        en: `/en${path}`,
+        zh: `/zh${path}`,
       },
     },
     openGraph: {
@@ -390,12 +398,12 @@ export function generateLogSEO({
   path: string
 }): Metadata {
   // 多层级回退策略
-  const title = 
+  const title =
     log.seo?.metaTitle || // 1. 优先使用SEO标题
     log.title || // 2. 使用文章标题
     'Development Tutorial' // 3. 最终回退
 
-  const description = 
+  const description =
     log.seo?.metaDescription || // 1. 优先使用SEO描述
     log.excerpt || // 2. 使用摘要
     extractTextFromContent(log.content, 160) || // 3. 从内容提取
@@ -403,18 +411,19 @@ export function generateLogSEO({
 
   // 社交图片处理
   const socialImage = log.seo?.socialImage || log.mainImageUrl
-  const ogImage = socialImage 
-    ? (typeof socialImage === 'string' ? socialImage : urlFor(socialImage).width(1200).height(630).url())
+  const ogImage = socialImage
+    ? typeof socialImage === 'string'
+      ? socialImage
+      : urlFor(socialImage).width(1200).height(630).url()
     : '/og-image.jpg'
 
   // 规范URL处理
-  const canonicalUrl = 
-    log.seo?.canonicalUrl ||
-    `${SEO_CONFIG.siteUrl}/${lang}${path}`
+  const canonicalUrl =
+    log.seo?.canonicalUrl || `${SEO_CONFIG.siteUrl}/${lang}${path}`
 
   // 关键词处理
   const focusKeyword = log.seo?.focusKeyword
-  const keywords = focusKeyword 
+  const keywords = focusKeyword
     ? [focusKeyword, ...SEO_CONFIG.keywords[lang]]
     : SEO_CONFIG.keywords[lang]
 
@@ -427,7 +436,9 @@ export function generateLogSEO({
   const noIndex = log.seo?.noIndex || false
 
   // 发布时间处理
-  const publishedTime = log.publishedAt ? new Date(log.publishedAt).toISOString() : undefined
+  const publishedTime = log.publishedAt
+    ? new Date(log.publishedAt).toISOString()
+    : undefined
 
   return {
     title,
@@ -436,8 +447,8 @@ export function generateLogSEO({
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        'en': `/en${path}`,
-        'zh': `/zh${path}`,
+        en: `/en${path}`,
+        zh: `/zh${path}`,
       },
     },
     openGraph: {
@@ -479,8 +490,14 @@ export function generateLogSEO({
 }
 
 // 辅助函数：自动生成Collection描述
-function generateAutoDescription(collection: CollectionData, lang: Locale): string {
-  const collectionName = collection.name || collection.title || (lang === 'zh' ? '摄影作品集' : 'Photography Collection')
+function generateAutoDescription(
+  collection: CollectionData,
+  lang: Locale
+): string {
+  const collectionName =
+    collection.name ||
+    collection.title ||
+    (lang === 'zh' ? '摄影作品集' : 'Photography Collection')
   const templates = {
     en: `Explore the "${collectionName}" collection featuring ${collection.photos?.length || 'multiple'} stunning photographs. Discover visual stories and artistic perspectives.`,
     zh: `探索"${collectionName}"作品集，包含${collection.photos?.length || '多张'}精美摄影作品。发现视觉故事和艺术视角。`,
@@ -498,33 +515,39 @@ function generateAutoLogDescription(log: LogData, lang: Locale): string {
 }
 
 // 辅助函数：从富文本内容提取纯文本
-function extractTextFromContent(content: unknown, maxLength: number = 160): string {
+function extractTextFromContent(
+  content: unknown,
+  maxLength: number = 160
+): string {
   if (!content) return ''
-  
+
   // 如果是数组（Portable Text格式）
   if (Array.isArray(content)) {
     const text = content
-      .filter((block: PortableTextBlock) => block._type === 'block' && block.children)
-      .map((block: PortableTextBlock) => 
-        block.children
-          ?.filter(child => child._type === 'span')
-          .map(child => child.text)
-          .join('') || ''
+      .filter(
+        (block: PortableTextBlock) => block._type === 'block' && block.children
+      )
+      .map(
+        (block: PortableTextBlock) =>
+          block.children
+            ?.filter((child) => child._type === 'span')
+            .map((child) => child.text)
+            .join('') || ''
       )
       .join(' ')
-    
-    return text.length > maxLength 
+
+    return text.length > maxLength
       ? text.substring(0, maxLength).trim() + '...'
       : text
   }
-  
+
   // 如果是字符串
   if (typeof content === 'string') {
-    return content.length > maxLength 
+    return content.length > maxLength
       ? content.substring(0, maxLength).trim() + '...'
       : content
   }
-  
+
   return ''
 }
 
@@ -539,13 +562,13 @@ export function generateAuthorSEO({
   path: string
 }): Metadata {
   // 多层级回退策略
-  const title = 
+  const title =
     author.metaTitle?.[lang] || // 1. 优先使用对应语言的SEO标题
     author.metaTitle?.en || // 2. 回退到英文SEO标题
     `${author.name} - About` || // 3. 使用作者名称
     (lang === 'zh' ? '关于我' : 'About Me') // 4. 最终回退
 
-  const description = 
+  const description =
     author.metaDescription?.[lang] || // 1. 优先使用对应语言的SEO描述
     author.metaDescription?.en || // 2. 回退到英文SEO描述
     extractTextFromContent(author.bio[lang], 160) || // 3. 从简介提取
@@ -557,13 +580,12 @@ export function generateAuthorSEO({
   const ogImage = socialImage || '/og-image.jpg'
 
   // 规范URL处理
-  const canonicalUrl = 
-    author.canonicalUrl ||
-    `${SEO_CONFIG.siteUrl}/${lang}${path}`
+  const canonicalUrl =
+    author.canonicalUrl || `${SEO_CONFIG.siteUrl}/${lang}${path}`
 
   // 关键词处理
   const focusKeyword = author.focusKeyword?.[lang] || author.focusKeyword?.en
-  const keywords = focusKeyword 
+  const keywords = focusKeyword
     ? [focusKeyword, author.name, ...SEO_CONFIG.keywords[lang]]
     : [author.name, ...SEO_CONFIG.keywords[lang]]
 
@@ -579,7 +601,7 @@ export function generateAuthorSEO({
     ...(author.imageUrl && { image: author.imageUrl }),
     ...(description && { description }),
     ...(author.socialLinks && {
-      sameAs: author.socialLinks.map(link => link.url)
+      sameAs: author.socialLinks.map((link) => link.url),
     }),
   }
 
@@ -590,8 +612,8 @@ export function generateAuthorSEO({
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        'en': `/en${path}`,
-        'zh': `/zh${path}`,
+        en: `/en${path}`,
+        zh: `/zh${path}`,
       },
     },
     openGraph: {

@@ -11,6 +11,7 @@ import { client as sanityClient } from '@/sanity/client'
 import { groq } from 'next-sanity'
 
 export async function generateStaticParams() {
+  // 构建时使用生产客户端获取已发布的内容
   const logs = await sanityClient.fetch(groq`
     *[_type == "log" && defined(slug.current)] {
       "slug": slug.current

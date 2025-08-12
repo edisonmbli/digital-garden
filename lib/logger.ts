@@ -438,44 +438,54 @@ class ClientLogger {
     if (logs.length === 0) return
     
     try {
-      const response = await fetch('/api/log-access/batch', {
+      // 转换为analytics事件格式
+      const analyticsEvents = logs.map(log => ({
+        eventName: `${log.type}_${log.action}`,
+        timestamp: log.timestamp || new Date().toISOString(),
+        sessionId: this.generateSessionId(),
+        userId: log.userId,
+        page: log.url || window.location.pathname,
+        referrer: log.referer || document.referrer,
+        userAgent: log.userAgent || navigator.userAgent,
+        properties: {
+          type: log.type,
+          action: log.action,
+          postId: log.postId,
+          collectionId: log.collectionId,
+          hasWatermark: log.hasWatermark,
+          developCollectionId: log.developCollectionId
+        }
+      }))
+
+      const response = await fetch('/api/analytics', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ logs }),
+        body: JSON.stringify(analyticsEvents),
       })
 
       if (!response.ok) {
-        console.warn('Failed to send batch access logs:', response.statusText)
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
     } catch (error) {
-      console.warn('Failed to send batch access logs:', error)
+      console.error('Failed to send batch access logs:', error)
     }
   }
 
   /**
-   * 发送单个访问日志到服务端（保留向后兼容性）
+   * 生成会话ID
    */
-  private async sendAccessLog(logData: ClientAccessLog): Promise<void> {
-    try {
-      const response = await fetch('/api/log-access', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...logData,
-          timestamp: logData.timestamp || new Date().toISOString(),
-        }),
-      })
-
-      if (!response.ok) {
-        console.warn('Failed to send access log:', response.statusText)
+  private generateSessionId(): string {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      let sessionId = sessionStorage.getItem('analytics_session_id')
+      if (!sessionId) {
+        sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        sessionStorage.setItem('analytics_session_id', sessionId)
       }
-    } catch (error) {
-      console.warn('Failed to send access log:', error)
+      return sessionId
     }
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
   /**
@@ -488,8 +498,26 @@ class ClientLogger {
         const logs = [...this.logQueue]
         this.logQueue = []
         
-        const data = JSON.stringify({ logs })
-        navigator.sendBeacon('/api/log-access/batch', data)
+        const analyticsEvents = logs.map(log => ({
+          eventName: `${log.type}_${log.action}`,
+          timestamp: log.timestamp || new Date().toISOString(),
+          sessionId: this.generateSessionId(),
+          userId: log.userId,
+          page: log.url || window.location.pathname,
+          referrer: log.referer || document.referrer,
+          userAgent: log.userAgent || navigator.userAgent,
+          properties: {
+            type: log.type,
+            action: log.action,
+            postId: log.postId,
+            collectionId: log.collectionId,
+            hasWatermark: log.hasWatermark,
+            developCollectionId: log.developCollectionId
+          }
+        }))
+        
+        const data = JSON.stringify(analyticsEvents)
+        navigator.sendBeacon('/api/analytics', data)
       } else {
         // 降级到同步处理
         this.processBatch()

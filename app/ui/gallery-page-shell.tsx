@@ -1,8 +1,12 @@
 // app/ui/gallery-page-shell.tsx
+'use client'
+
+import { useEffect } from 'react'
 import type { FeaturedGroup } from '@/types/sanity'
 import type { Locale } from '@/i18n-config'
 import Image from 'next/image'
 import Link from 'next/link'
+import { analytics } from '@/lib/analytics-logger'
 
 interface GalleryPageShellProps {
   collections: FeaturedGroup[]
@@ -10,6 +14,29 @@ interface GalleryPageShellProps {
 }
 
 export function GalleryPageShell({ collections, lang }: GalleryPageShellProps) {
+  useEffect(() => {
+    // 追踪画廊页面浏览
+    analytics.trackPageView(`/${lang}/gallery`, {
+      pageType: 'gallery',
+      language: lang,
+      collectionsCount: collections.length,
+      availableCollections: collections.map(c => c.slug)
+    })
+  }, [lang, collections])
+
+  const handleCollectionClick = (collection: FeaturedGroup) => {
+    // 追踪集合点击
+    analytics.track('collection_click', {
+      collectionId: collection._id,
+      collectionSlug: collection.slug,
+      collectionName: lang === 'en' 
+        ? collection.name?.en || collection.name?.zh 
+        : collection.name?.zh || collection.name?.en,
+      language: lang,
+      source: 'gallery_page'
+    })
+  }
+
   return (
     <div className="w-full py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,6 +52,7 @@ export function GalleryPageShell({ collections, lang }: GalleryPageShellProps) {
               <Link
                 key={collection._id}
                 href={`/${lang}/gallery/${collection.slug}`}
+                onClick={() => handleCollectionClick(collection)}
                 className="group relative h-80 rounded-lg overflow-hidden bg-muted cursor-pointer transition-transform duration-300 hover:scale-105 block"
               >
                 {/* 背景图片 */}

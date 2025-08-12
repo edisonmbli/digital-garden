@@ -175,10 +175,10 @@ export default function AdminPage() {
     try {
       const result = await updateSensitiveWordsBatch(sensitiveWordsText)
       if (result.success) {
-        alert(`敏感词保存成功: ${result.message}`)
-        setSensitiveWordsCount(result.count || 0)
+        alert(`敏感词保存成功: ${'message' in result ? result.message : '操作完成'}`)
+        setSensitiveWordsCount('count' in result ? result.count || 0 : 0)
       } else {
-        alert(`保存失败: ${result.error}`)
+        alert(`保存失败: ${'error' in result ? result.error : '未知错误'}`)
       }
     } catch {
       alert('保存失败')

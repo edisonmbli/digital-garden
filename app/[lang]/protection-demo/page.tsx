@@ -11,11 +11,12 @@ import { type Metadata } from 'next'
 import { getDictionary } from '@/lib/dictionary'
 import { logger } from '@/lib/logger'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface ProtectionDemoPageProps {
-  params: {
+  params: Promise<{
     lang: Locale
-  }
+  }>
 }
 
 export async function generateMetadata({
@@ -167,7 +168,7 @@ export default async function ProtectionDemoPage({
                 <Badge variant="outline" className="mr-2">{dict.protection.imageDemo.compareLabel}</Badge>
                 {dict.protection.imageDemo.normalImage}
               </h3>
-              <img
+              <Image
                 src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500&h=300&fit=crop"
                 alt={dict.protection.imageDemo.normalImage}
                 width={500}

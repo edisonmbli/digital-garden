@@ -1,9 +1,11 @@
 'use client'
 
+import { useEffect } from 'react'
 import { getDictionary } from '@/lib/dictionary'
 import { FeaturedGroup } from '@/types/sanity'
 import { Locale } from '@/i18n-config'
 import { HeroSection } from './hero-section'
+import { analytics } from '@/lib/analytics-logger'
 
 type DictionaryType = Awaited<ReturnType<typeof getDictionary>>
 
@@ -14,6 +16,16 @@ interface HomePageShellProps {
 }
 
 export function HomePageShell({ collections, lang }: HomePageShellProps) {
+  useEffect(() => {
+    // 追踪首页浏览
+    analytics.trackPageView(`/${lang}`, {
+      pageType: 'homepage',
+      language: lang,
+      collectionsCount: collections.length,
+      featuredCollections: collections.map(c => c.slug).slice(0, 3)
+    })
+  }, [lang, collections])
+
   return (
     <div className="w-full">
       {/* 英雄区 - 占据整个视口高度 */}

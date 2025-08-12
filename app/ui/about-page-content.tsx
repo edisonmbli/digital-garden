@@ -4,6 +4,7 @@ import { SocialIcons } from './social-icons'
 import type { Author } from '@/types/sanity'
 import type { Locale } from '@/i18n-config'
 import { getDictionary } from '@/lib/dictionary'
+import { AboutPageTracker } from '@/app/ui/about-page-tracker'
 
 interface AboutPageContentProps {
   author: Author
@@ -30,6 +31,11 @@ export async function AboutPageContent({ author, lang }: AboutPageContentProps) 
 
   return (
     <div className="min-h-screen bg-background bg-gradient-to-br from-background via-background/95 to-background/90">
+      <AboutPageTracker 
+        lang={lang} 
+        authorName={author.name}
+        hasSocialLinks={author.socialLinks && author.socialLinks.length > 0}
+      />
       {/* 主要内容区域 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Row 1: 页面标题和分隔线 */}

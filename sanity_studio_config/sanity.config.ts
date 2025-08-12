@@ -7,12 +7,19 @@ import { schemaTypes } from './schemaTypes'
 import { orderableDocumentListDeskItem } from '@sanity/orderable-document-list'
 import { documentInternationalization } from '@sanity/document-internationalization'
 
+// 根据环境变量动态设置 dataset
+// 重要：在浏览器环境中，只有以 SANITY_STUDIO_ 开头的环境变量可见
+// 因此只有 SANITY_STUDIO_DATASET 能在 Studio 中生效
+const dataset = process.env.SANITY_STUDIO_DATASET || 'development'
+
 export default defineConfig({
   name: 'default',
-  title: 'digital-garden-sanity',
+  title: `🌱 Digital Garden Sanity - DATASET: ${dataset.toUpperCase()} 🌱`,
 
   projectId: 'rmgc6o8r',
-  dataset: 'development',
+  // 根据环境变量动态设置 dataset，默认为 'development'
+  // 在部署时，可以通过设置 SANITY_DATASET 环境变量为 'production' 来切换到生产环境
+  dataset,
 
   plugins: [
     structureTool({

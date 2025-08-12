@@ -5,9 +5,9 @@ import { AboutPageContent } from '../../ui/about-page-content'
 import { notFound } from 'next/navigation'
 
 interface AboutPageProps {
-  params: {
+  params: Promise<{
     lang: Locale
-  }
+  }>
 }
 
 // --- 静态路径生成 ---

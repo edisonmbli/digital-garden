@@ -4,13 +4,9 @@ import { useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import {
   testDatabaseConnectionAction,
-  testAllFieldsAction,
-  testGetCommentsAction,
-  debugPrismaAction,
-  testSpamDetectionAction,
   resetSpamSystemAction,
   getSystemStatsAction,
-  testExtendedDALAction
+  testSensitiveWordsAction
 } from '@/lib/admin-actions'
 
 interface ServerActionResult {
@@ -68,16 +64,16 @@ export default function SystemTestPage() {
     }
   }
 
-  const runSpamTest = async (content: string, testName: string) => {
+  const runSensitiveWordsTest = async (content: string, testName: string) => {
     setLoading(true)
     try {
-      const data = await testSpamDetectionAction(content)
+      const data = await testSensitiveWordsAction(content)
       
       const result: TestResult = {
         name: testName,
         success: data.success,
         message: data.success 
-          ? `检测结果: ${data.data?.isSpam ? '垃圾内容' : '正常内容'} (置信度: ${data.data?.confidence})`
+          ? `检测结果: ${data.data?.foundWords?.length ? `发现敏感词: ${data.data.foundWords.join(', ')}` : '未发现敏感词'}`
           : data.error || '检测失败',
         timestamp: new Date().toLocaleString(),
         details: JSON.stringify(data, null, 2)
@@ -120,67 +116,39 @@ export default function SystemTestPage() {
                 测试数据库连接
               </button>
               <button
-                onClick={() => runServerAction('基础字段测试', testAllFieldsAction)}
-                disabled={loading}
-                className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 rounded"
-              >
-                测试基础字段
-              </button>
-              <button
-                onClick={() => runServerAction('获取评论列表测试', testGetCommentsAction)}
+                onClick={() => runServerAction('获取系统统计信息', getSystemStatsAction)}
                 disabled={loading}
                 className="bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-400 text-white px-4 py-2 rounded"
               >
-                测试获取评论列表
-              </button>
-              <button
-                onClick={() => runServerAction('Prisma调试信息', debugPrismaAction)}
-                disabled={loading}
-                className="bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-400 text-white px-4 py-2 rounded"
-              >
-                获取Prisma调试信息
-              </button>
-              <button
-                onClick={() => runServerAction('扩展DAL功能测试', testExtendedDALAction)}
-                disabled={loading}
-                className="bg-teal-500 hover:bg-teal-600 disabled:bg-gray-400 text-white px-4 py-2 rounded"
-              >
-                测试扩展DAL功能
+                获取系统统计信息
               </button>
             </div>
           </div>
 
-          {/* 垃圾邮件检测测试 */}
+          {/* 敏感词检测测试 */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-            <h2 className="text-display-sm font-semibold mb-4">垃圾邮件检测测试</h2>
+            <h2 className="text-display-sm font-semibold mb-4">敏感词检测测试</h2>
             <div className="grid grid-cols-1 gap-3">
               <button
-                onClick={() => runSpamTest('这是正常内容', '正常内容测试')}
+                onClick={() => runSensitiveWordsTest('这是正常内容', '正常内容测试')}
                 disabled={loading}
                 className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 rounded"
               >
                 测试正常内容
               </button>
               <button
-                onClick={() => runSpamTest('免费赚钱点击这里', '敏感词测试')}
+                onClick={() => runSensitiveWordsTest('测试敏感词垃圾广告', '敏感词测试')}
                 disabled={loading}
                 className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-2 rounded"
               >
                 测试敏感词检测
               </button>
               <button
-                onClick={() => runSpamTest('aaaaaaaaaaaa', '重复字符测试')}
+                onClick={() => runSensitiveWordsTest('免费赚钱点击这里', '广告内容测试')}
                 disabled={loading}
                 className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-4 py-2 rounded"
               >
-                测试重复字符
-              </button>
-              <button
-                onClick={() => runSpamTest('THIS IS ALL UPPERCASE CONTENT THAT SHOULD BE BLOCKED', '全大写测试')}
-                disabled={loading}
-                className="bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-4 py-2 rounded"
-              >
-                测试全大写内容
+                测试广告内容
               </button>
             </div>
           </div>

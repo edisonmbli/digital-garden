@@ -4,7 +4,7 @@ import { cache } from 'react'
 import { groq } from 'next-sanity'
 import { auth } from '@clerk/nextjs/server'
 import prisma from './prisma'
-import { client as sanityClient } from '@/sanity/client'
+import { client } from '@/sanity/client'
 import { logger } from './logger'
 import type { Locale } from '@/i18n-config'
 import type {
@@ -32,7 +32,7 @@ export const getHeroCollections = cache(async () => {
     orderRank
   }`
 
-  return sanityClient.fetch(query)
+  return client.fetch(query)
 })
 
 // 获取所有的影像组（未来支持分页），用于 /gallery 列表页
@@ -47,7 +47,7 @@ export const getAllCollections = cache(async () => {
     orderRank
   }`
 
-  return sanityClient.fetch(query)
+  return client.fetch(query)
 })
 
 export const getLogPosts = cache(async (lang: Locale) => {
@@ -58,7 +58,7 @@ export const getLogPosts = cache(async (lang: Locale) => {
     publishedAt,
     excerpt
   }`
-  return sanityClient.fetch<LogPost[]>(query, { lang })
+  return client.fetch<LogPost[]>(query, { lang })
 })
 
 export const getLogPostBySlug = cache(async (slug: string, lang: Locale) => {
@@ -69,7 +69,7 @@ export const getLogPostBySlug = cache(async (slug: string, lang: Locale) => {
     publishedAt,
     "author": author->{ name, "avatarUrl": image.asset->url }
   }`
-  return sanityClient.fetch<LogPostDetails>(query, { slug, lang })
+  return client.fetch<LogPostDetails>(query, { slug, lang })
 })
 
 // 获取所有开发教程合集（用于列表页）
@@ -93,7 +93,7 @@ export const getAllDevCollectionsAndLogs = cache(async (lang: Locale) => {
     "logsCount": count(*[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref])
   }`
 
-  const devCollections = await sanityClient.fetch<DevCollection[]>(query, {
+  const devCollections = await client.fetch<DevCollection[]>(query, {
     lang,
   })
 
@@ -121,7 +121,7 @@ export const getDevCollectionBySlug = cache(
     } [defined(@)]
   }`
 
-    const devCollection = await sanityClient.fetch<DevCollection | null>(
+    const devCollection = await client.fetch<DevCollection | null>(
       query,
       { slug, lang }
     )
@@ -169,7 +169,7 @@ export const getTranslationsBySlug = cache(
 
     const params = { type, slug, lang }
     try {
-      const result = await sanityClient.fetch(query, params)
+      const result = await client.fetch(query, params)
 
       if (!result) {
         return []
@@ -417,7 +417,7 @@ export const getCollectionAndPhotosBySlug = cache(
       }
     }`
 
-    const collectionDataFromSanity = await sanityClient.fetch<GroupAndPhotos>(
+    const collectionDataFromSanity = await client.fetch<GroupAndPhotos>(
       query,
       { slug }
     )
@@ -550,7 +550,7 @@ export const getLogPostWithInteractions = cache(
       }
     }`
 
-    const logDataFromSanity = await sanityClient.fetch<LogPostDetails>(
+    const logDataFromSanity = await client.fetch<LogPostDetails>(
       query,
       { slug, lang }
     )
@@ -616,7 +616,7 @@ export const getLogPostWithInteractions = cache(
       } [defined(@)]
     }`
 
-    const collectionData = await sanityClient.fetch(collectionQuery, {
+    const collectionData = await client.fetch(collectionQuery, {
       logId: logDataFromSanity._id,
       lang,
     })
@@ -655,7 +655,7 @@ export const getCollectionLogsBySlug = cache(
       _id
     }`
 
-    const logData = await sanityClient.fetch<{ _id: string } | null>(
+    const logData = await client.fetch<{ _id: string } | null>(
       logQuery,
       { logSlug, lang }
     )
@@ -679,7 +679,7 @@ export const getCollectionLogsBySlug = cache(
       } [defined(@)]
     }`
 
-    const collectionData = await sanityClient.fetch(collectionQuery, {
+    const collectionData = await client.fetch(collectionQuery, {
       logId: logData._id,
       lang,
     })
@@ -706,7 +706,7 @@ export const getAuthorBySlug = cache(async (slug: string): Promise<Author | null
     socialLinks
   }`
 
-  const author = await sanityClient.fetch<Author | null>(
+  const author = await client.fetch<Author | null>(
     query, 
     { slug },
     { next: { tags: ['author-data'] } }
