@@ -3,6 +3,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { auth } from '@clerk/nextjs/server'
+import { withApiMonitoring } from '@/lib/sentry-api-integration'
 
 interface AnalyticsEvent {
   eventName: string
@@ -23,7 +24,7 @@ interface AnalyticsEvent {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withApiMonitoring(async (request: NextRequest) => {
   try {
     const { userId } = await auth()
     const events: AnalyticsEvent[] = await request.json()
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'analytics')
 
 // 支持OPTIONS请求（CORS预检）
 export async function OPTIONS() {

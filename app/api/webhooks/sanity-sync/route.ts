@@ -4,6 +4,7 @@ import { revalidateTag } from 'next/cache'
 import { client } from '@/sanity/client'
 import prisma from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { withWebhookMonitoring } from '@/lib/sentry-api-integration'
 
 // The simplified payload from the webhook
 // Define a more accurate type for the document part of the payload
@@ -1029,7 +1030,7 @@ async function handleAuthorDelete(
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withWebhookMonitoring(async (request: NextRequest) => {
   try {
     // 1. Rate limiting check
     const withinRateLimit = await checkRateLimit()
@@ -1209,4 +1210,4 @@ export async function POST(request: NextRequest) {
     logger.error('WebhookMain', 'Webhook processing error', error as Error)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
-}
+}, 'sanity-sync')

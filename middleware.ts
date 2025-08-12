@@ -12,6 +12,7 @@ import {
   logImageAccess, 
   createHotlinkProtectionResponse 
 } from './lib/image-protection'
+import { withSentryMiddleware } from './lib/sentry-middleware-integration'
 
 /**
  * @description 获取请求中最匹配的地域语言。
@@ -45,8 +46,8 @@ const isProtectedRoute = createRouteMatcher([
   '/(zh|en)/admin(.*)', // 包含语言前缀的 admin 路由
 ])
 
-// 导出我们的主中间件函数，由 Clerk 的 clerkMiddleware 进行包装
-export default clerkMiddleware(async (auth, req) => {
+// 创建 Clerk 中间件
+const clerkMiddlewareHandler = clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname
   
   // --- 步骤零：图片防盗链保护 (Image Protection First) ---
@@ -101,6 +102,9 @@ export default clerkMiddleware(async (auth, req) => {
     )
   }
 })
+
+// 导出我们的主中间件函数，集成 Sentry 监控
+export default withSentryMiddleware(clerkMiddlewareHandler)
 
 export const config = {
   // 这个 matcher 定义了中间件将在哪些路径上运行。

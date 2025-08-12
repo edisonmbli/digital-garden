@@ -5,8 +5,9 @@ import { useTransition } from 'react'
 import { Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toggleLikeAction } from '@/lib/actions' // 导入我们创建的 Server Action
+import { withComponentMonitoring } from '@/lib/sentry-client-integration'
 
-export function LikeButton({
+function LikeButtonComponent({
   postId,
   initialLikes,
   isLikedByUser,
@@ -42,3 +43,5 @@ export function LikeButton({
     </Button>
   )
 }
+
+export const LikeButton = withComponentMonitoring(LikeButtonComponent, 'LikeButton')

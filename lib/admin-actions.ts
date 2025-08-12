@@ -8,6 +8,7 @@ import * as commentsDal from '@/lib/dal-comments'
 import { getSpamStats, getBlockedIPs, unblockIP, cleanupExpiredData } from '@/lib/anti-spam'
 import { CommentStatus } from '@/types'
 import { logger } from './logger'
+import { withServerActionMonitoring } from './sentry-api-integration'
 
 /**
  * 检查当前用户是否为管理员
@@ -451,14 +452,15 @@ export async function getCommentStatsAction() {
 }
 
 // 获取管理后台评论列表
-export async function getCommentsForAdminAction(options: {
-  contentType?: 'photo' | 'log'
-  status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'DELETED' | 'all'
-  search?: string
-  page?: number
-  limit?: number
-  sortBy?: 'newest' | 'oldest' | 'status' | 'pinned'
-}) {
+export const getCommentsForAdminAction = withServerActionMonitoring(
+  async (options: {
+    contentType?: 'photo' | 'log'
+    status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'DELETED' | 'all'
+    search?: string
+    page?: number
+    limit?: number
+    sortBy?: 'newest' | 'oldest' | 'status' | 'pinned'
+  }) => {
   try {
     await verifyAdminAccess()
     
@@ -480,7 +482,9 @@ export async function getCommentsForAdminAction(options: {
       message: '系统错误，请稍后重试'
     }
   }
-}
+  },
+  'getCommentsForAdmin'
+)
 
 // 批量更新评论
 export async function batchUpdateCommentsAction({

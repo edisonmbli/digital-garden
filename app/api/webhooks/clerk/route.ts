@@ -3,11 +3,12 @@
 import { Webhook } from 'svix'
 import { WebhookEvent } from '@clerk/nextjs/server'
 import { clerkClient } from '@clerk/nextjs/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { withWebhookMonitoring } from '@/lib/sentry-api-integration'
 
-export async function POST(req: Request) {
+export const POST = withWebhookMonitoring(async (req: NextRequest) => {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
 
   if (!WEBHOOK_SECRET) {
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
 
   if (!svix_id || !svix_timestamp || !svix_signature) {
     logger.error('ClerkWebhook', '缺少svix headers')
-    return new Response('Error occured -- no svix headers', { status: 400 })
+    return NextResponse.json({ error: 'Error occured -- no svix headers' }, { status: 400 })
   }
 
   const payload = await req.json()
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
     }) as WebhookEvent
   } catch (err) {
     logger.error('ClerkWebhook', 'Webhook验证失败', err as Error)
-    return new Response('Error occured', { status: 400 })
+    return NextResponse.json({ error: 'Error occured' }, { status: 400 })
   }
 
   const eventType = evt.type
@@ -122,7 +123,7 @@ export async function POST(req: Request) {
   if (eventType === 'user.deleted') {
     const { id } = evt.data
     if (!id) {
-      return new Response('Error occured -- user id not found', { status: 400 })
+      return NextResponse.json({ error: 'Error occured -- user id not found' }, { status: 400 })
     }
     await prisma.user.delete({
       where: { id: id },
@@ -133,5 +134,5 @@ export async function POST(req: Request) {
 
   // 处理其他事件类型
   logger.info('ClerkWebhook', '未处理的事件类型', { eventType })
-  return new Response('', { status: 200 })
-}
+  return NextResponse.json({}, { status: 200 })
+}, 'clerk-webhook')

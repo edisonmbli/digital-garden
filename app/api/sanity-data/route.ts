@@ -5,8 +5,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { client } from '../../../sanity/client'
 import { logger } from '@/lib/logger'
+import { withApiMonitoring } from '@/lib/sentry-api-integration'
 
-export async function GET(request: NextRequest) {
+export const GET = withApiMonitoring(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url)
   const type = searchParams.get('type')
 
@@ -55,4 +56,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, 'sanity-data')

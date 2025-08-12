@@ -16,60 +16,59 @@ import {
   type CreateCommentInput,
   type UpdateCommentInput,
 } from '@/types'
+import { withServerActionMonitoring } from './sentry-api-integration'
 
 // ================================================= //
 //                   照片相关Actions                  //
 // ================================================= //
 
 // 加载更多照片的 Server Action
-export async function loadMorePhotosAction(
-  slug: string,
-  lang: Locale,
-  page: number
-) {
-  // 我们直接复用 DAL 函数来获取下一页的数据
-  const groupData = await dal.getCollectionAndPhotosBySlug(slug, lang, page)
+export const loadMorePhotosAction = withServerActionMonitoring(
+  async (slug: string, lang: Locale, page: number) => {
+    // 我们直接复用 DAL 函数来获取下一页的数据
+    const groupData = await dal.getCollectionAndPhotosBySlug(slug, lang, page)
 
-  // 确保 groupData 存在，且包含 photos 字段
-  const newPhotos = groupData?.photos || []
+    // 确保 groupData 存在，且包含 photos 字段
+    const newPhotos = groupData?.photos || []
 
-  // 判断是否还有更多数据（如果这次获取到的照片数量，小于我们每页期望的数量，
-  // 那就说明这已经是最后一页了。）
-  const hasMore = newPhotos.length === PHOTOS_PER_PAGE
+    // 判断是否还有更多数据（如果这次获取到的照片数量，小于我们每页期望的数量，
+    // 那就说明这已经是最后一页了。）
+    const hasMore = newPhotos.length === PHOTOS_PER_PAGE
 
-  // 将照片和"是否还有更多"的标志，一并返回
-  return {
-    photos: newPhotos,
-    hasMore: hasMore,
-  }
-}
+    // 将照片和"是否还有更多"的标志，一并返回
+    return {
+      photos: newPhotos,
+      hasMore: hasMore,
+    }
+  },
+  'loadMorePhotos'
+)
 
 // 获取翻译映射的 Server Action
-export async function getTranslationMapAction(
-  slug: string,
-  lang: Locale,
-  type: 'collection' | 'log'
-): Promise<Record<string, string>> {
-  try {
-    const translations = await dal.getTranslationsBySlug({ slug, lang, type })
+export const getTranslationMapAction = withServerActionMonitoring(
+  async (slug: string, lang: Locale, type: 'collection' | 'log'): Promise<Record<string, string>> => {
+    try {
+      const translations = await dal.getTranslationsBySlug({ slug, lang, type })
 
-    // 将翻译数组转换为映射对象
-    return translations.reduce((acc, t) => {
-      acc[t.language] = t.slug
-      return acc
-    }, {} as Record<string, string>)
-  } catch (error) {
-    logger.error('Actions', 'Failed to fetch translation map', error as Error)
-    return {}
-  }
-}
+      // 将翻译数组转换为映射对象
+      return translations.reduce((acc, t) => {
+        acc[t.language] = t.slug
+        return acc
+      }, {} as Record<string, string>)
+    } catch (error) {
+      logger.error('Actions', 'Failed to fetch translation map', error as Error)
+      return {}
+    }
+  },
+  'getTranslationMap'
+)
 
 // ================================================= //
 //                   点赞相关Actions                  //
 // ================================================= //
 
 // 点赞/取消点赞的 Server Action
-export async function toggleLikeAction(postId: string) {
+export const toggleLikeAction = withServerActionMonitoring(async (postId: string) => {
   const startTime = Date.now()
   const { userId } = await auth()
   
@@ -156,7 +155,7 @@ export async function toggleLikeAction(postId: string) {
       code: 'INTERNAL_ERROR',
     }
   }
-}
+}, 'toggleLike')
 
 // ================================================= //
 //                   评论相关Actions                  //
@@ -170,11 +169,11 @@ const commentContentSchema = z
   .refine((content) => content.trim().length > 0, '评论内容不能只包含空格')
 
 // 创建评论的 Server Action
-export async function createCommentAction(data: {
+export const createCommentAction = withServerActionMonitoring(async (data: {
   content: string
   postId: string
   parentId?: string
-}) {
+}) => {
   const startTime = Date.now()
   const { userId } = await auth()
   
@@ -331,16 +330,14 @@ export async function createCommentAction(data: {
       code: 'INTERNAL_ERROR',
     }
   }
-}
+}, 'createComment')
 
 // 更新评论的 Server Action
-export async function updateCommentAction(
-  commentId: string,
-  data: {
+export const updateCommentAction = withServerActionMonitoring(
+  async (commentId: string, data: {
     content?: string
     status?: CommentStatus
-  }
-) {
+  }) => {
   try {
     // 验证用户身份
     const { userId } = await auth()
@@ -426,10 +423,12 @@ export async function updateCommentAction(
       code: 'INTERNAL_ERROR',
     }
   }
-}
+  },
+  'updateComment'
+)
 
 // 软删除评论的 Server Action
-export async function deleteCommentAction(commentId: string, reason?: string) {
+export const deleteCommentAction = withServerActionMonitoring(async (commentId: string, reason?: string) => {
   try {
     // 验证用户身份
     const { userId } = await auth()
@@ -497,14 +496,15 @@ export async function deleteCommentAction(commentId: string, reason?: string) {
       code: 'INTERNAL_ERROR',
     }
   }
-}
+}, 'deleteComment')
 
 // ================================================= //
 //                   审核相关Actions                  //
 // ================================================= //
 
 // 审核评论的 Server Action（批准）
-export async function approveCommentAction(commentId: string, reason?: string) {
+export const approveCommentAction = withServerActionMonitoring(
+  async (commentId: string, reason?: string) => {
   try {
     // 验证用户身份
     const { userId } = await auth()
@@ -565,10 +565,13 @@ export async function approveCommentAction(commentId: string, reason?: string) {
       code: 'INTERNAL_ERROR',
     }
   }
-}
+  },
+  'approveComment'
+)
 
 // 拒绝评论的 Server Action
-export async function rejectCommentAction(commentId: string, reason?: string) {
+export const rejectCommentAction = withServerActionMonitoring(
+  async (commentId: string, reason?: string) => {
   try {
     // 验证用户身份
     const { userId } = await auth()
@@ -627,10 +630,13 @@ export async function rejectCommentAction(commentId: string, reason?: string) {
       code: 'INTERNAL_ERROR',
     }
   }
-}
+  },
+  'rejectComment'
+)
 
 // 置顶评论的 Server Action
-export async function pinCommentAction(commentId: string) {
+export const pinCommentAction = withServerActionMonitoring(
+  async (commentId: string) => {
   try {
     // 验证用户身份
     const { userId } = await auth()
@@ -679,7 +685,9 @@ export async function pinCommentAction(commentId: string) {
       code: 'INTERNAL_ERROR',
     }
   }
-}
+  },
+  'pinComment'
+)
 
 // 取消置顶评论的 Server Action
 export async function unpinCommentAction(commentId: string) {
@@ -772,17 +780,18 @@ export async function commentAction(postId: string, formData: FormData) {
 // ================================================= //
 
 // 获取评论列表的 Server Action（替代 /api/comments）
-export async function getCommentsAction({
-  postId,
-  page = 1,
-  limit = 10,
-  status = CommentStatus.APPROVED,
-}: {
-  postId: string
-  page?: number
-  limit?: number
-  status?: CommentStatus
-}) {
+export const getCommentsAction = withServerActionMonitoring(
+  async ({
+    postId,
+    page = 1,
+    limit = 10,
+    status = CommentStatus.APPROVED,
+  }: {
+    postId: string
+    page?: number
+    limit?: number
+    status?: CommentStatus
+  }) => {
   try {
     // 验证输入参数
     if (!postId || typeof postId !== 'string') {
@@ -824,4 +833,6 @@ export async function getCommentsAction({
       code: 'INTERNAL_ERROR',
     }
   }
-}
+  },
+  'getComments'
+)

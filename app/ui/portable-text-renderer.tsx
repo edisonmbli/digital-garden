@@ -351,12 +351,8 @@ const components: PortableTextComponents = {
             </div>
           )}
           <div className="relative">
-            <Highlight
-               theme={themes.github}
-               code={code}
-               language={language}
-             >
-               {({ style, tokens, getLineProps, getTokenProps }) => (
+            <Highlight theme={themes.github} code={code} language={language}>
+              {({ style, tokens, getLineProps, getTokenProps }) => (
                 <pre
                   className={cn(
                     'overflow-x-auto bg-gray-300/20 dark:bg-gray-100/10 p-2 text-code-sm font-mono',
@@ -377,7 +373,7 @@ const components: PortableTextComponents = {
               )}
             </Highlight>
             {!value.filename && language && language !== 'text' && (
-              <div className="absolute top-2 right-2 text-caption-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-gray-600/50 px-2 py-1 rounded uppercase">
+              <div className="absolute top-2 right-2 text-caption-xs text-slate-500 dark:text-slate-700 bg-slate-100 dark:bg-gray-600/50 px-2 py-1 rounded uppercase">
                 {language}
               </div>
             )}

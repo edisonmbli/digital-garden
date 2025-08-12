@@ -11,6 +11,7 @@ import { Loader2, Send } from 'lucide-react'
 import { useI18n } from '@/app/context/i18n-provider'
 import { useAuth } from '@clerk/nextjs'
 import { analytics } from '@/lib/analytics-logger'
+import { withComponentMonitoring } from '@/lib/sentry-client-integration'
 
 interface CommentFormProps {
   postId: string
@@ -24,7 +25,7 @@ interface CommentFormProps {
   className?: string
 }
 
-export default function CommentForm({ 
+function CommentFormComponent({ 
   postId, 
   parentId, 
   placeholder, 
@@ -245,3 +246,5 @@ export default function CommentForm({
     </Card>
   )
 }
+
+export default withComponentMonitoring(CommentFormComponent, 'CommentForm')

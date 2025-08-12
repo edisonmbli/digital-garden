@@ -8,6 +8,7 @@ import { toggleLikeAction } from '@/lib/actions'
 import { toast } from 'sonner'
 import { useI18n } from '@/app/context/i18n-provider'
 import { analytics } from '@/lib/analytics-logger'
+import { withComponentMonitoring } from '@/lib/sentry-client-integration'
 
 interface EnhancedLikeButtonProps {
   postId: string
@@ -18,7 +19,7 @@ interface EnhancedLikeButtonProps {
   className?: string
 }
 
-export function EnhancedLikeButton({
+const EnhancedLikeButtonComponent = function EnhancedLikeButton({
   postId,
   initialLikes,
   isLikedByUser,
@@ -75,7 +76,7 @@ export function EnhancedLikeButton({
           toast.success(result.message)
 
           // 确保状态与服务器返回的数据一致
-          if (result.data) {
+          if (result.success && result.data) {
             setOptimisticIsLiked(result.data.action === 'liked')
             // 注意：这里我们可能需要重新获取准确的点赞数，
             // 但为了简化，我们保持乐观更新的结果
@@ -162,3 +163,8 @@ export function EnhancedLikeButton({
     </Button>
   )
 }
+
+export const EnhancedLikeButton = withComponentMonitoring(
+  EnhancedLikeButtonComponent,
+  'EnhancedLikeButton'
+)

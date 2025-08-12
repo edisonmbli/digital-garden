@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { withApiMonitoring } from '@/lib/sentry-api-integration'
 
 interface AnalyticsEvent {
   eventType?: string // 旧格式
@@ -25,7 +26,7 @@ interface EventSummary {
   lastSeen: string
 }
 
-export async function GET(request: Request) {
+export const GET = withApiMonitoring(async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
@@ -144,4 +145,4 @@ export async function GET(request: Request) {
       { status: 500 }
     )
   }
-}
+}, 'analytics-dashboard')

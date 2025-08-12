@@ -6,6 +6,7 @@ import { auth } from '@clerk/nextjs/server'
 import prisma from './prisma'
 import { client } from '@/sanity/client'
 import { logger } from './logger'
+import { withDatabaseMonitoring } from './sentry-dal-integration'
 import type { Locale } from '@/i18n-config'
 import type {
   DevCollection,
@@ -208,41 +209,28 @@ export const getTranslationsBySlug = cache(
 
 // --- Prisma Queries ---
 
-export const getLikesAndCommentsForPost = cache(async (postId: string) => {
-  // 优化查询：使用更精确的字段选择和预加载策略
-  const post = await prisma.post.findUnique({
-    where: { id: postId },
-    select: {
-      id: true,
-      sanityDocumentId: true,
-      contentType: true,
-      likes: {
-        select: { 
-          userId: true,
-          createdAt: true 
-        },
-      },
-      comments: {
+export const getLikesAndCommentsForPost = cache(
+  withDatabaseMonitoring(
+    async (postId: string) => {
+      // 优化查询：使用更精确的字段选择和预加载策略
+      const post = await prisma.post.findUnique({
+        where: { id: postId },
         select: {
           id: true,
-          content: true,
-          createdAt: true,
-          updatedAt: true,
-          status: true,
-          isDeleted: true,
-          user: {
+          sanityDocumentId: true,
+          contentType: true,
+          likes: {
             select: { 
-              id: true,
-              name: true, 
-              avatarUrl: true 
+              userId: true,
+              createdAt: true 
             },
           },
-          // 优化：只预加载必要的回复字段
-          replies: {
+          comments: {
             select: {
               id: true,
               content: true,
               createdAt: true,
+              updatedAt: true,
               status: true,
               isDeleted: true,
               user: {
@@ -252,70 +240,93 @@ export const getLikesAndCommentsForPost = cache(async (postId: string) => {
                   avatarUrl: true 
                 },
               },
+              // 优化：只预加载必要的回复字段
+              replies: {
+                select: {
+                  id: true,
+                  content: true,
+                  createdAt: true,
+                  status: true,
+                  isDeleted: true,
+                  user: {
+                    select: { 
+                      id: true,
+                      name: true, 
+                      avatarUrl: true 
+                    },
+                  },
+                },
+                where: {
+                  status: 'APPROVED',
+                  isDeleted: false,
+                },
+                orderBy: { createdAt: 'asc' },
+              },
             },
-            where: {
+            where: { 
+              parentId: null,
               status: 'APPROVED',
               isDeleted: false,
             },
-            orderBy: { createdAt: 'asc' },
+            orderBy: { createdAt: 'desc' },
           },
-        },
-        where: { 
-          parentId: null,
-          status: 'APPROVED',
-          isDeleted: false,
-        },
-        orderBy: { createdAt: 'desc' },
-      },
-      _count: {
-        select: {
-          likes: true,
-          comments: {
-            where: {
-              status: 'APPROVED',
-              isDeleted: false,
+          _count: {
+            select: {
+              likes: true,
+              comments: {
+                where: {
+                  status: 'APPROVED',
+                  isDeleted: false,
+                },
+              },
             },
           },
         },
-      },
+      })
+      return post
     },
-  })
-  return post
-})
+    'getLikesAndCommentsForPost',
+    'Post'
+  )
+)
 
-export async function toggleLikePost(postId: string) {
-  const { userId } = await auth()
-  if (!userId) throw new Error('Unauthorized')
+export const toggleLikePost = withDatabaseMonitoring(
+  async (postId: string) => {
+    const { userId } = await auth()
+    if (!userId) throw new Error('Unauthorized')
 
-  // 检查用户是否已经点赞过这个帖子
-  const existingLike = await prisma.like.findUnique({
-    where: {
-      postId_userId: {
-        postId,
-        userId,
-      },
-    },
-  })
-
-  if (existingLike) {
-    // 如果已经点赞，则取消点赞
-    await prisma.like.delete({
+    // 检查用户是否已经点赞过这个帖子
+    const existingLike = await prisma.like.findUnique({
       where: {
-        id: existingLike.id,
+        postId_userId: {
+          postId,
+          userId,
+        },
       },
     })
-    return { action: 'unliked' as const, success: true }
-  } else {
-    // 如果没有点赞，则创建点赞
-    await prisma.like.create({
-      data: {
-        postId,
-        userId,
-      },
-    })
-    return { action: 'liked' as const, success: true }
-  }
-}
+
+    if (existingLike) {
+      // 如果已经点赞，则取消点赞
+      await prisma.like.delete({
+        where: {
+          id: existingLike.id,
+        },
+      })
+      return { action: 'unliked' as const, success: true }
+    } else {
+      // 如果没有点赞，则创建点赞
+      await prisma.like.create({
+        data: {
+          postId,
+          userId,
+        },
+      })
+      return { action: 'liked' as const, success: true }
+    }
+  },
+  'toggleLikePost',
+  'Like'
+)
 
 // 获取帖子的点赞统计信息
 export async function getPostLikeStats(postId: string) {
@@ -351,43 +362,54 @@ export async function createComment(
   const { userId } = await auth()
   if (!userId) throw new Error('Unauthorized')
 
-  return prisma.comment.create({
-    data: {
-      content,
-      postId,
-      userId,
-      parentId,
+  return withDatabaseMonitoring(
+    async () => {
+      return prisma.comment.create({
+        data: {
+          content,
+          postId,
+          userId,
+          parentId,
+        },
+      })
     },
-  })
+    'createComment',
+    'Comment'
+  )
 }
 
-export async function deleteComment(commentId: string) {
-  const { userId, sessionClaims } = await auth()
-  if (!userId) throw new Error('Unauthorized')
+export const deleteComment = withDatabaseMonitoring(
+  async (commentId: string) => {
+    const { userId, sessionClaims } = await auth()
+    if (!userId) throw new Error('Unauthorized')
 
-  // 只有评论的创建者或管理员才能删除
-  const comment = await prisma.comment.findUnique({ where: { id: commentId } })
+    // 只有评论的创建者或管理员才能删除
+    const comment = await prisma.comment.findUnique({ where: { id: commentId } })
 
-  // 使用类型断言来访问 publicMetadata
-  const userRole = (sessionClaims?.publicMetadata as { role?: string })?.role
+    // 使用类型断言来访问 publicMetadata
+    const userRole = (sessionClaims?.publicMetadata as { role?: string })?.role
 
-  if (comment?.userId !== userId && userRole !== 'admin') {
-    throw new Error('Forbidden')
-  }
+    if (comment?.userId !== userId && userRole !== 'admin') {
+      throw new Error('Forbidden')
+    }
 
-  // 删除评论并返回其 postId
-  const deletedComment = await prisma.comment.delete({
-    where: { id: commentId },
-  })
-  return deletedComment.postId
-}
+    // 删除评论并返回其 postId
+    const deletedComment = await prisma.comment.delete({
+      where: { id: commentId },
+    })
+    return deletedComment.postId
+  },
+  'deleteComment',
+  'Comment'
+)
 
 // ---- Sanity x Prisma 数据合并 ----
 
 export const PHOTOS_PER_PAGE = 12 // 定义每页加载的照片数量
 
 export const getCollectionAndPhotosBySlug = cache(
-  async (slug: string, lang: Locale, page: number = 1) => {
+  withDatabaseMonitoring(
+    async (slug: string, lang: Locale, page: number = 1) => {
     // 分页逻辑
     const start = (page - 1) * PHOTOS_PER_PAGE
     const end = start + PHOTOS_PER_PAGE
@@ -494,38 +516,46 @@ export const getCollectionAndPhotosBySlug = cache(
       ...collectionDataFromSanity,
       photos: enrichedPhotos,
     }
-  }
+    },
+    'getCollectionAndPhotosBySlug',
+    'Collection'
+  )
 )
 
 // ---- Log 相关的 Sanity x Prisma 数据合并 ----
 
 // 确保 Postgres 中存在对应的 Post 记录
-export async function ensureLogPostExists(sanityDocumentId: string, authorId: string) {
-  const existingPost = await prisma.post.findUnique({
-    where: {
-      sanityDocumentId,
-    },
-  })
-
-  if (!existingPost) {
-    // 创建新的 Post 记录
-    const newPost = await prisma.post.create({
-      data: {
+export const ensureLogPostExists = withDatabaseMonitoring(
+  async (sanityDocumentId: string, authorId: string) => {
+    const existingPost = await prisma.post.findUnique({
+      where: {
         sanityDocumentId,
-        contentType: 'log',
-        authorId,
-        isDeleted: false,
       },
     })
-    return newPost
-  }
 
-  return existingPost
-}
+    if (!existingPost) {
+      // 创建新的 Post 记录
+      const newPost = await prisma.post.create({
+        data: {
+          sanityDocumentId,
+          contentType: 'log',
+          authorId,
+          isDeleted: false,
+        },
+      })
+      return newPost
+    }
+
+    return existingPost
+  },
+  'ensureLogPostExists',
+  'Post'
+)
 
 // 获取log文章及其交互数据（参考getCollectionAndPhotosBySlug的模式）
 export const getLogPostWithInteractions = cache(
-  async (slug: string, lang: Locale): Promise<EnrichedLogPost | null> => {
+  withDatabaseMonitoring(
+    async (slug: string, lang: Locale): Promise<EnrichedLogPost | null> => {
     // 1. 从 Sanity 获取基础的log内容数据（包含SEO字段）
     const query = groq`*[_type == "log" && slug.current == $slug && language == $lang][0] {
       _id,
@@ -644,7 +674,10 @@ export const getLogPostWithInteractions = cache(
     }
 
     return enrichedLogPost
-  }
+    },
+    'getLogPostWithInteractions',
+    'LogPost'
+  )
 )
 
 // 获取当前log所属合集的其他文章列表（用于左侧导航）

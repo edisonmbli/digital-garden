@@ -14,19 +14,25 @@ import { AnalyticsProvider } from '@/components/analytics-provider'
 // 导入环境变量验证（仅在开发环境自动执行）
 import '@/lib/env-validation'
 
-// 英文字体配置
+// 英文字体配置 - 使用 swap 确保视觉效果，但优化 Hydration 稳定性
 const fontSans = Inter({
   subsets: ['latin'],
-  display: 'swap',
+  display: 'swap', 
   variable: '--font-sans',
   weight: ['300', '400', '500', '600', '700'],
+  preload: true,
+  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
 })
+
+
 
 const fontSerif = Crimson_Pro({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-serif',
   weight: ['300', '400', '500', '600', '700'],
+  preload: true, 
+  fallback: ['Georgia', 'Times New Roman', 'serif'],
 })
 
 const fontDisplay = Playfair_Display({
@@ -34,6 +40,8 @@ const fontDisplay = Playfair_Display({
   display: 'swap',
   variable: '--font-display',
   weight: ['400', '500', '600', '700', '900'],
+  preload: true,
+  fallback: ['Georgia', 'Times New Roman', 'serif'],
 })
 
 // 中文字体配置
@@ -42,6 +50,8 @@ const fontSansCN = Noto_Sans_SC({
   display: 'swap',
   variable: '--font-sans-cn',
   weight: ['300', '400', '500', '600', '700'],
+  preload: true,
+  fallback: ['PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'sans-serif'],
 })
 
 const fontSerifCN = Noto_Serif_SC({
@@ -49,7 +59,11 @@ const fontSerifCN = Noto_Serif_SC({
   display: 'swap',
   variable: '--font-serif-cn',
   weight: ['300', '400', '500', '600', '700', '900'],
+  preload: true,
+  fallback: ['Songti SC', 'SimSun', 'serif'],
 })
+
+
 
 // 动态生成metadata
 export async function generateMetadata({
@@ -76,21 +90,27 @@ export default async function RootLayout({
   const { lang } = await params
   const dictionary = await getDictionary(lang)
   const clerkLocalization = getClerkLocalization(lang)
+  
+  // 构建字体类名字符串
+  const fontClasses = `${fontSans.variable} ${fontSerif.variable} ${fontDisplay.variable} ${fontSansCN.variable} ${fontSerifCN.variable}`
 
   return (
     <DynamicClerkProvider 
       baseLocalization={{ ...clerkLocalization, ...dictionary.clerk }}
       contextualLocalization={dictionary}
     >
-      <html lang="en" suppressHydrationWarning>
+      <html lang={lang} suppressHydrationWarning>
         <body
-          className={`${fontSans.variable} ${fontSerif.variable} ${fontDisplay.variable} ${fontSansCN.variable} ${fontSerifCN.variable} font-sans min-h-screen w-full bg-background text-foreground antialiased`}
+          className={`${fontClasses} font-sans min-h-screen w-full bg-background text-foreground antialiased`}
+          suppressHydrationWarning
+
         >
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
             enableSystem
             disableTransitionOnChange
+            storageKey="theme"
           >
             <I18nProvider dictionary={dictionary}>
               <AnalyticsProvider>

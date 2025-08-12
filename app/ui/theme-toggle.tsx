@@ -13,8 +13,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { withComponentMonitoring } from '@/lib/sentry-client-integration'
 
-export function ThemeToggle() {
+function ThemeToggle() {
   const { setTheme } = useTheme()
 
   return (
@@ -40,3 +41,5 @@ export function ThemeToggle() {
     </DropdownMenu>
   )
 }
+
+export default withComponentMonitoring(ThemeToggle, 'ThemeToggle')

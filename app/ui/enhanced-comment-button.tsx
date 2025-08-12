@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { MessageCircle } from 'lucide-react'
 import { useAuth } from '@clerk/nextjs'
 import { useI18n } from '@/app/context/i18n-provider'
+import { withComponentMonitoring } from '@/lib/sentry-client-integration'
 
 interface EnhancedCommentButtonProps {
   commentCount: number
@@ -14,7 +15,7 @@ interface EnhancedCommentButtonProps {
   className?: string
 }
 
-export default function EnhancedCommentButton({
+function EnhancedCommentButton({
   commentCount,
   hasUserCommented = false,
   onCommentClick,
@@ -65,3 +66,5 @@ export default function EnhancedCommentButton({
     </Button>
   )
 }
+
+export default withComponentMonitoring(EnhancedCommentButton, 'EnhancedCommentButton')

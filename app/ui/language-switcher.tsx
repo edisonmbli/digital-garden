@@ -14,8 +14,9 @@ import { Languages } from 'lucide-react'
 import { getTranslationMapAction } from '@/lib/actions'
 import { logger } from '@/lib/logger'
 import { useState } from 'react'
+import { withComponentMonitoring } from '@/lib/sentry-client-integration'
 
-export function LanguageSwitcher() {
+function LanguageSwitcher() {
   const pathName = usePathname()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
@@ -101,3 +102,5 @@ export function LanguageSwitcher() {
     </DropdownMenu>
   )
 }
+
+export default withComponentMonitoring(LanguageSwitcher, 'LanguageSwitcher')
