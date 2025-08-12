@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "prisma generate && next build",
+    "build:fast": "next build",
     "start": "next start",
     "lint": "next lint",
+    "postinstall": "prisma generate",
     "prisma:migrate": "dotenv -e .env.local -- pnpm prisma migrate dev",
     "prisma:studio": "dotenv -e .env.local -- pnpm prisma studio",
     "prisma:seed": "dotenv -e .env.local -- pnpm prisma db seed",
