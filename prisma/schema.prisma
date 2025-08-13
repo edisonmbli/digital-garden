@@ -234,6 +234,38 @@ model SensitiveWord {
   @@index([word])
 }
 
+model AnalyticsEvent {
+  id              String   @id @default(cuid())
+  eventName       String   @map("event_name") // 事件名称
+  timestamp       DateTime // 事件发生时间
+  date            DateTime @db.Date // 日期字段，用于分区和清理
+  sessionId       String   @map("session_id") // 会话ID
+  userId          String?  // 用户ID（可选）
+  page            String   // 页面路径
+  referrer        String?  // 来源页面
+  userAgent       String   @map("user_agent") // 用户代理
+  ip              String   // IP地址
+  country         String   // 国家
+  
+  // JSON 字段存储复杂数据
+  properties      Json?    // 事件属性
+  performance     Json?    // 性能指标
+  
+  // 服务端处理信息
+  processedAt     DateTime @default(now()) @map("processed_at")
+  serverTimestamp BigInt   @map("server_timestamp") // 服务端时间戳
+  environment     String   @default("production") // 环境标识
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // 索引优化
+  @@index([date, eventName]) // 按日期和事件类型查询
+  @@index([sessionId])       // 会话分析
+  @@index([userId])          // 用户行为分析
+  @@index([environment])     // 环境隔离
+  @@index([page])
+  @@map("analytics_events")
+}
+
 enum CommentStatus {
   PENDING
   APPROVED

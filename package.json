@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "prisma generate && next build",
+    "build": "prisma migrate deploy && prisma generate && next build",
     "build:fast": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -14,7 +14,8 @@
     "prisma:seed": "dotenv -e .env.local -- pnpm prisma db seed",
     "analytics:analyze": "node scripts/analyze-analytics.js",
     "analytics:today": "node scripts/analyze-analytics.js --format=table",
-    "analytics:json": "node scripts/analyze-analytics.js --format=json"
+    "analytics:json": "node scripts/analyze-analytics.js --format=json",
+    "analytics:migrate": "node scripts/migrate-analytics-data.js"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",

@@ -1,9 +1,9 @@
 /**
  * Analytics Logger - 基于现有ClientLogger的Analytics扩展
- * 
+ *
  * 这个模块扩展了现有的ClientLogger系统，增加了专门的Analytics功能
  * 复用了批量处理、防重复、队列管理等核心机制
- * 
+ *
  * 设计理念：
  * 1. 复用现有基础设施，降低开发成本
  * 2. 渐进式升级，保持向后兼容
@@ -55,31 +55,31 @@ export class AnalyticsLogger {
   private batchTimer: NodeJS.Timeout | null = null
   private recentEvents = new Set<string>()
   private performanceObserver: PerformanceObserver | null = null
-  
+
   // 配置参数
   private readonly config: AnalyticsConfig = {
-    batchSize: 10,
+    batchSize: 20,
     batchDelay: 5000,
     maxQueueSize: 50,
     duplicateWindow: 3000,
     enablePerformanceTracking: true,
-    enableAutoPageTracking: true
+    enableAutoPageTracking: true,
   }
-  
+
   constructor(customConfig?: Partial<AnalyticsConfig>) {
     // 合并自定义配置
     if (customConfig) {
       this.config = { ...this.config, ...customConfig }
     }
-    
+
     this.sessionId = this.generateSessionId()
-    
+
     if (this.isClient) {
       this.initializeTracking()
       this.setupCleanup()
     }
   }
-  
+
   /**
    * 初始化各种追踪功能
    */
@@ -87,11 +87,11 @@ export class AnalyticsLogger {
     if (this.config.enablePerformanceTracking) {
       this.initializePerformanceTracking()
     }
-    
+
     if (this.config.enableAutoPageTracking) {
       this.setupPageTracking()
     }
-    
+
     // 追踪初始页面加载
     if (document.readyState === 'complete') {
       this.trackPageView()
@@ -101,7 +101,7 @@ export class AnalyticsLogger {
       })
     }
   }
-  
+
   /**
    * 设置页面卸载时的清理
    */
@@ -109,20 +109,20 @@ export class AnalyticsLogger {
     window.addEventListener('beforeunload', () => {
       this.flush()
     })
-    
+
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
         this.flush()
       }
     })
   }
-  
+
   /**
    * 追踪自定义事件
    */
   track(eventName: string, properties?: Record<string, unknown>): void {
     if (!this.isClient) return
-    
+
     const event: AnalyticsEvent = {
       eventName,
       timestamp: new Date().toISOString(),
@@ -131,57 +131,64 @@ export class AnalyticsLogger {
       page: window.location.pathname,
       referrer: document.referrer,
       userAgent: navigator.userAgent,
-      properties
+      properties,
     }
-    
+
     this.queueEvent(event)
   }
-  
+
   /**
    * 追踪页面访问
    */
   trackPageView(page?: string, properties?: Record<string, unknown>): void {
     const pageUrl = page || window.location.pathname
-    
+
     this.track('page_view', {
       page: pageUrl,
       title: document.title,
       search: window.location.search,
       hash: window.location.hash,
-      ...properties
+      ...properties,
     })
   }
-  
+
   /**
    * 追踪用户交互事件
    */
-  trackInteraction(element: string, action: string, properties?: Record<string, unknown>): void {
+  trackInteraction(
+    element: string,
+    action: string,
+    properties?: Record<string, unknown>
+  ): void {
     this.track('user_interaction', {
       element,
       action,
-      ...properties
+      ...properties,
     })
   }
-  
+
   /**
    * 追踪业务事件（复用现有ClientLogger的业务逻辑）
    */
-  trackBusinessEvent(eventType: 'like' | 'comment' | 'share' | 'download', context: {
-    postId?: string
-    collectionId?: string
-    userId?: string
-    action?: string
-    [key: string]: unknown
-  }): void {
+  trackBusinessEvent(
+    eventType: 'like' | 'comment' | 'share' | 'download',
+    context: {
+      postId?: string
+      collectionId?: string
+      userId?: string
+      action?: string
+      [key: string]: unknown
+    }
+  ): void {
     // 同时发送到Analytics和现有的业务日志系统
     this.track(`business_${eventType}`, context)
-    
+
     // 根据事件类型调用现有的ClientLogger方法
     if (eventType === 'download' && context.postId) {
       clientLogger.logImageAccess('download', {
         userId: context.userId,
         postId: context.postId,
-        collectionId: context.collectionId
+        collectionId: context.collectionId,
       })
     }
   }
@@ -189,46 +196,57 @@ export class AnalyticsLogger {
   /**
    * 追踪页面浏览事件（专门用于post view）
    */
-  trackPostView(postId: string, postType: 'photo' | 'log', context?: {
-    collectionId?: string
-    title?: string
-    [key: string]: unknown
-  }): void {
+  trackPostView(
+    postId: string,
+    postType: 'photo' | 'log',
+    context?: {
+      collectionId?: string
+      title?: string
+      [key: string]: unknown
+    }
+  ): void {
     this.track('post_view', {
       postId,
       postType,
-      ...context
+      ...context,
     })
   }
 
   /**
    * 追踪点赞事件
    */
-  trackLike(postId: string, action: 'like' | 'unlike', context?: {
-    collectionId?: string
-    [key: string]: unknown
-  }): void {
+  trackLike(
+    postId: string,
+    action: 'like' | 'unlike',
+    context?: {
+      collectionId?: string
+      [key: string]: unknown
+    }
+  ): void {
     this.trackBusinessEvent('like', {
       postId,
       action,
-      ...context
+      ...context,
     })
   }
 
   /**
    * 追踪评论事件
    */
-  trackComment(postId: string, context?: {
-    commentLength?: number
-    parentId?: string
-    [key: string]: unknown
-  }): void {
+  trackComment(
+    postId: string,
+    context?: {
+      commentLength?: number
+      parentId?: string
+      [key: string]: unknown
+    }
+  ): void {
     this.trackBusinessEvent('comment', {
       postId,
-      ...context
+      ...context,
     })
   }
-  
+
   /**
    * 追踪错误事件
    */
@@ -237,29 +255,33 @@ export class AnalyticsLogger {
       errorName: error.name,
       errorMessage: error.message,
       errorStack: error.stack,
-      ...context
+      ...context,
     })
   }
-  
+
   /**
    * 追踪性能指标
    */
-  trackPerformance(metric: string, value: number, context?: Record<string, unknown>): void {
+  trackPerformance(
+    metric: string,
+    value: number,
+    context?: Record<string, unknown>
+  ): void {
     this.track('performance_metric', {
       metric,
       value,
       url: window.location.href,
-      ...context
+      ...context,
     })
   }
-  
+
   /**
    * 设置用户属性
    */
   identify(userId: string, traits?: Record<string, unknown>): void {
     this.track('identify', {
       userId,
-      traits
+      traits,
     })
   }
 
@@ -297,7 +319,7 @@ export class AnalyticsLogger {
   private trackPerformanceMetric(metric: string, value: number): void {
     this.trackPerformance(metric, value)
   }
-  
+
   /**
    * 将事件添加到队列
    */
@@ -307,53 +329,53 @@ export class AnalyticsLogger {
     if (this.recentEvents.has(eventKey)) {
       return
     }
-    
+
     // 添加到防重复集合
     this.recentEvents.add(eventKey)
     setTimeout(() => {
       this.recentEvents.delete(eventKey)
     }, this.config.duplicateWindow)
-    
+
     // 添加到队列
     this.queue.push(event)
-    
+
     // 队列满时立即处理
     if (this.queue.length >= this.config.batchSize) {
       this.processBatch()
       return
     }
-    
+
     // 队列溢出保护
     if (this.queue.length > this.config.maxQueueSize) {
       this.queue.shift()
     }
-    
+
     // 设置定时批量处理
     if (this.batchTimer) {
       clearTimeout(this.batchTimer)
     }
-    
+
     this.batchTimer = setTimeout(() => {
       this.processBatch()
     }, this.config.batchDelay)
   }
-  
+
   /**
    * 处理批量事件
    */
   private async processBatch(): Promise<void> {
     if (this.queue.length === 0) return
-    
+
     // 清除定时器
     if (this.batchTimer) {
       clearTimeout(this.batchTimer)
       this.batchTimer = null
     }
-    
+
     // 取出当前队列中的所有事件
     const eventsToSend = [...this.queue]
     this.queue = []
-    
+
     try {
       await this.sendBatchEvents(eventsToSend)
     } catch (error) {
@@ -362,21 +384,21 @@ export class AnalyticsLogger {
       this.queue.unshift(...eventsToSend)
     }
   }
-  
+
   /**
    * 发送批量事件到服务端
    */
   private async sendBatchEvents(events: AnalyticsEvent[]): Promise<void> {
     if (events.length === 0) return
-    
+
     const data = JSON.stringify(events)
-    
+
     // 优先使用 sendBeacon API
     if (navigator.sendBeacon) {
       const success = navigator.sendBeacon('/api/analytics', data)
       if (success) return
     }
-    
+
     // 降级到 fetch
     try {
       const response = await fetch('/api/analytics', {
@@ -385,9 +407,9 @@ export class AnalyticsLogger {
           'Content-Type': 'application/json',
         },
         body: data,
-        keepalive: true
+        keepalive: true,
       })
-      
+
       if (!response.ok) {
         throw new Error(`Analytics API error: ${response.statusText}`)
       }
@@ -396,7 +418,7 @@ export class AnalyticsLogger {
       throw error
     }
   }
-  
+
   /**
    * 立即处理队列中的所有事件
    */
@@ -404,21 +426,29 @@ export class AnalyticsLogger {
     if (this.queue.length > 0) {
       await this.processBatch()
     }
-    
+
     // 清理定时器
     if (this.batchTimer) {
       clearTimeout(this.batchTimer)
       this.batchTimer = null
     }
   }
-  
+
   /**
    * 生成会话ID
    */
   private generateSessionId(): string {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      let sessionId = sessionStorage.getItem('analytics_session_id')
+      if (!sessionId) {
+        sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        sessionStorage.setItem('analytics_session_id', sessionId)
+      }
+      return sessionId
+    }
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   }
-  
+
   /**
    * 获取当前用户ID（内部方法）
    */
@@ -427,18 +457,22 @@ export class AnalyticsLogger {
     if (this.userId) {
       return this.userId
     }
-    
+
     // 如果没有设置，尝试从Clerk的全局状态获取
     if (typeof window !== 'undefined') {
       try {
         // 尝试从Clerk的全局状态获取
-        const clerkGlobal = (window as unknown as { __clerk_user?: { id: string } }).__clerk_user
+        const clerkGlobal = (
+          window as unknown as { __clerk_user?: { id: string } }
+        ).__clerk_user
         if (clerkGlobal?.id) {
           return clerkGlobal.id
         }
-        
+
         // 尝试从Clerk实例获取
-        const clerkInstance = (window as unknown as { Clerk?: { user?: { id: string } } }).Clerk
+        const clerkInstance = (
+          window as unknown as { Clerk?: { user?: { id: string } } }
+        ).Clerk
         if (clerkInstance?.user?.id) {
           return clerkInstance.user.id
         }
@@ -446,10 +480,10 @@ export class AnalyticsLogger {
         console.warn('Failed to get user ID from Clerk:', error)
       }
     }
-    
+
     return undefined
   }
-  
+
   /**
    * 生成事件的唯一标识
    */
@@ -458,7 +492,7 @@ export class AnalyticsLogger {
     const propsKey = properties ? JSON.stringify(properties) : ''
     return `${eventName}-${userId || 'anonymous'}-${page}-${propsKey}`
   }
-  
+
   /**
    * 初始化性能监控
    */
@@ -471,27 +505,35 @@ export class AnalyticsLogger {
       window.addEventListener('load', () => {
         const loadTime = performance.now()
         this.trackPerformanceMetric('page_load_time', loadTime)
-        
+
         // Navigation Timing API
         setTimeout(() => {
-          const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
+          const navigation = performance.getEntriesByType(
+            'navigation'
+          )[0] as PerformanceNavigationTiming
           if (navigation) {
-            this.trackPerformance('dom_content_loaded', navigation.domContentLoadedEventEnd - navigation.fetchStart)
-            this.trackPerformance('first_byte', navigation.responseStart - navigation.fetchStart)
+            this.trackPerformance(
+              'dom_content_loaded',
+              navigation.domContentLoadedEventEnd - navigation.fetchStart
+            )
+            this.trackPerformance(
+              'first_byte',
+              navigation.responseStart - navigation.fetchStart
+            )
           }
         }, 0)
       })
     }
   }
-  
+
   /**
    * 设置页面路由变化监听
    */
   private setupPageTracking(): void {
     if (typeof window === 'undefined') return
-    
+
     let currentPath = window.location.pathname
-    
+
     // 监听popstate事件（浏览器前进后退）
     window.addEventListener('popstate', () => {
       if (window.location.pathname !== currentPath) {
@@ -499,12 +541,12 @@ export class AnalyticsLogger {
         this.trackPageView()
       }
     })
-    
+
     // 监听pushState和replaceState（SPA路由变化）
     const originalPushState = history.pushState
     const originalReplaceState = history.replaceState
-    
-    history.pushState = function(...args) {
+
+    history.pushState = function (...args) {
       originalPushState.apply(history, args)
       setTimeout(() => {
         if (window.location.pathname !== currentPath) {
@@ -513,8 +555,8 @@ export class AnalyticsLogger {
         }
       }, 0)
     }
-    
-    history.replaceState = function(...args) {
+
+    history.replaceState = function (...args) {
       originalReplaceState.apply(history, args)
       setTimeout(() => {
         if (window.location.pathname !== currentPath) {
@@ -530,31 +572,66 @@ export class AnalyticsLogger {
 export const analytics = new AnalyticsLogger()
 
 // 便捷方法导出
-export function trackEvent(eventName: string, properties?: Record<string, unknown>) {
+export function trackEvent(
+  eventName: string,
+  properties?: Record<string, unknown>
+) {
   analytics.track(eventName, properties)
 }
 
-export function trackPageView(page?: string, properties?: Record<string, unknown>) {
+export function trackPageView(
+  page?: string,
+  properties?: Record<string, unknown>
+) {
   analytics.trackPageView(page, properties)
 }
 
-export function trackCommentSubmit(postId: string, properties?: Record<string, unknown>) {
+export function trackCommentSubmit(
+  postId: string,
+  properties?: Record<string, unknown>
+) {
   analytics.trackBusinessEvent('comment', { postId, ...properties })
 }
 
-export function trackLikeButton(postId: string, action: 'like' | 'unlike', properties?: Record<string, unknown>) {
+export function trackLikeButton(
+  postId: string,
+  action: 'like' | 'unlike',
+  properties?: Record<string, unknown>
+) {
   analytics.track('like_button', { postId, action, ...properties })
 }
 
-export function trackImageView(postId: string, collectionId?: string, properties?: Record<string, unknown>) {
-  analytics.trackBusinessEvent('like', { postId, collectionId, ...properties })
+export function trackImageView(
+  postId: string,
+  collectionId?: string,
+  properties?: Record<string, unknown>
+) {
+  analytics.track('image_view', { 
+    postId, 
+    collectionId, 
+    type: 'image',
+    action: 'view',
+    ...properties 
+  })
 }
 
-export function trackImageDownload(postId: string, collectionId?: string, properties?: Record<string, unknown>) {
-  analytics.trackBusinessEvent('download', { postId, collectionId, ...properties })
+export function trackImageDownload(
+  postId: string,
+  collectionId?: string,
+  properties?: Record<string, unknown>
+) {
+  analytics.trackBusinessEvent('download', {
+    postId,
+    collectionId,
+    ...properties,
+  })
 }
 
-export function trackShare(postId: string, platform: string, properties?: Record<string, unknown>) {
+export function trackShare(
+  postId: string,
+  platform: string,
+  properties?: Record<string, unknown>
+) {
   analytics.trackBusinessEvent('share', { postId, platform, ...properties })
 }
 

@@ -1,24 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
 import { withApiMonitoring } from '@/lib/sentry-api-integration'
-
-interface AnalyticsEvent {
-  eventType?: string // 旧格式
-  eventName?: string // 新格式
-  timestamp: number | string
-  sessionId: string
-  data?: Record<string, unknown> // 旧格式
-  properties?: Record<string, unknown> // 新格式
-  userId: string
-  ip: string
-  country: string
-  processedAt: string
-  serverTimestamp: number
-  page?: string
-  referrer?: string
-  userAgent?: string
-}
+import prisma from '@/lib/prisma'
+import type { AnalyticsEvent } from '@prisma/client'
 
 interface EventSummary {
   eventType: string
@@ -31,78 +14,63 @@ export const GET = withApiMonitoring(async (request: NextRequest) => {
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
+    const environment = process.env.NODE_ENV || 'production'
     
-    const logsDir = path.join(process.cwd(), 'logs', 'analytics')
-    
-    // 检查日志目录是否存在
-    try {
-      await fs.access(logsDir)
-    } catch {
-      return NextResponse.json({
-        events: [],
-        summary: [],
-        message: 'Analytics日志目录不存在'
-      })
+    // 构建查询条件
+    const whereClause: { environment: string; date?: { gte?: Date; lte?: Date } } = {
+      environment
     }
-
-    // 读取所有日志文件
-    const files = await fs.readdir(logsDir)
-    let jsonlFiles = files.filter(file => file.endsWith('.jsonl'))
     
-    // 如果指定了日期范围，过滤文件
+    // 如果指定了日期范围，添加日期过滤
     if (startDate || endDate) {
-      jsonlFiles = jsonlFiles.filter(file => {
-        const match = file.match(/analytics-(\d{4}-\d{2}-\d{2})\.jsonl/)
-        if (!match) return false
-        
-        const fileDate = match[1]
-        
-        if (startDate && fileDate < startDate) return false
-        if (endDate && fileDate > endDate) return false
-        
-        return true
-      })
-    }
-    
-    if (jsonlFiles.length === 0) {
-      return NextResponse.json({
-        events: [],
-        summary: [],
-        message: '暂无Analytics日志文件'
-      })
-    }
-
-    const allEvents: AnalyticsEvent[] = []
-
-    // 读取所有日志文件内容
-    for (const file of jsonlFiles) {
-      const filePath = path.join(logsDir, file)
-      const content = await fs.readFile(filePath, 'utf-8')
-      const lines = content.trim().split('\n').filter(line => line.trim())
-      
-      for (const line of lines) {
-        try {
-          const rawEvent = JSON.parse(line) as AnalyticsEvent
-          // 统一事件格式
-          const event: AnalyticsEvent = {
-            ...rawEvent,
-            eventType: rawEvent.eventType || rawEvent.eventName || 'unknown',
-            data: rawEvent.data || rawEvent.properties || {}
-          }
-          allEvents.push(event)
-        } catch (parseError) {
-          console.error('解析Analytics事件失败:', parseError)
-        }
+      whereClause.date = {}
+      if (startDate) {
+        whereClause.date.gte = new Date(startDate)
+      }
+      if (endDate) {
+        whereClause.date.lte = new Date(endDate)
       }
     }
+    
+    // 从数据库查询事件
+    const allEvents = await prisma.analyticsEvent.findMany({
+      where: whereClause,
+      orderBy: {
+        serverTimestamp: 'desc'
+      },
+      take: 1000 // 限制返回数量，避免性能问题
+    })
+    
+    if (allEvents.length === 0) {
+      return NextResponse.json({
+        events: [],
+        summary: [],
+        message: '暂无Analytics数据'
+      })
+    }
 
-    // 按时间戳降序排序
-    allEvents.sort((a, b) => b.serverTimestamp - a.serverTimestamp)
+    // 转换数据格式以保持兼容性
+    const formattedEvents = allEvents.map((event: AnalyticsEvent) => ({
+      eventType: event.eventName,
+      eventName: event.eventName,
+      timestamp: event.timestamp.toISOString(),
+      sessionId: event.sessionId,
+      userId: event.userId || 'anonymous',
+      ip: event.ip,
+      country: event.country,
+      processedAt: event.processedAt.toISOString(),
+      serverTimestamp: Number(event.serverTimestamp),
+      page: event.page,
+      referrer: event.referrer,
+      userAgent: event.userAgent,
+      properties: event.properties,
+      performance: event.performance
+    }))
 
     // 生成事件汇总
     const eventCounts = new Map<string, { count: number; lastSeen: number }>()
     
-    for (const event of allEvents) {
+    for (const event of formattedEvents) {
       const eventType = event.eventType || 'unknown'
       const existing = eventCounts.get(eventType)
       if (existing) {
@@ -125,13 +93,13 @@ export const GET = withApiMonitoring(async (request: NextRequest) => {
       .sort((a, b) => b.count - a.count)
 
     return NextResponse.json({
-      events: allEvents,
+      events: formattedEvents,
       summary,
-      totalEvents: allEvents.length,
-      totalSessions: new Set(allEvents.map(e => e.sessionId)).size,
-      dateRange: allEvents.length > 0 ? {
-        earliest: new Date(Math.min(...allEvents.map(e => e.serverTimestamp))).toLocaleString('zh-CN'),
-        latest: new Date(Math.max(...allEvents.map(e => e.serverTimestamp))).toLocaleString('zh-CN')
+      totalEvents: formattedEvents.length,
+      totalSessions: new Set(formattedEvents.map(e => e.sessionId)).size,
+      dateRange: formattedEvents.length > 0 ? {
+        earliest: new Date(Math.min(...formattedEvents.map(e => e.serverTimestamp))).toLocaleString('zh-CN'),
+        latest: new Date(Math.max(...formattedEvents.map(e => e.serverTimestamp))).toLocaleString('zh-CN')
       } : null
     })
 

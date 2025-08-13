@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
 import { auth } from '@clerk/nextjs/server'
 import { withApiMonitoring } from '@/lib/sentry-api-integration'
+import prisma from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 interface AnalyticsEvent {
   eventName: string
@@ -33,35 +32,42 @@ export const POST = withApiMonitoring(async (request: NextRequest) => {
       return NextResponse.json({ error: 'Invalid events data' }, { status: 400 })
     }
 
-    // 确保日志目录存在
-    const logsDir = join(process.cwd(), 'logs', 'analytics')
-    if (!existsSync(logsDir)) {
-      await mkdir(logsDir, { recursive: true })
-    }
-
-    // 按日期分文件存储
-    const today = new Date().toISOString().split('T')[0]
-    const logFile = join(logsDir, `analytics-${today}.jsonl`)
+    // 获取环境信息
+    const environment = process.env.NODE_ENV || 'production'
+    const serverTimestamp = Date.now()
 
     // 处理每个事件
-    const processedEvents = events.map((event) => ({
-      ...event,
-      userId: event.userId || userId || 'anonymous',
-      ip: request.headers.get('x-forwarded-for') || 
-          request.headers.get('x-real-ip') || 
-          'unknown',
-      country: request.headers.get('cf-ipcountry') || 'unknown',
-      processedAt: new Date().toISOString(),
-      serverTimestamp: Date.now()
-    }))
+    const processedEvents = events.map((event) => {
+      const eventTimestamp = new Date(event.timestamp)
+      return {
+        eventName: event.eventName,
+        timestamp: eventTimestamp,
+        date: new Date(eventTimestamp.toDateString()), // 提取日期部分
+        sessionId: event.sessionId,
+        userId: event.userId || userId || null,
+        page: event.page,
+        referrer: event.referrer || null,
+        userAgent: event.userAgent,
+        ip: request.headers.get('x-forwarded-for') || 
+            request.headers.get('x-real-ip') || 
+            'unknown',
+        country: request.headers.get('cf-ipcountry') || 'unknown',
+        properties: event.properties ? event.properties as Prisma.InputJsonValue : Prisma.JsonNull,
+        performance: event.performance ? event.performance as Prisma.InputJsonValue : Prisma.JsonNull,
+        serverTimestamp: BigInt(serverTimestamp),
+        environment
+      }
+    })
 
-    // 写入JSONL格式
-    const logLines = processedEvents.map((event) => JSON.stringify(event)).join('\n') + '\n'
-    await writeFile(logFile, logLines, { flag: 'a' })
+    // 批量插入数据库
+    await prisma.analyticsEvent.createMany({
+      data: processedEvents,
+      skipDuplicates: true // 避免重复插入
+    })
 
     // 在开发环境下打印事件信息
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`📊 Analytics: Logged ${processedEvents.length} events`)
+    if (environment === 'development') {
+      console.log(`📊 Analytics: Logged ${processedEvents.length} events to database`)
       processedEvents.forEach(event => {
         console.log(`  - ${event.eventName}: ${event.page} (${event.sessionId.slice(0, 8)})`)
       })
@@ -70,7 +76,7 @@ export const POST = withApiMonitoring(async (request: NextRequest) => {
     return NextResponse.json({ 
       success: true, 
       processed: processedEvents.length,
-      timestamp: Date.now()
+      timestamp: serverTimestamp
     })
 
   } catch (error) {

@@ -58,3 +58,6 @@ ngrok*
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# gallery photos
+/gallery/*
