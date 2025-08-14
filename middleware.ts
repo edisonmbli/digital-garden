@@ -12,8 +12,6 @@ import {
   logImageAccess, 
   createHotlinkProtectionResponse 
 } from './lib/image-protection'
-import { withSentryMiddleware } from './lib/sentry-middleware-integration'
-import { monitorClerkAuthError } from './lib/sentry-monitoring-strategy'
 
 /**
  * @description 获取请求中最匹配的地域语言。
@@ -65,83 +63,72 @@ function getLocale(request: NextRequest): string {
   }
 }
 
-// 定义哪些路由是受保护的。这是一个"黑名单"，所有匹配的路径都需要用户登录。
+// 定义受保护的路由
 const isProtectedRoute = createRouteMatcher([
-  '/admin(.*)', // /admin 及其所有子路由
-  '/(zh|en)/admin(.*)', // 包含语言前缀的 admin 路由
+  '/admin(.*)',
+  '/(zh|en)/admin(.*)'
 ])
 
-// 创建 Clerk 中间件
-const clerkMiddlewareHandler = clerkMiddleware(async (auth, req) => {
+// 直接导出 clerkMiddleware，不要包装
+export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname
   
   try {
-    // --- 步骤零：图片防盗链保护 (Image Protection First) ---
-    // 检查是否为图片请求，如果是则进行防盗链检查
+    // 图片防盗链保护
     if (isImageRequest(pathname) || isSanityImage(pathname)) {
       const isAllowed = checkImageReferer(req)
-      
-      // 记录访问日志
       logImageAccess(req, isAllowed)
       
-      // 如果不允许访问，返回防盗链保护响应
       if (!isAllowed) {
         return createHotlinkProtectionResponse()
       }
     }
     
-    // --- 步骤一：优先处理认证 (Authentication First) ---
-    // 检查当前请求的路径是否在我们定义的"受保护列表"中
+    // 认证检查 - 关键：确保这里的调用是正确的
     if (isProtectedRoute(req)) {
-      // 如果是受保护的路由，则调用 auth.protect()。
-      // 这个函数会检查用户是否登录：
-      // - 如果已登录，则允许请求继续。
-      // - 如果未登录，它会自动将用户重定向到 Clerk 的登录页面。
-      await auth.protect()
-      
-      // 注意：权限检查（admin role）现在移到页面组件中进行
-      // 这样避免了在 Edge Runtime 中调用 Prisma 和复杂的 Server Actions
+      // 使用 auth.protect() 进行路由保护
+      auth.protect()
+    }
+    
+    // 跳过 API 路由的国际化处理
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.next()
+    }
+
+    // 国际化重定向
+    const pathnameIsMissingLocale = i18n.locales.every(
+      (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
+    )
+
+    if (pathnameIsMissingLocale) {
+      const locale = getLocale(req)
+      return NextResponse.redirect(
+        new URL(
+          `/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`,
+          req.url
+        )
+      )
     }
   } catch (error) {
-    // 监控 Clerk 认证错误
-    monitorClerkAuthError(error as Error, {
-      authFlow: 'middleware',
-      pathname,
-      errorType: (error as Error).name
-    })
-    
-    // 重新抛出错误，让 Clerk 处理
-    throw error
-  }
-
-  // --- 步骤二：处理国际化重定向 (Internationalization Next) ---
-  // 这个逻辑只会在请求通过了上面的认证检查（或者本身就是公共路由）后才执行。
-
-  // 跳过 API 路由的国际化处理
-  if (pathname.startsWith('/api/')) {
-    return NextResponse.next()
-  }
-
-  // 检查请求路径是否已经包含了语言前缀 (e.g., /en/about)
-  const pathnameIsMissingLocale = i18n.locales.every(
-    (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
-  )
-
-  // 如果路径缺少语言前缀，我们就为他重定向到一个带语言前缀的 URL
-  if (pathnameIsMissingLocale) {
-    const locale = getLocale(req) // 获取最匹配的语言
-    // 例如，如果用户访问 /gallery，而检测到的语言是 'zh'，我们将他重定向到 /zh/gallery。
-    return NextResponse.redirect(
-      new URL(
-        `/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`,
-        req.url
-      )
+    // 记录错误但不要抛出，避免中断中间件流程
+    logger.error(
+      'Middleware', 
+      'Error in clerkMiddleware',
+      error instanceof Error ? error : new Error(String(error)),
+      {
+        pathname,
+        errorType: error instanceof Error ? error.name : 'Unknown'
+      }
     )
+    
+    // 对于受保护的路由，如果认证失败，让 Clerk 处理
+    if (isProtectedRoute(req)) {
+      throw error
+    }
   }
 })
 
-// 导出我们的主中间件函数，集成 Sentry 监控
-export default withSentryMiddleware(clerkMiddlewareHandler)
+// 中间件配置
 
 export const config = {
   // 这个 matcher 定义了中间件将在哪些路径上运行。

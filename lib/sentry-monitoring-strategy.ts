@@ -132,7 +132,14 @@ export const monitorClerkAuthError = (error: Error, context: {
     url: context.pathname,
     additionalData: {
       authFlow: context.authFlow,
-      errorType: context.errorType
+      errorType: context.errorType,
+      errorMessage: error.message,
+      errorStack: error.stack,
+      middlewareDetection: {
+        hasClerkMiddleware: typeof error.message === 'string' && error.message.includes('clerkMiddleware'),
+        errorName: error.name,
+        timestamp: new Date().toISOString()
+      }
     }
   })
 }
