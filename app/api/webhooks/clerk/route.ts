@@ -8,6 +8,44 @@ import prisma from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withWebhookMonitoring } from '@/lib/sentry-api-integration'
 
+// Record webhook call
+async function recordWebhookCall(
+  operation: string,
+  documentType: string,
+  documentId: string,
+  success: boolean,
+  error?: string
+) {
+  try {
+    await prisma.webhookCall.create({
+      data: {
+        operation,
+        documentType,
+        documentId,
+        success,
+        error,
+      },
+    })
+
+    logger.info('ClerkWebhookRecord', 'Webhook调用记录已保存', {
+      operation,
+      documentType,
+      documentId,
+      success,
+      error,
+    })
+  } catch (err) {
+    logger.error('ClerkWebhookRecord', '保存Webhook调用记录失败', err as Error, {
+      operation,
+      documentType,
+      documentId,
+      success,
+      error,
+    })
+    // 不抛出错误，避免影响主要的 webhook 处理流程
+  }
+}
+
 export const POST = withWebhookMonitoring(async (req: NextRequest) => {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
 
@@ -52,35 +90,52 @@ export const POST = withWebhookMonitoring(async (req: NextRequest) => {
     const { id, email_addresses, image_url, username, first_name, last_name } =
       evt.data
 
-    // 优先使用 username，如果没有则使用 first_name + last_name，最后使用匿名用户作为兜底
-    let displayName = username
-    if (!displayName) {
-      const fullName = `${first_name || ''} ${last_name || ''}`.trim()
-      displayName = fullName || '匿名用户' // 默认中文匿名用户
+    let success = true
+    let error: string | undefined
+
+    try {
+      // 优先使用 username，如果没有则使用 first_name + last_name，最后使用匿名用户作为兜底
+      let displayName = username
+      if (!displayName) {
+        const fullName = `${first_name || ''} ${last_name || ''}`.trim()
+        displayName = fullName || '匿名用户' // 默认中文匿名用户
+      }
+
+      // 将用户数据写入到我们自己的数据库
+      await prisma.user.create({
+        data: {
+          id: id,
+          email: email_addresses[0].email_address,
+          name: displayName,
+          avatarUrl: image_url,
+        },
+      })
+
+      // 通过 Clerk 后端 API，为新用户设置默认角色
+      const client = await clerkClient()
+      await client.users.updateUserMetadata(id, {
+        publicMetadata: {
+          role: 'user',
+        },
+      })
+
+      logger.info('ClerkWebhook', '用户创建成功', {
+        userId: id,
+        name: displayName,
+      })
+    } catch (err) {
+      success = false
+      error = err instanceof Error ? err.message : 'Unknown error'
+      logger.error('ClerkWebhook', '用户创建失败', err as Error, { userId: id })
     }
 
-    // 将用户数据写入到我们自己的数据库
-    await prisma.user.create({
-      data: {
-        id: id,
-        email: email_addresses[0].email_address,
-        name: displayName,
-        avatarUrl: image_url,
-      },
-    })
+    // 记录 webhook 调用
+    await recordWebhookCall('user.created', 'user', id, success, error)
 
-    // 通过 Clerk 后端 API，为新用户设置默认角色
-    const client = await clerkClient()
-    await client.users.updateUserMetadata(id, {
-      publicMetadata: {
-        role: 'user',
-      },
-    })
+    if (!success) {
+      return NextResponse.json({ error: 'User creation failed' }, { status: 500 })
+    }
 
-    logger.info('ClerkWebhook', '用户创建成功', {
-      userId: id,
-      name: displayName,
-    })
     return NextResponse.json({ message: 'User created' }, { status: 201 })
   }
 
@@ -89,33 +144,50 @@ export const POST = withWebhookMonitoring(async (req: NextRequest) => {
     const { id, email_addresses, image_url, username, first_name, last_name } =
       evt.data
 
-    // 优先使用 username，如果没有则使用 first_name + last_name，最后使用匿名用户作为兜底
-    let displayName = username
-    if (!displayName) {
-      const fullName = `${first_name || ''} ${last_name || ''}`.trim()
-      displayName = fullName || '匿名用户' // 默认中文匿名用户
+    let success = true
+    let error: string | undefined
+
+    try {
+      // 优先使用 username，如果没有则使用 first_name + last_name，最后使用匿名用户作为兜底
+      let displayName = username
+      if (!displayName) {
+        const fullName = `${first_name || ''} ${last_name || ''}`.trim()
+        displayName = fullName || '匿名用户' // 默认中文匿名用户
+      }
+
+      // 使用 upsert 操作，如果用户不存在则创建，存在则更新
+      await prisma.user.upsert({
+        where: { id: id },
+        update: {
+          email: email_addresses[0].email_address,
+          name: displayName,
+          avatarUrl: image_url,
+        },
+        create: {
+          id: id,
+          email: email_addresses[0].email_address,
+          name: displayName,
+          avatarUrl: image_url,
+        },
+      })
+
+      logger.info('ClerkWebhook', '用户更新成功', {
+        userId: id,
+        name: displayName,
+      })
+    } catch (err) {
+      success = false
+      error = err instanceof Error ? err.message : 'Unknown error'
+      logger.error('ClerkWebhook', '用户更新失败', err as Error, { userId: id })
     }
 
-    // 使用 upsert 操作，如果用户不存在则创建，存在则更新
-    await prisma.user.upsert({
-      where: { id: id },
-      update: {
-        email: email_addresses[0].email_address,
-        name: displayName,
-        avatarUrl: image_url,
-      },
-      create: {
-        id: id,
-        email: email_addresses[0].email_address,
-        name: displayName,
-        avatarUrl: image_url,
-      },
-    })
+    // 记录 webhook 调用
+    await recordWebhookCall('user.updated', 'user', id, success, error)
 
-    logger.info('ClerkWebhook', '用户更新成功', {
-      userId: id,
-      name: displayName,
-    })
+    if (!success) {
+      return NextResponse.json({ error: 'User update failed' }, { status: 500 })
+    }
+
     return NextResponse.json({ message: 'User updated' }, { status: 200 })
   }
 
@@ -123,16 +195,36 @@ export const POST = withWebhookMonitoring(async (req: NextRequest) => {
   if (eventType === 'user.deleted') {
     const { id } = evt.data
     if (!id) {
+      await recordWebhookCall('user.deleted', 'user', 'unknown', false, 'User ID not found')
       return NextResponse.json({ error: 'Error occured -- user id not found' }, { status: 400 })
     }
-    await prisma.user.delete({
-      where: { id: id },
-    })
-    logger.info('ClerkWebhook', '用户删除成功', { userId: id })
+
+    let success = true
+    let error: string | undefined
+
+    try {
+      await prisma.user.delete({
+        where: { id: id },
+      })
+      logger.info('ClerkWebhook', '用户删除成功', { userId: id })
+    } catch (err) {
+      success = false
+      error = err instanceof Error ? err.message : 'Unknown error'
+      logger.error('ClerkWebhook', '用户删除失败', err as Error, { userId: id })
+    }
+
+    // 记录 webhook 调用
+    await recordWebhookCall('user.deleted', 'user', id, success, error)
+
+    if (!success) {
+      return NextResponse.json({ error: 'User deletion failed' }, { status: 500 })
+    }
+
     return NextResponse.json({ message: 'User deleted' }, { status: 200 })
   }
 
   // 处理其他事件类型
   logger.info('ClerkWebhook', '未处理的事件类型', { eventType })
+  await recordWebhookCall(eventType, 'unknown', 'unknown', true, 'Unhandled event type')
   return NextResponse.json({}, { status: 200 })
 }, 'clerk-webhook')
