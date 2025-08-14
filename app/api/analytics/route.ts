@@ -38,11 +38,18 @@ export const POST = withApiMonitoring(async (request: NextRequest) => {
 
     // 处理每个事件
     const processedEvents = events.map((event) => {
-      const eventTimestamp = new Date(event.timestamp)
+      // 客户端时间戳转换为服务器时区时间
+      const clientTimestamp = new Date(event.timestamp)
+      // 获取客户端时区偏移（如果有的话），否则使用服务器时区
+      const timezoneOffset = event.properties?.timezoneOffset as number || new Date().getTimezoneOffset()
+      
+      // 调整时间戳到正确的时区
+      const adjustedTimestamp = new Date(clientTimestamp.getTime() - (timezoneOffset * 60 * 1000))
+      
       return {
         eventName: event.eventName,
-        timestamp: eventTimestamp,
-        date: new Date(eventTimestamp.toDateString()), // 提取日期部分
+        timestamp: adjustedTimestamp,
+        date: new Date(adjustedTimestamp.toDateString()), // 提取日期部分
         sessionId: event.sessionId,
         userId: event.userId || userId || null,
         page: event.page,

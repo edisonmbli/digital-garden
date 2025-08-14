@@ -131,7 +131,11 @@ export class AnalyticsLogger {
       page: window.location.pathname,
       referrer: document.referrer,
       userAgent: navigator.userAgent,
-      properties,
+      properties: {
+        ...properties,
+        // 添加客户端时区偏移信息（分钟）
+        timezoneOffset: new Date().getTimezoneOffset()
+      },
     }
 
     this.queueEvent(event)
