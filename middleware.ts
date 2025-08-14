@@ -13,6 +13,7 @@ import {
   createHotlinkProtectionResponse 
 } from './lib/image-protection'
 import { withSentryMiddleware } from './lib/sentry-middleware-integration'
+import { monitorClerkAuthError } from './lib/sentry-monitoring-strategy'
 
 /**
  * @description 获取请求中最匹配的地域语言。
@@ -50,31 +51,43 @@ const isProtectedRoute = createRouteMatcher([
 const clerkMiddlewareHandler = clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname
   
-  // --- 步骤零：图片防盗链保护 (Image Protection First) ---
-  // 检查是否为图片请求，如果是则进行防盗链检查
-  if (isImageRequest(pathname) || isSanityImage(pathname)) {
-    const isAllowed = checkImageReferer(req)
-    
-    // 记录访问日志
-    logImageAccess(req, isAllowed)
-    
-    // 如果不允许访问，返回防盗链保护响应
-    if (!isAllowed) {
-      return createHotlinkProtectionResponse()
+  try {
+    // --- 步骤零：图片防盗链保护 (Image Protection First) ---
+    // 检查是否为图片请求，如果是则进行防盗链检查
+    if (isImageRequest(pathname) || isSanityImage(pathname)) {
+      const isAllowed = checkImageReferer(req)
+      
+      // 记录访问日志
+      logImageAccess(req, isAllowed)
+      
+      // 如果不允许访问，返回防盗链保护响应
+      if (!isAllowed) {
+        return createHotlinkProtectionResponse()
+      }
     }
-  }
-  
-  // --- 步骤一：优先处理认证 (Authentication First) ---
-  // 检查当前请求的路径是否在我们定义的"受保护列表"中
-  if (isProtectedRoute(req)) {
-    // 如果是受保护的路由，则调用 auth.protect()。
-    // 这个函数会检查用户是否登录：
-    // - 如果已登录，则允许请求继续。
-    // - 如果未登录，它会自动将用户重定向到 Clerk 的登录页面。
-    await auth.protect()
     
-    // 注意：权限检查（admin role）现在移到页面组件中进行
-    // 这样避免了在 Edge Runtime 中调用 Prisma 和复杂的 Server Actions
+    // --- 步骤一：优先处理认证 (Authentication First) ---
+    // 检查当前请求的路径是否在我们定义的"受保护列表"中
+    if (isProtectedRoute(req)) {
+      // 如果是受保护的路由，则调用 auth.protect()。
+      // 这个函数会检查用户是否登录：
+      // - 如果已登录，则允许请求继续。
+      // - 如果未登录，它会自动将用户重定向到 Clerk 的登录页面。
+      await auth.protect()
+      
+      // 注意：权限检查（admin role）现在移到页面组件中进行
+      // 这样避免了在 Edge Runtime 中调用 Prisma 和复杂的 Server Actions
+    }
+  } catch (error) {
+    // 监控 Clerk 认证错误
+    monitorClerkAuthError(error as Error, {
+      authFlow: 'middleware',
+      pathname,
+      errorType: (error as Error).name
+    })
+    
+    // 重新抛出错误，让 Clerk 处理
+    throw error
   }
 
   // --- 步骤二：处理国际化重定向 (Internationalization Next) ---

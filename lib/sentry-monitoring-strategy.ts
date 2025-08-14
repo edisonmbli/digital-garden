@@ -73,6 +73,71 @@ export const monitorClerkWebhookError = (error: Error, context: {
 }
 
 /**
+ * OAuth 登录错误监控
+ */
+export const monitorOAuthError = (error: Error, context: {
+  provider: 'google' | 'github' | 'other'
+  errorCode?: string
+  errorDescription?: string
+  userId?: string
+  userAgent?: string
+  ip?: string
+}) => {
+  addSentryBreadcrumb(
+    'OAuth login attempt',
+    'auth',
+    'error',
+    {
+      provider: context.provider,
+      errorCode: context.errorCode
+    }
+  )
+  
+  captureError(error, {
+    module: 'oauth-login',
+    userId: context.userId,
+    additionalData: {
+      provider: context.provider,
+      errorCode: context.errorCode,
+      errorDescription: context.errorDescription,
+      userAgent: context.userAgent,
+      ip: context.ip
+    }
+  })
+}
+
+/**
+ * Clerk 认证流程错误监控
+ */
+export const monitorClerkAuthError = (error: Error, context: {
+  authFlow: 'sign-in' | 'sign-up' | 'oauth' | 'middleware'
+  errorType?: string
+  userId?: string
+  pathname?: string
+}) => {
+  addSentryBreadcrumb(
+    'Clerk authentication error',
+    'auth',
+    'error',
+    {
+      authFlow: context.authFlow,
+      errorType: context.errorType,
+      pathname: context.pathname
+    }
+  )
+  
+  captureError(error, {
+    module: 'clerk-auth',
+    userId: context.userId,
+    url: context.pathname,
+    additionalData: {
+      authFlow: context.authFlow,
+      errorType: context.errorType
+    }
+  })
+}
+
+/**
  * 权限验证失败监控
  */
 export const monitorPermissionDenied = (context: {
