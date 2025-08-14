@@ -131,8 +131,13 @@ export default clerkMiddleware(async (auth, req) => {
 // 中间件配置
 
 export const config = {
-  // 这个 matcher 定义了中间件将在哪些路径上运行。
-  // 这个正则表达式的作用是：排除所有包含 '.' 的文件（如图片、css等静态资源）
-  // 和 Next.js 的内部路由（_next），但对其他所有路径生效。
-  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
+  // 匹配所有路径，包括图片文件，除了以下情况：
+  // 1. Next.js 内部路径（_next）
+  // 2. 静态资源文件（但保留图片文件如 og-image.jpg）
+  matcher: [
+    '/((?!_next|favicon\\.ico|.*\\.css|.*\\.js|.*\\.map).*)',
+    '/',
+    '/(api|trpc)(.*)',
+    '/og-image.jpg'
+  ],
 }
