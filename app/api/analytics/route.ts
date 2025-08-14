@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { withApiMonitoring } from '@/lib/sentry-api-integration'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
@@ -25,7 +24,6 @@ interface AnalyticsEvent {
 
 export const POST = withApiMonitoring(async (request: NextRequest) => {
   try {
-    const { userId } = await auth()
     const events: AnalyticsEvent[] = await request.json()
     
     if (!Array.isArray(events) || events.length === 0) {
@@ -51,7 +49,7 @@ export const POST = withApiMonitoring(async (request: NextRequest) => {
         timestamp: adjustedTimestamp,
         date: new Date(adjustedTimestamp.toDateString()), // 提取日期部分
         sessionId: event.sessionId,
-        userId: event.userId || userId || null,
+        userId: event.userId || null,
         page: event.page,
         referrer: event.referrer || null,
         userAgent: event.userAgent,

@@ -24,7 +24,24 @@ function getLocale(request: NextRequest): string {
   try {
     // 1. 从请求头中，解析出用户浏览器偏好的语言列表 (e.g., ['zh-CN', 'zh', 'en'])
     const negotiatorHeaders: Record<string, string> = {}
-    request.headers.forEach((value, key) => (negotiatorHeaders[key] = value))
+    request.headers.forEach((value, key) => {
+      // 过滤和清理请求头，特别是 Accept-Language
+      if (key.toLowerCase() === 'accept-language' && value) {
+        // 移除可能导致解析失败的特殊字符，保留语言标识符所需的字符
+        const cleanValue = value.replace(/[^\w\-,;=.\s]/g, '')
+        if (cleanValue.trim()) {
+          negotiatorHeaders[key] = cleanValue
+        }
+      } else {
+        negotiatorHeaders[key] = value
+      }
+    })
+    
+    // 检查是否有有效的 Accept-Language 头
+    if (!negotiatorHeaders['accept-language']) {
+      return i18n.defaultLocale
+    }
+    
     const languages = new Negotiator({ headers: negotiatorHeaders }).languages()
 
     // 2. 如果没有语言偏好或解析失败，返回默认语言
@@ -35,8 +52,15 @@ function getLocale(request: NextRequest): string {
     // 3. 将用户偏好列表与我们支持的语言列表进行匹配，找出最佳选择
     return matchLocale(languages, i18n.locales, i18n.defaultLocale)
   } catch (error) {
-    // 如果 locale 匹配失败，返回默认语言
-    logger.warn('Middleware', 'Locale matching failed, using default locale', { error: error instanceof Error ? error.message : String(error) })
+    // 提供更详细的错误信息，但避免记录敏感信息
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const acceptLanguage = request.headers.get('accept-language')
+    
+    logger.warn('Middleware', 'Locale matching failed, using default locale', { 
+      error: errorMessage,
+      acceptLanguage: acceptLanguage?.substring(0, 100), // 限制长度避免日志过长
+      hasAcceptLanguage: !!acceptLanguage
+    })
     return i18n.defaultLocale
   }
 }
