@@ -107,13 +107,17 @@ export class ErrorBoundary extends Component<Props, State> {
     // 页面级错误
     if (level === 'page') return 'error'
     
+    // 安全检查：确保 error.message 和 error.name 存在
+    const errorMessage = (error.message || '').toLowerCase()
+    const errorName = (error.name || '').toLowerCase()
+    
     // 网络相关错误
-    if (error.message.includes('fetch') || error.message.includes('network')) {
+    if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
       return 'warning'
     }
     
     // 渲染错误
-    if (error.message.includes('render') || error.name === 'ChunkLoadError') {
+    if (errorMessage.includes('render') || errorName === 'chunkloaderror') {
       return 'warning'
     }
     

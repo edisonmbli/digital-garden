@@ -28,12 +28,12 @@ import {
 } from '@/hooks/use-optimal-modal-size'
 import { analytics } from '@/lib/analytics-logger'
 
-export function PhotoGrid({ 
-  photos, 
-  collectionId 
-}: { 
+export function PhotoGrid({
+  photos,
+  collectionId,
+}: {
   photos: EnrichedPhoto[]
-  collectionId: string 
+  collectionId: string
 }) {
   const [selectedPhoto, setSelectedPhoto] = useState<EnrichedPhoto | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
@@ -260,7 +260,7 @@ export function PhotoGrid({
               onClick={() => {
                 setSelectedPhoto(photo)
                 setShowCommentForm(false) // 重置评论表单状态
-                
+
                 // 追踪照片浏览
                 analytics.trackPostView(photo._id, 'photo', {
                   title: photo.title,
@@ -268,7 +268,7 @@ export function PhotoGrid({
                   hasDescription: !!photo.description,
                   dimensions: photo.metadata?.dimensions,
                   likesCount: photo.post?.likesCount || 0,
-                  commentsCount: photo.post?.commentsCount || 0
+                  commentsCount: photo.post?.commentsCount || 0,
                 })
               }}
             >
@@ -346,51 +346,102 @@ export function PhotoGrid({
 
                   {/* 中层：信息和互动按钮区域 */}
                   <div className="flex-shrink-0 bg-background border-t border-border/20 px-6 py-4">
-                    <div className="flex items-end justify-between gap-6">
-                      {/* 左侧：标题和描述 */}
-                      <div className="flex-1 min-w-0">
-                        {selectedPhoto.title && (
-                          <h3 className="text-body-lg font-medium mb-2 text-foreground">
-                            {selectedPhoto.title}
-                          </h3>
-                        )}
-                        {selectedPhoto.description && (
-                          <p className="text-body-sm text-muted-foreground">
-                            {selectedPhoto.description}
-                          </p>
+                    {isLandscape ? (
+                      /* 横向构图：保持原有的左右布局 */
+                      <div className="flex items-end justify-between gap-6">
+                        {/* 左侧：标题和描述 */}
+                        <div className="flex-1 min-w-0">
+                          {selectedPhoto.title && (
+                            <h3 className="text-body-lg font-medium mb-2 text-foreground">
+                              {selectedPhoto.title}
+                            </h3>
+                          )}
+                          {selectedPhoto.description && (
+                            <p className="text-body-sm text-muted-foreground">
+                              {selectedPhoto.description}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* 右侧：互动按钮 - 与描述底部对齐 */}
+                        {selectedPhoto.post && (
+                          <div className="flex space-x-3 flex-shrink-0 justify-items-end">
+                            {/* 点赞按钮 */}
+                            <EnhancedLikeButton
+                              postId={selectedPhoto.post.id}
+                              initialLikes={selectedPhoto.post.likesCount}
+                              isLikedByUser={selectedPhoto.post.isLikedByUser}
+                              onAuthRequired={handleAuthRequired}
+                              variant="default"
+                              className="justify-center"
+                            />
+
+                            {/* 评论按钮 */}
+                            <EnhancedCommentButton
+                              commentCount={selectedPhoto.post.commentsCount}
+                              hasUserCommented={
+                                selectedPhoto.post.hasUserCommented || false
+                              }
+                              onCommentClick={() => {
+                                setShowCommentForm(true)
+                              }}
+                              onAuthRequired={handleCommentAuthRequired}
+                              variant="default"
+                              className="justify-center"
+                            />
+                          </div>
                         )}
                       </div>
-
-                      {/* 右侧：互动按钮 - 与描述底部对齐 */}
-                      {selectedPhoto.post && (
-                        <div className="flex space-x-3 flex-shrink-0 justify-items-end">
-                          {/* 点赞按钮 */}
-                          <EnhancedLikeButton
-                            postId={selectedPhoto.post.id}
-                            initialLikes={selectedPhoto.post.likesCount}
-                            isLikedByUser={selectedPhoto.post.isLikedByUser}
-                            onAuthRequired={handleAuthRequired}
-                            variant="default"
-                            className="justify-center"
-                          />
-
-                          {/* 评论按钮 */}
-                          <EnhancedCommentButton
-                            commentCount={selectedPhoto.post.commentsCount}
-                            hasUserCommented={
-                              selectedPhoto.post.hasUserCommented || false
-                            }
-                            onCommentClick={() => {
-                              setShowCommentForm(true)
-                            }}
-                            onAuthRequired={handleCommentAuthRequired}
-                            variant="default"
-                            className="justify-center"
-                          />
+                    ) : (
+                      /* 竖向构图：垂直布局，按钮在描述下方居右 */
+                      <div className="space-y-4">
+                        {/* 标题和描述区域 - 占满整行 */}
+                        <div className="w-full">
+                          {selectedPhoto.title && (
+                            <h3 className="text-body-lg font-medium mb-2 text-foreground">
+                              {selectedPhoto.title}
+                            </h3>
+                          )}
+                          {selectedPhoto.description && (
+                            <p className="text-body-sm text-muted-foreground">
+                              {selectedPhoto.description}
+                            </p>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    
+
+                        {/* 互动按钮区域 - 居右显示 */}
+                        {selectedPhoto.post && (
+                          <div className="flex justify-end">
+                            <div className="flex space-x-3">
+                              {/* 点赞按钮 */}
+                              <EnhancedLikeButton
+                                postId={selectedPhoto.post.id}
+                                initialLikes={selectedPhoto.post.likesCount}
+                                isLikedByUser={selectedPhoto.post.isLikedByUser}
+                                onAuthRequired={handleAuthRequired}
+                                variant="default"
+                                className="justify-center"
+                              />
+
+                              {/* 评论按钮 */}
+                              <EnhancedCommentButton
+                                commentCount={selectedPhoto.post.commentsCount}
+                                hasUserCommented={
+                                  selectedPhoto.post.hasUserCommented || false
+                                }
+                                onCommentClick={() => {
+                                  setShowCommentForm(true)
+                                }}
+                                onAuthRequired={handleCommentAuthRequired}
+                                variant="default"
+                                className="justify-center"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* 版权声明 */}
                     {/* <div className="px-6 py-2 border-t border-border/10">
                       <CopyrightNotice contentType="photo" variant="minimal" />
@@ -542,7 +593,7 @@ export function PhotoGrid({
                           </div>
                         </div>
                       )}
-                      
+
                       {/* 版权声明 */}
                       {/* <div className="border-t border-border/10 pt-3">
                         <CopyrightNotice contentType="photo" variant="minimal" />

@@ -15,8 +15,9 @@ enum ErrorSeverity {
 
 // 根据错误类型判断严重性
 function getErrorSeverity(error: Error): ErrorSeverity {
-  const errorMessage = error.message.toLowerCase()
-  const errorName = error.name.toLowerCase()
+  // 安全检查：确保 error.message 和 error.name 存在
+  const errorMessage = (error.message || '').toLowerCase()
+  const errorName = (error.name || '').toLowerCase()
   
   // 关键系统错误
   if (errorMessage.includes('database') || 
@@ -71,9 +72,14 @@ if (process.env.NODE_ENV === 'production') {
     
     // 错误过滤 - 过滤掉不重要的错误
     beforeSend(event, hint) {
-      const error = hint.originalException as Error
+      const originalException = hint.originalException
       
-      if (error) {
+      // 确保 originalException 是一个有效的 Error 对象
+      if (originalException && typeof originalException === 'object' && 
+          (originalException instanceof Error || 
+           ('name' in originalException) || 
+           ('message' in originalException))) {
+        const error = originalException as Error
         const severity = getErrorSeverity(error)
         
         // 设置错误级别

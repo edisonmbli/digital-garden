@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import * as commentsDal from '@/lib/dal-comments'
-import { getSpamStats, getBlockedIPs, unblockIP, cleanupExpiredData } from '@/lib/anti-spam'
+import { getSpamStats, getBlockedIPs, unblockIP, cleanupExpiredData, containsSensitiveWords } from '@/lib/anti-spam'
 import { CommentStatus } from '@/types'
 import { logger } from './logger'
 import { withServerActionMonitoring } from './sentry-api-integration'
@@ -189,25 +189,29 @@ export async function testSensitiveWordsAction(content: string) {
   try {
     await verifyAdminAccess()
     
-    // 这里应该调用敏感词检测逻辑
-    // 暂时返回模拟数据
-    const foundWords: string[] = []
-    const sensitiveWords = ['测试敏感词', '垃圾', '广告'] // 示例敏感词
+    // 使用实际的敏感词检测逻辑
+    const hasSensitiveWords = await containsSensitiveWords(content)
     
-    for (const word of sensitiveWords) {
-      if (content.includes(word)) {
-        foundWords.push(word)
-      }
-    }
+    // 获取数据库中的所有敏感词用于详细分析
+    const sensitiveWordsFromDB = await prisma.sensitiveWord.findMany({
+      select: { word: true }
+    })
+    
+    // 找出具体匹配的敏感词
+    const lowerContent = content.toLowerCase()
+    const foundWords = sensitiveWordsFromDB
+      .filter(wordRecord => lowerContent.includes(wordRecord.word.toLowerCase()))
+      .map(wordRecord => wordRecord.word)
     
     return {
       success: true,
       data: {
         content,
         contentLength: content.length,
-        hasSensitiveWords: foundWords.length > 0,
+        hasSensitiveWords,
         foundWords,
-        wordsCount: foundWords.length
+        wordsCount: foundWords.length,
+        totalSensitiveWordsInDB: sensitiveWordsFromDB.length
       },
       message: '敏感词检测完成'
     }
