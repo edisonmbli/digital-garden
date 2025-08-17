@@ -1,6 +1,7 @@
 // types/sanity.ts
 
 import type { PortableTextBlock } from '@portabletext/types'
+import type { SanityImageSource } from '@sanity/image-url/lib/types/types'
 
 // 多语言字段类型
 export type MultilingualField = {
@@ -84,6 +85,7 @@ export type Photo = {
   title: string
   description?: string
   imageUrl: string
+  imageFile?: SanityImageSource // Sanity 图片资源引用
   metadata: {
     lqip: string
     dimensions: {

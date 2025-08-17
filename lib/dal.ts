@@ -5,6 +5,7 @@ import { groq } from 'next-sanity'
 import { auth } from '@clerk/nextjs/server'
 import prisma from './prisma'
 import { client } from '@/sanity/client'
+import { urlFor } from '@/sanity/image'
 import { logger } from './logger'
 import { withDatabaseMonitoring } from './sentry-dal-integration'
 import type { Locale } from '@/i18n-config'
@@ -434,7 +435,7 @@ export const getCollectionAndPhotosBySlug = cache(
         _id,
         "title": coalesce(title.${lang}, title.en, ""),
         "description": coalesce(description.${lang}, description.en, ""),
-        "imageUrl": imageFile.asset->url,
+        "imageFile": imageFile,
         "metadata": imageFile.asset->metadata { lqip, dimensions }
       }
     }`
@@ -499,6 +500,8 @@ export const getCollectionAndPhotosBySlug = cache(
 
         return {
           ...photo,
+          // 使用 urlFor 生成优化的图片 URL，如果没有 imageFile 则保持原有的 imageUrl
+          imageUrl: photo.imageFile ? urlFor(photo.imageFile).url() : photo.imageUrl,
           post: photoData
             ? {
                 id: photoData.id,
