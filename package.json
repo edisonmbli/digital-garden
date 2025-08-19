@@ -15,7 +15,9 @@
     "analytics:analyze": "node scripts/analyze-analytics.js",
     "analytics:today": "node scripts/analyze-analytics.js --format=table",
     "analytics:json": "node scripts/analyze-analytics.js --format=json",
-    "analytics:migrate": "node scripts/migrate-analytics-data.js"
+    "analytics:migrate": "node scripts/migrate-analytics-data.js",
+    "test:cache": "node scripts/test-cache-invalidation.mjs",
+    "test:cache-dev": "dotenv -e .env.local -- node scripts/test-cache-invalidation.mjs"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",

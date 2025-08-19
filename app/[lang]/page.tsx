@@ -41,6 +41,9 @@ export default async function Home(props: {
   // 在服务端并行获取数据
   const dictionary = await getDictionary(lang)
   const heroCollections = await getHeroCollections()
+  
+  // 获取首张图片用于预加载（LCP优化）
+  const firstImage = heroCollections[0]?.coverImageUrl
 
   // 生成结构化数据
   const structuredData = generateStructuredData({
@@ -55,6 +58,16 @@ export default async function Home(props: {
   // 将获取到的精选摄影集，传递给 UI Shell 组件
   return (
     <>
+      {/* 关键图片预加载 - LCP优化 */}
+      {firstImage && (
+        <link
+          rel="preload"
+          as="image"
+          href={firstImage}
+          fetchPriority="high"
+        />
+      )}
+      
       {/* 结构化数据 */}
       <script
         type="application/ld+json"

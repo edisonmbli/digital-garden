@@ -1,9 +1,10 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { useState, useEffect, useRef } from 'react'
 import { clientLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
+import { generateSecureImageUrl } from '@/lib/secure-image-loader'
 
 interface ProtectedImageProps {
   src: string
@@ -59,7 +60,6 @@ export default function ProtectedImage({
     width: number
     height: number
   } | null>(null)
-  const imageRef = useRef<HTMLImageElement>(null)
 
   useEffect(() => {
     // 记录图片访问
@@ -173,8 +173,7 @@ export default function ProtectedImage({
 
       {/* 图片 */}
       <Image
-        ref={imageRef}
-        src={src}
+        src={src.startsWith('http') || src.startsWith('/') ? src : generateSecureImageUrl(src)}
         alt={alt}
         fill={fill}
         width={fill ? undefined : width || 800}
@@ -190,7 +189,15 @@ export default function ProtectedImage({
         placeholder={placeholder}
         blurDataURL={blurDataURL}
         onLoad={handleLoad}
-        onError={handleError}
+        onError={() => {
+          console.error('图片加载失败', {
+            src,
+            userId,
+            postId,
+            collectionId,
+          })
+          handleError()
+        }}
         className={cn(
           'transition-opacity duration-300',
           isLoading ? 'opacity-0' : 'opacity-100',

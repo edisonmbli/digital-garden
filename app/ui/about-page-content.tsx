@@ -1,6 +1,6 @@
-import Image from 'next/image'
 import { PortableTextRenderer } from './portable-text-renderer'
 import { SocialIcons } from './social-icons'
+import Image from 'next/image'
 import type { Author } from '@/types/sanity'
 import type { Locale } from '@/i18n-config'
 import { getDictionary } from '@/lib/dictionary'
@@ -11,11 +11,10 @@ interface AboutPageContentProps {
   lang: Locale
 }
 
-
-
-
-
-export async function AboutPageContent({ author, lang }: AboutPageContentProps) {
+export async function AboutPageContent({
+  author,
+  lang,
+}: AboutPageContentProps) {
   const dictionary = await getDictionary(lang)
   const bioContent = author.bio[lang] || author.bio.en || []
 
@@ -31,8 +30,8 @@ export async function AboutPageContent({ author, lang }: AboutPageContentProps) 
 
   return (
     <div className="min-h-screen bg-background bg-gradient-to-br from-background via-background/95 to-background/90">
-      <AboutPageTracker 
-        lang={lang} 
+      <AboutPageTracker
+        lang={lang}
         authorName={author.name}
         hasSocialLinks={author.socialLinks && author.socialLinks.length > 0}
       />
@@ -41,7 +40,7 @@ export async function AboutPageContent({ author, lang }: AboutPageContentProps) 
         {/* Row 1: 页面标题和分隔线 */}
         <div className="space-y-2 mb-12">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-slate-100 dark:via-slate-300 dark:to-slate-100 bg-clip-text text-transparent">
-{dictionary.about.title}
+            {dictionary.about.title}
           </h1>
           <div className="flex items-center space-x-4">
             <div className="w-32 h-1 bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 rounded-full"></div>
@@ -109,8 +108,6 @@ export async function AboutPageContent({ author, lang }: AboutPageContentProps) 
           </div>
         </div>
       </div>
-
-
     </div>
   )
 }

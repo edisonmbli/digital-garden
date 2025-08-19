@@ -69,12 +69,26 @@ const isProtectedRoute = createRouteMatcher([
   '/(zh|en)/admin(.*)'
 ])
 
+// 注意：clerkMiddleware 默认所有路由都是公开的
+// 只需要定义受保护的路由
+
 // 直接导出 clerkMiddleware，不要包装
 export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname
   
+  // 完全跳过 API 路由的处理，让它们直接通过
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next()
+  }
+  
   try {
-    // 图片防盗链保护
+    // 认证检查 - 只对受保护的路由进行认证
+    if (isProtectedRoute(req)) {
+      // 使用 auth.protect() 进行路由保护
+      auth.protect()
+    }
+    
+    // 图片防盗链保护（仅对非 API 路由）
     if (isImageRequest(pathname) || isSanityImage(pathname)) {
       const isAllowed = checkImageReferer(req)
       logImageAccess(req, isAllowed)
@@ -82,17 +96,6 @@ export default clerkMiddleware(async (auth, req) => {
       if (!isAllowed) {
         return createHotlinkProtectionResponse()
       }
-    }
-    
-    // 认证检查 - 关键：确保这里的调用是正确的
-    if (isProtectedRoute(req)) {
-      // 使用 auth.protect() 进行路由保护
-      auth.protect()
-    }
-    
-    // 跳过 API 路由的国际化处理
-    if (pathname.startsWith('/api/')) {
-      return NextResponse.next()
     }
 
     // 国际化重定向
@@ -134,10 +137,11 @@ export const config = {
   // 匹配所有路径，包括图片文件，除了以下情况：
   // 1. Next.js 内部路径（_next）
   // 2. 静态资源文件（但保留图片文件如 og-image.jpg）
+  // 3. 排除图片代理 API 路由
   matcher: [
-    '/((?!_next|favicon\\.ico|.*\\.css|.*\\.js|.*\\.map).*)',
+    '/((?!_next|favicon\.ico|.*\.css|.*\.js|.*\.map|api/images).*)',
     '/',
-    '/(api|trpc)(.*)',
+    '/api/webhooks(.*)',
     '/og-image.jpg'
   ],
 }

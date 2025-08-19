@@ -4,10 +4,12 @@ import { cache } from 'react'
 import { groq } from 'next-sanity'
 import { auth } from '@clerk/nextjs/server'
 import prisma from './prisma'
-import { client } from '@/sanity/client'
+import { sanityServerClient } from '@/lib/sanity-server'
 import { urlFor } from '@/sanity/image'
+import { extractSanityImageId, generateSecureImageUrl } from './secure-image-loader'
 import { logger } from './logger'
 import { withDatabaseMonitoring } from './sentry-dal-integration'
+import type { SanityImageSource } from '@sanity/image-url/lib/types/types'
 import type { Locale } from '@/i18n-config'
 import type {
   DevCollection,
@@ -29,12 +31,38 @@ export const getHeroCollections = cache(async () => {
     "name": name,
     "description": description,
     "slug": slug.current,
-    "coverImageUrl": coverImage.asset->url,
+    coverImage,
     isFeatured,
     orderRank
   }`
 
-  return client.fetch(query)
+  const collections = await sanityServerClient.fetch(query, {}, {
+    next: {
+      tags: [
+        'collections',
+        'featured-collections',
+        'homepage-collections'
+      ]
+    }
+  })
+  
+  // 为每个collection生成安全的coverImageUrl（返回安全代理URL）
+  return collections.map((collection: { coverImage?: SanityImageSource; [key: string]: unknown }) => {
+    let imageId: string | null = null
+    
+    if (collection.coverImage) {
+      if (typeof collection.coverImage === 'object' && 'asset' in collection.coverImage && collection.coverImage.asset) {
+        imageId = collection.coverImage.asset._ref
+      } else {
+        imageId = extractSanityImageId(urlFor(collection.coverImage).url())
+      }
+    }
+    
+    return {
+      ...collection,
+      coverImageUrl: imageId ? generateSecureImageUrl(imageId) : null
+    }
+  })
 })
 
 // 获取所有的影像组（未来支持分页），用于 /gallery 列表页
@@ -44,12 +72,37 @@ export const getAllCollections = cache(async () => {
     "name": name,
     "description": description,
     "slug": slug.current,
-    "coverImageUrl": coverImage.asset->url,
+    coverImage,
     isFeatured,
     orderRank
   }`
 
-  return client.fetch(query)
+  const collections = await sanityServerClient.fetch(query, {}, {
+    next: {
+      tags: [
+        'collections',
+        'gallery-collections'
+      ]
+    }
+  })
+  
+  // 为每个collection生成安全的coverImageUrl（返回安全代理URL）
+  return collections.map((collection: { coverImage?: SanityImageSource; [key: string]: unknown }) => {
+    let imageId: string | null = null
+    
+    if (collection.coverImage) {
+      if (typeof collection.coverImage === 'object' && 'asset' in collection.coverImage && collection.coverImage.asset) {
+        imageId = collection.coverImage.asset._ref
+      } else {
+        imageId = extractSanityImageId(urlFor(collection.coverImage).url())
+      }
+    }
+    
+    return {
+      ...collection,
+      coverImageUrl: imageId ? generateSecureImageUrl(imageId) : null
+    }
+  })
 })
 
 export const getLogPosts = cache(async (lang: Locale) => {
@@ -60,7 +113,15 @@ export const getLogPosts = cache(async (lang: Locale) => {
     publishedAt,
     excerpt
   }`
-  return client.fetch<LogPost[]>(query, { lang })
+  return sanityServerClient.fetch<LogPost[]>(query, { lang }, {
+    next: {
+      tags: [
+        'logs',
+        `logs:${lang}`,
+        'log-list'
+      ]
+    }
+  })
 })
 
 export const getLogPostBySlug = cache(async (slug: string, lang: Locale) => {
@@ -69,9 +130,18 @@ export const getLogPostBySlug = cache(async (slug: string, lang: Locale) => {
     title,
     content, // Portable Text
     publishedAt,
-    "author": author->{ name, "avatarUrl": image.asset->url }
+    "author": author->{ name, image }
   }`
-  return client.fetch<LogPostDetails>(query, { slug, lang })
+  return sanityServerClient.fetch<LogPostDetails>(query, { slug, lang }, {
+    next: {
+      tags: [
+        'logs',
+        `log:${slug}`,
+        `logs:${lang}`,
+        'log-detail'
+      ]
+    }
+  })
 })
 
 // 获取所有开发教程合集（用于列表页）
@@ -81,7 +151,7 @@ export const getAllDevCollectionsAndLogs = cache(async (lang: Locale) => {
     "name": name,
     "description": description,
     "slug": slug.current,
-    "coverImageUrl": coverImage.asset->url,
+    coverImage,
     isFeatured,
     orderRank,
     "logs": *[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref] {
@@ -95,11 +165,36 @@ export const getAllDevCollectionsAndLogs = cache(async (lang: Locale) => {
     "logsCount": count(*[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref])
   }`
 
-  const devCollections = await client.fetch<DevCollection[]>(query, {
+  const devCollectionsData = await sanityServerClient.fetch<{ coverImage?: SanityImageSource; [key: string]: unknown }[]>(query, {
     lang,
+  }, {
+    next: {
+      tags: [
+        'dev-collections',
+        `dev-collections:${lang}`,
+        'dev-collection-list'
+      ]
+    }
   })
 
-  // 直接返回完整的 DevCollection 数据，包含所有 logs
+  // 生成安全的图片URL（返回安全代理URL）
+  const devCollections: DevCollection[] = devCollectionsData.map((collection) => {
+    let imageId: string | null = null
+    
+    if (collection.coverImage) {
+      if (typeof collection.coverImage === 'object' && 'asset' in collection.coverImage && collection.coverImage.asset) {
+        imageId = collection.coverImage.asset._ref
+      } else {
+        imageId = extractSanityImageId(urlFor(collection.coverImage).url())
+      }
+    }
+    
+    return {
+      ...collection,
+      coverImageUrl: imageId ? generateSecureImageUrl(imageId) : undefined
+    }
+  }) as DevCollection[]
+
   return devCollections
 })
 
@@ -111,7 +206,7 @@ export const getDevCollectionBySlug = cache(
     "name": name,
     "description": description,
     "slug": slug.current,
-    "coverImageUrl": coverImage.asset->url,
+    coverImage,
     isFeatured,
     "logs": *[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref] {
       _id,
@@ -123,24 +218,39 @@ export const getDevCollectionBySlug = cache(
     } [defined(@)]
   }`
 
-    const devCollection = await client.fetch<DevCollection | null>(
+    const devCollectionData = await sanityServerClient.fetch<{ coverImage?: SanityImageSource; [key: string]: unknown } | null>(
       query,
-      { slug, lang }
+      { slug, lang },
+      {
+        next: {
+          tags: [
+            'dev-collections',
+            `dev-collection:${slug}`,
+            `dev-collections:${lang}`
+          ]
+        }
+      }
     )
 
-    if (!devCollection) {
+    if (!devCollectionData) {
       return null
     }
 
     return {
-      _id: devCollection._id,
-      name: devCollection.name,
-      description: devCollection.description,
-      slug: devCollection.slug,
-      coverImageUrl: devCollection.coverImageUrl,
-      isFeatured: devCollection.isFeatured,
-      logs: devCollection.logs || [],
-    }
+      _id: devCollectionData._id,
+      name: devCollectionData.name,
+      description: devCollectionData.description,
+      slug: devCollectionData.slug,
+      coverImageUrl: devCollectionData.coverImage 
+          ? (
+              typeof devCollectionData.coverImage === 'object' && 'asset' in devCollectionData.coverImage && devCollectionData.coverImage.asset
+                ? devCollectionData.coverImage.asset._ref
+                : extractSanityImageId(urlFor(devCollectionData.coverImage).url())
+            )
+          : undefined,
+      isFeatured: devCollectionData.isFeatured,
+      logs: devCollectionData.logs || [],
+    } as DevCollection
   }
 )
 
@@ -171,7 +281,15 @@ export const getTranslationsBySlug = cache(
 
     const params = { type, slug, lang }
     try {
-      const result = await client.fetch(query, params)
+      const result = await sanityServerClient.fetch(query, params, {
+        next: {
+          tags: [
+            'translations',
+            `translation:${type}:${slug}`,
+            `translations:${lang}`
+          ]
+        }
+      })
 
       if (!result) {
         return []
@@ -440,9 +558,20 @@ export const getCollectionAndPhotosBySlug = cache(
       }
     }`
 
-    const collectionDataFromSanity = await client.fetch<GroupAndPhotos>(
+    const collectionDataFromSanity = await sanityServerClient.fetch<GroupAndPhotos>(
       query,
-      { slug }
+      { slug },
+      {
+        next: {
+          tags: [
+            'collections',
+            `collection:${slug}`,
+            'photos',
+            `collection-photos:${slug}`,
+            `lang:${lang}`
+          ]
+        }
+      }
     )
 
     if (!collectionDataFromSanity || !collectionDataFromSanity.photos) {
@@ -500,8 +629,16 @@ export const getCollectionAndPhotosBySlug = cache(
 
         return {
           ...photo,
-          // 使用 urlFor 生成优化的图片 URL，如果没有 imageFile 则保持原有的 imageUrl
-          imageUrl: photo.imageFile ? urlFor(photo.imageFile).url() : photo.imageUrl,
+          // 返回原始asset ID供双层代理使用
+          imageUrl: photo.imageFile 
+            ? (
+                typeof photo.imageFile === 'object' && 'asset' in photo.imageFile && photo.imageFile.asset
+                  ? photo.imageFile.asset._ref
+                  : typeof photo.imageFile === 'string'
+                  ? photo.imageFile
+                  : extractSanityImageId(urlFor(photo.imageFile).url())
+              )
+            : undefined,
           post: photoData
             ? {
                 id: photoData.id,
@@ -569,8 +706,8 @@ export const getLogPostWithInteractions = cache(
       "slug": slug.current,
       language,
       tags,
-      "author": author->{ name, "avatarUrl": image.asset->url },
-      "mainImageUrl": mainImage.asset->url,
+      "author": author->{ name, image },
+      mainImage,
       // SEO 字段（单语言）
       seo {
         metaTitle,
@@ -583,9 +720,20 @@ export const getLogPostWithInteractions = cache(
       }
     }`
 
-    const logDataFromSanity = await client.fetch<LogPostDetails>(
+    const logDataFromSanity = await sanityServerClient.fetch<LogPostDetails>(
       query,
-      { slug, lang }
+      { slug, lang },
+      {
+        next: {
+          tags: [
+            'logs',
+            `log:${slug}`,
+            `logs:${lang}`,
+            'log-detail',
+            'log-interactions'
+          ]
+        }
+      }
     )
 
     if (!logDataFromSanity) {
@@ -649,14 +797,30 @@ export const getLogPostWithInteractions = cache(
       } [defined(@)]
     }`
 
-    const collectionData = await client.fetch(collectionQuery, {
+    const collectionData = await sanityServerClient.fetch(collectionQuery, {
       logId: logDataFromSanity._id,
       lang,
+    }, {
+      next: {
+        tags: [
+          'dev-collections',
+          `dev-collections:${lang}`,
+          'log-collection-mapping'
+        ]
+      }
     })
 
     // 5. 合并数据并返回 EnrichedLogPost
     const enrichedLogPost: EnrichedLogPost = {
       ...logDataFromSanity,
+      // 生成安全的代理URL
+      mainImageUrl: logDataFromSanity.mainImage 
+          ? (
+              typeof logDataFromSanity.mainImage === 'object' && 'asset' in logDataFromSanity.mainImage && logDataFromSanity.mainImage.asset
+                ? generateSecureImageUrl(logDataFromSanity.mainImage.asset._ref)
+                : generateSecureImageUrl(extractSanityImageId(urlFor(logDataFromSanity.mainImage).url()))
+            )
+          : undefined,
       post: logInfoFromDb
         ? {
             id: logInfoFromDb.id,
@@ -691,9 +855,18 @@ export const getCollectionLogsBySlug = cache(
       _id
     }`
 
-    const logData = await client.fetch<{ _id: string } | null>(
+    const logData = await sanityServerClient.fetch<{ _id: string } | null>(
       logQuery,
-      { logSlug, lang }
+      { logSlug, lang },
+      {
+        next: {
+          tags: [
+            'logs',
+            `log:${logSlug}`,
+            `logs:${lang}`
+          ]
+        }
+      }
     )
 
     if (!logData) {
@@ -715,9 +888,17 @@ export const getCollectionLogsBySlug = cache(
       } [defined(@)]
     }`
 
-    const collectionData = await client.fetch(collectionQuery, {
+    const collectionData = await sanityServerClient.fetch(collectionQuery, {
       logId: logData._id,
       lang,
+    }, {
+      next: {
+        tags: [
+          'dev-collections',
+          `dev-collections:${lang}`,
+          'collection-logs'
+        ]
+      }
     })
 
     return collectionData
@@ -730,22 +911,53 @@ export const getAuthorBySlug = cache(async (slug: string): Promise<Author | null
     _id,
     name,
     "slug": slug.current,
-    "imageUrl": image.asset->url,
+    image,
     bio,
     // SEO 字段
     metaTitle,
     metaDescription,
     focusKeyword,
-    "socialImageUrl": socialImage.asset->url,
+    socialImage,
     canonicalUrl,
     noIndex,
     socialLinks
   }`
 
-  const author = await client.fetch<Author | null>(
+  const authorData = await sanityServerClient.fetch<{ image?: SanityImageSource; socialImage?: SanityImageSource; [key: string]: unknown } | null>(
     query, 
     { slug },
     { next: { tags: ['author-data'] } }
   )
+  
+  if (!authorData) {
+    return null
+  }
+
+  // 生成安全的图片URL
+  let imageId: string | null = null
+  let socialImageId: string | null = null
+  
+  if (authorData.image) {
+    if (typeof authorData.image === 'object' && 'asset' in authorData.image && authorData.image.asset) {
+      imageId = authorData.image.asset._ref
+    } else {
+      imageId = extractSanityImageId(urlFor(authorData.image).url())
+    }
+  }
+  
+  if (authorData.socialImage) {
+    if (typeof authorData.socialImage === 'object' && 'asset' in authorData.socialImage && authorData.socialImage.asset) {
+      socialImageId = authorData.socialImage.asset._ref
+    } else {
+      socialImageId = extractSanityImageId(urlFor(authorData.socialImage).url())
+    }
+  }
+  
+  const author: Author = {
+    ...authorData,
+    imageUrl: imageId ? generateSecureImageUrl(imageId) : undefined,
+    socialImageUrl: socialImageId ? generateSecureImageUrl(socialImageId) : undefined,
+  } as Author
+  
   return author
 })

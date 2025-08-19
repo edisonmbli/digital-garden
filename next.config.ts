@@ -11,31 +11,75 @@ const nextConfig = {
     optimizePackageImports: ['@sentry/nextjs'],
   },
 
-  // 图片优化配置 - 添加 Sanity CDN 和 Unsplash 域名
+  // 图片优化配置 - 双层代理架构
   images: {
+    // 移除全局自定义loader配置，改为在组件级别使用
+    // loader: 'custom',
+    // loaderFile: './lib/secure-image-loader.ts',
+    
+    // 允许的图片域名配置
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'cdn.sanity.io',
-        port: '',
-        pathname: '/images/**',
-      },
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
         port: '',
         pathname: '/**',
       },
+      // 允许本地安全端点作为图片源
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3000',
+        pathname: '/api/images/secure/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'edisonmbli.com',
+        pathname: '/api/images/secure/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.vercel.app',
+        pathname: '/api/images/secure/**',
+      },
     ],
-    // 可选：图片质量和格式优化
+    
+    // 图片质量和格式优化
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    
+    // 启用 Next.js 图片优化（双层代理的关键）
+    unoptimized: false,
+    
+    // 缓存优化配置
+    minimumCacheTTL: 86400, // 24小时
+    dangerouslyAllowSVG: false,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
   // 安全头配置
   async headers() {
     return [
+      // 图片和静态资源缓存优化
+      {
+        source: '/_next/image(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/_next/static/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [

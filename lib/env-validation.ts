@@ -41,21 +41,27 @@ const ENV_CONFIGS: EnvConfig[] = [
     sensitive: true,
   },
   
-  // Sanity CMS
+  // Sanity CMS (服务端配置)
   {
-    name: 'NEXT_PUBLIC_SANITY_PROJECT_ID',
+    name: 'SANITY_PROJECT_ID',
     required: true,
-    description: 'Sanity 项目 ID',
+    description: 'Sanity 项目 ID（服务端）',
   },
   {
-    name: 'NEXT_PUBLIC_SANITY_DATASET',
+    name: 'SANITY_DATASET',
     required: true,
-    description: 'Sanity 数据集名称',
+    description: 'Sanity 数据集名称（服务端）',
   },
   {
-    name: 'NEXT_PUBLIC_SANITY_API_VERSION',
+    name: 'SANITY_API_VERSION',
     required: true,
-    description: 'Sanity API 版本',
+    description: 'Sanity API 版本（服务端）',
+  },
+  {
+    name: 'SANITY_API_EDITOR_TOKEN',
+    required: true,
+    description: 'Sanity API 编辑器令牌',
+    sensitive: true,
   },
   {
     name: 'SANITY_WEBHOOK_SECRET',

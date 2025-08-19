@@ -10,6 +10,7 @@
 
 import { captureError, captureBusinessEvent, addSentryBreadcrumb } from './sentry-integration'
 import { logger } from './logger'
+import { sanityConfig } from './sanity-server'
 
 // =============================================================================
 // 1. 认证与授权层监控
@@ -305,7 +306,7 @@ export const monitorSanityError = (error: Error, context: {
       documentType: context.documentType,
       documentId: context.documentId,
       query: context.query?.substring(0, 200),
-      endpoint: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
+      endpoint: sanityConfig.projectId
     }
   })
 }

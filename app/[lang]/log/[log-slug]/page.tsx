@@ -7,12 +7,12 @@ import { generateLogSEO, generateStructuredData } from '@/lib/seo-utils'
 import { type Locale } from '@/i18n-config'
 import { notFound } from 'next/navigation'
 import { LogDetailPage } from '@/app/ui/log-detail-page'
-import { client as sanityClient } from '@/sanity/client'
+import { sanityServerClient } from '@/lib/sanity-server'
 import { groq } from 'next-sanity'
 
 export async function generateStaticParams() {
   // 构建时使用生产客户端获取已发布的内容
-  const logs = await sanityClient.fetch(groq`
+  const logs = await sanityServerClient.fetch(groq`
     *[_type == "log" && defined(slug.current)] {
       "slug": slug.current
     }

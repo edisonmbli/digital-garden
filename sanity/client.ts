@@ -1,16 +1,14 @@
 // sanity/client.ts
+// 已弃用：建议新代码使用 lib/sanity-server.ts
+// 此文件保留用于向后兼容，但不应在新代码中使用
 
-import { createClient } from 'next-sanity'
+import { sanityServerClient } from '@/lib/sanity-server'
 
-// 从 .env.local 文件中读取你的 Sanity 项目配置
-export const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
-export const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET
-export const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION
+// 为了向后兼容，重新导出服务端客户端
+// 建议直接使用 sanityServerClient
+export const client = sanityServerClient
 
-// 标准 Sanity 客户端配置
-export const client = createClient({
-  projectId,
-  dataset,
-  apiVersion,
-  useCdn: true, // 使用 CDN 以获得最佳性能
-})
+// 已弃用的配置导出（为了向后兼容）
+export const projectId = 'deprecated-use-server-config'
+export const dataset = 'deprecated-use-server-config'
+export const apiVersion = 'deprecated-use-server-config'

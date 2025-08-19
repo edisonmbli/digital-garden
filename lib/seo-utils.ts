@@ -1,6 +1,7 @@
 import { type Metadata } from 'next'
 import { type Locale } from '@/i18n-config'
 import { urlFor } from '@/sanity/image'
+import { generateSecureImageUrl, extractSanityImageId } from './secure-image-loader'
 import type { Author } from '@/types/sanity'
 
 // SEO相关类型定义
@@ -318,7 +319,11 @@ export function generateCollectionSEO({
     collection.coverImage
 
   const ogImage = socialImage
-    ? urlFor(socialImage).width(1200).height(630).url()
+    ? generateSecureImageUrl(
+            typeof socialImage === 'object' && socialImage && 'asset' in socialImage && socialImage.asset && typeof socialImage.asset === 'object' && '_ref' in socialImage.asset
+              ? socialImage.asset._ref as string
+              : extractSanityImageId(urlFor(socialImage).width(1200).height(630).url())
+          )
     : '/og-image.jpg'
 
   // 规范URL处理
@@ -414,7 +419,11 @@ export function generateLogSEO({
   const ogImage = socialImage
     ? typeof socialImage === 'string'
       ? socialImage
-      : urlFor(socialImage).width(1200).height(630).url()
+      : generateSecureImageUrl(
+          typeof socialImage === 'object' && socialImage && 'asset' in socialImage && socialImage.asset && typeof socialImage.asset === 'object' && '_ref' in socialImage.asset
+            ? socialImage.asset._ref as string
+            : extractSanityImageId(urlFor(socialImage).width(1200).height(630).url())
+        )
     : '/og-image.jpg'
 
   // 规范URL处理

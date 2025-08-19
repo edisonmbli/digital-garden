@@ -76,6 +76,7 @@ export type LogPostDetails = {
     name: string
     avatarUrl?: string
   }
+  mainImage?: SanityImageSource
   mainImageUrl?: string
 }
 

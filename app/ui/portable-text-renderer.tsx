@@ -5,8 +5,9 @@ import React, { useEffect } from 'react'
 import { PortableText, PortableTextComponents } from '@portabletext/react'
 import { PortableTextBlock } from '@portabletext/types'
 import { cn } from '@/lib/utils'
-import Image from 'next/image'
 import { Highlight, themes } from 'prism-react-renderer'
+import Image from 'next/image'
+import { extractSanityImageId, generateSecureImageUrl } from '@/lib/secure-image-loader'
 
 interface PortableTextRendererProps {
   content: PortableTextBlock[]
@@ -309,27 +310,52 @@ const components: PortableTextComponents = {
     ),
 
     // 图片
-    image: ({ value }) => (
-      <figure className="my-8 group">
-        <div className="relative overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-          <Image
-            src={value.asset?.url}
-            alt={value.alt || ''}
-            width={value.asset?.metadata?.dimensions?.width || 800}
-            height={value.asset?.metadata?.dimensions?.height || 600}
-            className="w-full h-auto transition-transform duration-300 group-hover:scale-105"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </div>
-        {value.caption && (
-          <figcaption className="mt-3 text-body-sm text-slate-600 dark:text-slate-400 text-center italic">
-            {value.caption}
-          </figcaption>
-        )}
-      </figure>
-    ),
+    image: ({ value }) => {
+      // 提取 Sanity asset ID 并生成安全 URL
+      let imageUrl: string | undefined
+      
+      if (value.asset) {
+        let imageId: string | null = null
+        
+        if (typeof value.asset === 'object' && 'asset' in value.asset && value.asset.asset) {
+          imageId = value.asset.asset._ref
+        } else if (typeof value.asset === 'object' && '_ref' in value.asset) {
+          imageId = value.asset._ref
+        } else if (value.asset.url) {
+          imageId = extractSanityImageId(value.asset.url)
+        }
+        
+        if (imageId) {
+          imageUrl = generateSecureImageUrl(imageId)
+        }
+      }
+      
+      if (!imageUrl) {
+        return null
+      }
+      
+      return (
+        <figure className="my-8 group">
+          <div className="relative overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+            <Image
+              src={imageUrl}
+              alt={value.alt || ''}
+              width={value.asset?.metadata?.dimensions?.width || 800}
+              height={value.asset?.metadata?.dimensions?.height || 600}
+              className="w-full h-auto transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </div>
+          {value.caption && (
+            <figcaption className="mt-3 text-body-sm text-slate-600 dark:text-slate-400 text-center italic">
+              {value.caption}
+            </figcaption>
+          )}
+        </figure>
+      )
+    },
 
     // 代码块 - 使用语法高亮
     codeBlock: ({ value }) => {

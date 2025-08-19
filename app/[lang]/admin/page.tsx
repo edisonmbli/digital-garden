@@ -223,11 +223,12 @@ export default function AdminPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">概览</TabsTrigger>
           <TabsTrigger value="system-test">系统测试</TabsTrigger>
           <TabsTrigger value="spam-management">恶意攻击管理</TabsTrigger>
           <TabsTrigger value="sensitive-words">敏感词管理</TabsTrigger>
+          <TabsTrigger value="cache-management">缓存管理</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -631,6 +632,26 @@ export default function AdminPage() {
                  </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="cache-management" className="space-y-4">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">缓存管理</h2>
+                <p className="text-muted-foreground">统一管理和监控系统缓存</p>
+              </div>
+              <Badge variant="outline" className="text-body-sm">
+                <Database className="w-4 h-4 mr-1" />
+                缓存管理
+              </Badge>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/zh/admin/cache-management">
+                打开专用缓存管理页面
+              </Link>
+            </Button>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

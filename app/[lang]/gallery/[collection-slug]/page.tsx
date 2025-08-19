@@ -5,7 +5,7 @@ import { type Locale } from '@/i18n-config'
 import { getCollectionAndPhotosBySlug } from '@/lib/dal'
 import { generateCollectionSEO, generateStructuredData } from '@/lib/seo-utils'
 import { notFound } from 'next/navigation'
-import { client as sanityClient } from '@/sanity/client'
+import { sanityServerClient } from '@/lib/sanity-server'
 import { groq } from 'next-sanity'
 import { InfinitePhotoGrid } from '@/app/ui/infinite-photo-grid'
 import { CopyrightNotice } from '@/app/ui/copyright-notice'
@@ -13,9 +13,9 @@ import { getDictionary } from '@/lib/dictionary'
 
 // --- 静态路径生成 ---
 export async function generateStaticParams() {
-  // 构建时使用生产客户端获取已发布的内容
+  // 构建时使用服务端客户端获取已发布的内容
   const query = groq`*[_type == "collection" && defined(slug.current)]{ "slug": slug.current }`
-  const results = await sanityClient.fetch<{ slug: string }[]>(query)
+  const results = await sanityServerClient.fetch<{ slug: string }[]>(query)
 
   // 为每个collection生成所有支持的语言路径
   const supportedLanguages: Locale[] = ['en', 'zh']

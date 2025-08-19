@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isValidSignature, SIGNATURE_HEADER_NAME } from '@sanity/webhook'
-import { revalidateTag } from 'next/cache'
-import { client } from '@/sanity/client'
+import { sanityServerClient } from '@/lib/sanity-server'
 import prisma from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withWebhookMonitoring } from '@/lib/sentry-api-integration'
+import { CacheInvalidationManager } from '@/lib/cache-invalidation-manager'
 
 // The simplified payload from the webhook
 // Define a more accurate type for the document part of the payload
@@ -128,6 +128,40 @@ async function recordWebhookCall(
   }
 }
 
+// Unified cache invalidation function
+async function invalidateCache(
+  operation: 'create' | 'update' | 'delete',
+  documentType: 'collection' | 'devCollection' | 'log' | 'photo' | 'author',
+  document: SanityDocument,
+  beforeState?: SanityDocument | null
+) {
+  try {
+    const cacheManager = CacheInvalidationManager.getInstance()
+    
+    // Create invalidation task
+    await cacheManager.queueInvalidation({
+      type: documentType,
+      operation,
+      documentId: document._id,
+      beforeState: beforeState || undefined,
+      afterState: document
+    })
+    
+    logger.info('CacheInvalidation', 'Cache invalidation queued successfully', {
+      operation,
+      documentType,
+      documentId: document._id
+    })
+  } catch (error) {
+    logger.error('CacheInvalidation', 'Failed to queue cache invalidation', error as Error, {
+      operation,
+      documentType,
+      documentId: document._id
+    })
+    // Don't throw here to avoid breaking the main webhook flow
+  }
+}
+
 async function getI18nInfo(documentId: string): Promise<{
   i18n_id: string
   i18n_lang: string | null
@@ -153,7 +187,7 @@ async function getI18nInfo(documentId: string): Promise<{
   try {
     logger.debug('WebhookI18n', 'Executing GROQ query with timeout', { documentId })
 
-    const queryPromise = client.fetch(query, params)
+    const queryPromise = sanityServerClient.fetch(query, params)
     const timeoutPromise = new Promise((_, reject) =>
       setTimeout(
         () =>
@@ -193,7 +227,7 @@ async function getI18nInfo(documentId: string): Promise<{
       logger.debug('WebhookI18n', 'Attempting to get language info only', { documentId })
       const langQuery = `*[_id==$documentId][0].language`
       const langResult = await Promise.race([
-        client.fetch(langQuery, params),
+        sanityServerClient.fetch(langQuery, params),
         new Promise((_, reject) =>
           setTimeout(
             () => reject(new Error(`Language query timeout for ${documentId}`)),
@@ -360,6 +394,9 @@ async function handleCollectionCreate(
       },
     })
 
+    // Invalidate cache after successful creation
+    await invalidateCache('create', 'collection', payload)
+
     logger.info('WebhookCollection', 'Collection created successfully', { id: payload._id })
   } catch (error) {
     logger.error('WebhookCollection', 'Error creating collection', error as Error, { id: payload._id })
@@ -426,6 +463,9 @@ async function handleCollectionUpdate(
       },
     })
 
+    // Invalidate cache after successful update
+    await invalidateCache('update', 'collection', payload)
+
     logger.info('WebhookCollection', 'Collection upserted successfully', { 
       id: payload._id, 
       resultId: result.id, 
@@ -456,6 +496,9 @@ async function handleCollectionDelete(
         deletedAt: new Date(),
       },
     })
+
+    // Invalidate cache after successful deletion
+    await invalidateCache('delete', 'collection', payload)
 
     logger.info('WebhookCollection', 'Collection soft deleted successfully', { 
       id: payload._id, 
@@ -536,6 +579,9 @@ async function handleDevCollectionCreate(
       },
     })
 
+    // Invalidate cache after successful creation
+    await invalidateCache('create', 'devCollection', payload)
+
     logger.info('WebhookDevCollection', 'DevCollection created successfully', { id: payload._id })
   } catch (error) {
     logger.error('WebhookDevCollection', 'Error creating devCollection', error as Error, { id: payload._id })
@@ -604,6 +650,9 @@ async function handleDevCollectionUpdate(
       },
     })
 
+    // Invalidate cache after successful update
+    await invalidateCache('update', 'devCollection', payload)
+
     logger.info('WebhookDevCollection', 'DevCollection upserted successfully', { 
       id: payload._id, 
       resultId: result.id, 
@@ -634,6 +683,9 @@ async function handleDevCollectionDelete(
         deletedAt: new Date(),
       },
     })
+
+    // Invalidate cache after successful deletion
+    await invalidateCache('delete', 'devCollection', payload)
 
     logger.info('WebhookDevCollection', 'DevCollection soft deleted successfully', { 
       id: payload._id, 
@@ -697,6 +749,9 @@ async function handleLogCreate(
         language: language,
       },
     })
+
+    // Invalidate cache after successful creation
+    await invalidateCache('create', 'log', payload)
 
     logger.info('WebhookLog', 'Log created successfully', { id: payload._id, postId, language })
   } catch (error) {
@@ -764,6 +819,9 @@ async function handleLogUpdate(
       })
       logger.info('WebhookLog', 'Log updated successfully', { id: payload._id, postId, language })
     }
+
+    // Invalidate cache after successful update
+    await invalidateCache('update', 'log', payload)
   } catch (error) {
     logger.error('WebhookLog', 'Error updating log', error as Error, { id: payload._id })
     throw error
@@ -791,6 +849,9 @@ async function handleLogDelete(
         deletedAt: new Date(),
       },
     })
+
+    // Invalidate cache after successful deletion
+    await invalidateCache('delete', 'log', payload)
 
     logger.info('WebhookLog', 'Log post soft deleted successfully', {
       documentId,
@@ -865,6 +926,9 @@ async function handlePhotoCreate(
       },
     })
 
+    // Invalidate cache after successful creation
+    await invalidateCache('create', 'photo', payload)
+
     logger.info('WebhookPhoto', 'Photo created successfully', { id: payload._id, postId: post.id })
   } catch (error) {
     logger.error('WebhookPhoto', 'Error creating photo', error as Error, { id: payload._id })
@@ -924,6 +988,9 @@ async function handlePhotoUpdate(
       })
     }
 
+    // Invalidate cache after successful update
+    await invalidateCache('update', 'photo', payload)
+
     logger.info('WebhookPhoto', 'Photo updated successfully', { id: payload._id, postId: post.id })
   } catch (error) {
     logger.error('WebhookPhoto', 'Error updating photo', error as Error, { id: payload._id })
@@ -951,6 +1018,9 @@ async function handlePhotoDelete(
         deletedAt: new Date(),
       },
     })
+
+    // Invalidate cache after successful deletion
+    await invalidateCache('delete', 'photo', payload)
 
     logger.info('WebhookPhoto', 'Photo post soft deleted successfully', {
       documentId,
@@ -982,8 +1052,8 @@ async function handleAuthorCreate(
   try {
     // Author documents don't need database storage in this system
     // They are fetched directly from Sanity when needed
-    // Just trigger revalidation for about pages
-    revalidateTag('author-data')
+    // Just trigger cache invalidation for about pages
+    await invalidateCache('create', 'author', payload)
 
     logger.info('WebhookAuthor', 'Author created, about pages revalidated', { id: payload._id })
   } catch (error) {
@@ -1001,8 +1071,8 @@ async function handleAuthorUpdate(
   })
 
   try {
-    // Trigger revalidation for about pages when author data changes
-    revalidateTag('author-data')
+    // Trigger cache invalidation for about pages when author data changes
+    await invalidateCache('update', 'author', payload)
 
     logger.info('WebhookAuthor', 'Author updated, about pages revalidated', { id: payload._id })
   } catch (error) {
@@ -1020,8 +1090,8 @@ async function handleAuthorDelete(
   })
 
   try {
-    // Trigger revalidation for about pages when author is deleted
-    revalidateTag('author-data')
+    // Trigger cache invalidation for about pages when author is deleted
+    await invalidateCache('delete', 'author', payload)
 
     logger.info('WebhookAuthor', 'Author deleted, about pages revalidated', { id: payload._id })
   } catch (error) {
