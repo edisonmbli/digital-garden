@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withApiMonitoring } from '@/lib/sentry-api-integration'
-import { performImageWarmup } from '@/lib/warmup-utils'
+import { performImageWarmupLegacy } from '@/lib/warmup-utils'
 
 // 定时缓存预热任务
 export const POST = withApiMonitoring(async (request: NextRequest) => {
@@ -28,7 +28,7 @@ export const POST = withApiMonitoring(async (request: NextRequest) => {
       : process.env.NEXT_PUBLIC_SITE_URL || 'https://edisonmbli.com'
 
     // 执行预热逻辑
-    const warmupResult = await performImageWarmup(baseUrl, 'all', 50, 3)
+    const warmupResult = await performImageWarmupLegacy(baseUrl, 'all', 50, 3)
     
     const duration = Date.now() - startTime
     

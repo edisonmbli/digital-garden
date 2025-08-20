@@ -1,12 +1,12 @@
 'use server'
 
 import { auth } from '@clerk/nextjs/server'
-import { performImageWarmup } from '@/lib/warmup-utils'
+import { performImageWarmupWithProgress, getWarmupTargetInfo, type AdminWarmupConfig } from '@/lib/warmup-utils'
 import { revalidatePath } from 'next/cache'
 import prisma from '@/lib/prisma'
 
 // 检查管理员权限
-async function checkAdminAccess(): Promise<boolean> {
+export async function checkAdminAccess(): Promise<boolean> {
   try {
     const authResult = await auth()
     const { userId, sessionClaims, getToken } = authResult
@@ -56,11 +56,12 @@ async function checkAdminAccess(): Promise<boolean> {
 }
 
 type WarmupRequest = {
-  type: 'collection-covers' | 'featured-photos' | 'dev-collections' | 'custom'
+  type: 'cover-images' | 'collection' | 'dev-collections' | 'custom'
   limit: number
   sizes: string[]
   formats: string[]
   customImageIds?: string[]
+  targetId?: string // 用于指定特定的collection ID
 }
 
 type WarmupResult = {
@@ -117,6 +118,19 @@ export async function executeWarmup(request: WarmupRequest): Promise<WarmupResul
       }
     }
 
+    // 验证collection类型需要targetId
+    if (type === 'collection' && !request.targetId) {
+      return {
+        success: false,
+        totalUrls: 0,
+        successCount: 0,
+        failureCount: 0,
+        duration: 0,
+        errors: [],
+        message: 'Collection类型需要指定targetId'
+      }
+    }
+
     // 限制参数范围
     if (limit < 1 || limit > 100) {
       return {
@@ -130,27 +144,51 @@ export async function executeWarmup(request: WarmupRequest): Promise<WarmupResul
       }
     }
 
-    // 执行预热
-    const startTime = Date.now()
-    const result = await performImageWarmup({
+    console.log('开始执行预热操作:', { type, limit, sizes, formats, customImageIds, targetId: request.targetId })
+
+    // 构建配置对象
+    const config: AdminWarmupConfig = {
       type,
       limit,
       sizes,
       formats,
       customImageIds,
-    })
+      targetId: request.targetId
+    }
+
+    // 先获取目标信息以验证
+    try {
+      const targetInfo = await getWarmupTargetInfo(config)
+      console.log('预热目标信息:', targetInfo)
+    } catch (error) {
+      return {
+        success: false,
+        totalUrls: 0,
+        successCount: 0,
+        failureCount: 0,
+        duration: 0,
+        errors: [],
+        message: `获取预热目标失败: ${error instanceof Error ? error.message : String(error)}`
+      }
+    }
+
+    // 执行预热
+    const startTime = Date.now()
+    const result = await performImageWarmupWithProgress(config, undefined, 20)
     const duration = Date.now() - startTime
+
+    console.log('预热操作完成:', result)
 
     // 保存预热日志到数据库
     try {
       await prisma.warmupLog.create({
         data: {
           type,
-          totalUrls: result.total,
-          successCount: result.success,
-          failureCount: result.failed,
-          duration,
-          success: result.failed === 0,
+          totalUrls: result.totalUrls,
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+        duration,
+        success: result.success,
           errors: result.errors,
           config: {
             limit: type === 'custom' ? customImageIds!.length : limit,
@@ -181,13 +219,13 @@ export async function executeWarmup(request: WarmupRequest): Promise<WarmupResul
     revalidatePath('/admin/warmup')
 
     return {
-      success: result.failed === 0,
-      totalUrls: result.total,
-      successCount: result.success,
-      failureCount: result.failed,
+      success: result.success,
+      totalUrls: result.totalUrls,
+      successCount: result.successCount,
+      failureCount: result.failureCount,
       duration,
       errors: result.errors,
-      message: result.failed === 0 ? '预热完成' : `预热完成，但有 ${result.failed} 个失败`
+      message: result.success ? '预热完成' : `预热完成，但有 ${result.failureCount} 个失败`
     }
   } catch (error) {
     console.error('Admin warmup error:', error)

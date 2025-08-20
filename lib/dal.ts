@@ -961,3 +961,90 @@ export const getAuthorBySlug = cache(async (slug: string): Promise<Author | null
   
   return author
 })
+
+// ---- Warmup 相关的数据获取函数 ----
+
+// 获取所有collection的基本信息（用于warmup选择）
+export const getCollectionsForWarmup = cache(async () => {
+  const query = groq`*[_type == "collection"] | order(orderRank) {
+    _id,
+    "name": name,
+    "slug": slug.current,
+    "photosCount": count(photos)
+  }`
+
+  return sanityServerClient.fetch(query, {}, {
+    next: {
+      tags: [
+        'collections',
+        'warmup-collections'
+      ]
+    }
+  })
+})
+
+// 获取所有dev collection的基本信息（用于warmup选择）
+export const getDevCollectionsForWarmup = cache(async () => {
+  const query = groq`*[_type == "devCollection"] | order(orderRank) {
+    _id,
+    "name": name,
+    "slug": slug.current,
+    coverImage
+  }`
+
+  return sanityServerClient.fetch(query, {}, {
+    next: {
+      tags: [
+        'dev-collections',
+        'warmup-dev-collections'
+      ]
+    }
+  })
+})
+
+// 获取指定collection的photo数量
+export const getCollectionPhotoCount = cache(async (collectionId: string) => {
+  const query = groq`*[_type == "collection" && _id == $collectionId][0] {
+    "photosCount": count(photos)
+  }`
+
+  const result = await sanityServerClient.fetch(query, { collectionId }, {
+    next: {
+      tags: [
+        'collections',
+        `collection:${collectionId}`,
+        'warmup-photo-count'
+      ]
+    }
+  })
+
+  return result?.photosCount || 0
+})
+
+// 获取所有collection cover images的数量
+export const getAllCollectionCoversCount = cache(async () => {
+  const query = groq`count(*[_type == "collection" && defined(coverImage)])`
+  
+  return sanityServerClient.fetch(query, {}, {
+    next: {
+      tags: [
+        'collections',
+        'warmup-covers-count'
+      ]
+    }
+  })
+})
+
+// 获取所有dev collection covers的数量
+export const getAllDevCollectionCoversCount = cache(async () => {
+  const query = groq`count(*[_type == "devCollection" && defined(coverImage)])`
+  
+  return sanityServerClient.fetch(query, {}, {
+    next: {
+      tags: [
+        'dev-collections',
+        'warmup-dev-covers-count'
+      ]
+    }
+  })
+})

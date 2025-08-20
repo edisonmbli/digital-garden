@@ -34,13 +34,18 @@ export function WarmupStats() {
   const fetchStats = async () => {
     startTransition(async () => {
       try {
+        console.log('Fetching warmup stats...')
         const data = await getWarmupStats()
+        console.log('Warmup stats response:', data)
         if ('error' in data) {
+          console.error('Warmup stats error:', data.error)
           toast.error(data.error)
           return
         }
         setStats(data)
+        toast.success('统计数据已刷新')
       } catch (error) {
+        console.error('Fetch stats error:', error)
         toast.error(`获取统计数据失败：${error instanceof Error ? error.message : '未知错误'}`)
       }
     })
