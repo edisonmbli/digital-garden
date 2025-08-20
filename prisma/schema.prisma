@@ -266,6 +266,26 @@ model AnalyticsEvent {
   @@map("analytics_events")
 }
 
+model WarmupLog {
+  id            String   @id @default(cuid())
+  type          String   // 预热类型: collection-covers, featured-photos, dev-collections, custom
+  totalUrls     Int      @map("total_urls")
+  successCount  Int      @map("success_count")
+  failureCount  Int      @map("failure_count")
+  duration      Int      // 执行时长(毫秒)
+  success       Boolean  // 整体是否成功
+  errors        String[] // 错误信息列表
+  config        Json?    // 预热配置(sizes, formats, customImageIds等)
+  createdAt     DateTime @default(now()) @map("created_at")
+  createdBy     String   @map("created_by") // 执行预热的用户ID
+
+  @@index([type])
+  @@index([success])
+  @@index([createdAt])
+  @@index([createdBy])
+  @@map("warmup_logs")
+}
+
 enum CommentStatus {
   PENDING
   APPROVED

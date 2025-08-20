@@ -53,7 +53,7 @@ ngrok*
 /docs/*
 /tutorials/*
 
-# working scripts
+# backup scripts
 /scripts/*
 
 # Sentry Config File

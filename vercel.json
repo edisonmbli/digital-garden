@@ -1,6 +1,12 @@
 {
-  "crons": [{
-    "path": "/api/analytics/cleanup",
-    "schedule": "0 2 * * *"
-  }]
+  "crons": [
+    {
+      "path": "/api/analytics/cleanup",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/warmup/cron",
+      "schedule": "0 5 */3 * *"
+    }
+  ]
 }

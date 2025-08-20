@@ -47,14 +47,15 @@ const nextConfig = {
     // 图片质量和格式优化
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 512, 768, 1024],
     
     // 启用 Next.js 图片优化（双层代理的关键）
     unoptimized: false,
     
     // 缓存优化配置
-    minimumCacheTTL: 86400, // 24小时
-    dangerouslyAllowSVG: false,
+    minimumCacheTTL: 31536000, // 1年（图片内容基于hash，安全）
+    dangerouslyAllowSVG: true, // 启用SVG支持
+    contentDispositionType: 'attachment', // 安全考虑
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
