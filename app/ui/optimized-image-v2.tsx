@@ -72,7 +72,7 @@ export function OptimizedImageV2({
     })
     
     onLoadComplete?.()
-  }, [src, proxyMode, retryCount, onPerformanceMetrics, onLoadComplete])
+  }, [proxyMode, retryCount, onPerformanceMetrics, onLoadComplete])
 
   // 处理图片加载错误
   const handleError = useCallback((error: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -91,7 +91,7 @@ export function OptimizedImageV2({
     
     const errorObj = new Error(`图片加载失败: ${error.type}`)
     onError?.(errorObj)
-  }, [src, proxyMode, retryCount, onError])
+  }, [proxyMode, retryCount, onError])
 
   // 重置状态当 src 改变时
   useEffect(() => {
