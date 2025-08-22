@@ -180,128 +180,66 @@ export async function syncToSanity(data: SyncRequest): Promise<SyncResult> {
   }
 }
 
-// 获取文档类型列表
-// 检查字段是否为portable text类型
-function isPortableTextField(fieldValue: unknown): boolean {
-  if (!Array.isArray(fieldValue)) return false;
-  
-  // 检查是否包含portable text的典型结构
-  return fieldValue.some((block: unknown) => 
-    block && 
-    typeof block === 'object' && 
-    block !== null &&
-    'children' in block &&
-    '_type' in block &&
-    (block as { _type: string })._type === 'block' &&
-    Array.isArray((block as { children: unknown }).children)
-  );
-}
 
-export async function getDocumentTypes() {
-  try {
-    const isAdminUser = await isAdmin()
-    
-    if (!isAdminUser) {
+
+import { cache } from 'react'
+import { PortableTextDocumentConfig, getSupportedDocumentTypes } from './sanity-portable-text-config'
+
+/**
+ * 获取所有在配置文件中定义的、支持Portable Text的文档类型及其字段。
+ * 这个经过优化的函数取代了之前会导致N+1查询的实现。
+ * 它现在直接从一个可维护的配置文件中读取Schema定义，并通过一次轻量查询来验证文档的存在性。
+ * @returns 返回一个包含文档类型配置的数组，这些类型被确认为系统中实际存在的。
+ */
+export const getDocumentTypes = cache(
+  async (): Promise<{
+    success: boolean
+    error?: string
+    data: PortableTextDocumentConfig[]
+  }> => {
+    try {
+      const isAdminUser = await isAdmin()
+      if (!isAdminUser) {
+        return {
+          success: false,
+          error: '权限不足：需要管理员权限才能执行此操作',
+          data: [],
+        }
+      }
+
+      // 1. 从配置文件获取支持的文档类型定义
+      const supportedTypesConfig = getSupportedDocumentTypes()
+      const supportedTypeNames = supportedTypesConfig.map(t => t.name)
+
+      // 2. 一次性查询所有相关类型的现有文档的_id和_type
+      // 这是一个非常轻量级的查询，用于确认哪些文档类型在数据库中实际存在内容。
+      const query = `*[_type in $supportedTypeNames] {_id, _type}`
+      const existingDocuments = await sanityServerClient.fetch<
+        { _id: string; _type: string }[]
+      >(query, { supportedTypeNames })
+
+      // 3. 确定哪些文档类型至少有一个文档存在
+      const existingTypeNames = new Set(existingDocuments.map(doc => doc._type))
+
+      // 4. 过滤配置，只返回数据库中实际存在的文档类型
+      const finalDocumentTypes = supportedTypesConfig.filter(typeConfig =>
+        existingTypeNames.has(typeConfig.name)
+      )
+
+      return {
+        success: true,
+        data: finalDocumentTypes,
+      }
+    } catch (error) {
+      console.error('Error in getDocumentTypes:', error)
       return {
         success: false,
-        error: '权限不足：需要管理员权限才能执行此操作',
+        error: '获取文档类型失败',
         data: [],
       }
     }
-
-    const client = sanityServerClient
-    const testQuery = '*[0..0]';
-    await client.fetch(testQuery);
-
-    const query = `array::unique(*[]._type)`
-    const documentTypes = await client.fetch(query)
-    
-    const userTypes = documentTypes
-      .filter((type: string) => !type.startsWith('sanity.') && !type.startsWith('system.'))
-
-    // 为每个类型获取字段信息，并识别portable text字段
-    const typesWithFields = await Promise.all(
-      userTypes.map(async (type: string) => {
-        try {
-          // 获取该类型的多个文档样本以更好地识别字段类型
-          const sampleDocs = await client.fetch(
-            `*[_type == $type][0...5]`,
-            { type }
-          );
-          
-          if (!sampleDocs || sampleDocs.length === 0) {
-            return {
-              name: type,
-              title: type.charAt(0).toUpperCase() + type.slice(1),
-              fields: []
-            };
-          }
-
-          // 收集所有字段名
-           const allFieldNames = new Set<string>();
-           sampleDocs.forEach((doc: Record<string, unknown>) => {
-             if (doc) {
-               Object.keys(doc)
-                 .filter(key => !key.startsWith('_'))
-                 .forEach(key => allFieldNames.add(key));
-             }
-           });
-
-          // 分析每个字段，只保留portable text字段
-          const portableTextFields: Array<{
-            name: string;
-            title: string;
-            type: string;
-          }> = [];
-
-          allFieldNames.forEach(fieldName => {
-             // 检查这个字段在样本文档中是否为portable text
-             const isPortableText = sampleDocs.some((doc: Record<string, unknown>) => 
-               doc && doc[fieldName] && isPortableTextField(doc[fieldName])
-             );
-
-            if (isPortableText) {
-              portableTextFields.push({
-                name: fieldName,
-                title: fieldName.charAt(0).toUpperCase() + fieldName.slice(1),
-                type: 'portableText'
-              });
-            }
-          });
-          
-          // 只返回包含portable text字段的类型
-          if (portableTextFields.length > 0) {
-            return {
-              name: type,
-              title: type.charAt(0).toUpperCase() + type.slice(1),
-              fields: portableTextFields
-            };
-          }
-          
-          return null; // 不包含portable text字段的类型将被过滤掉
-        } catch (error) {
-          console.error(`Error processing document type ${type}:`, error);
-          return null;
-        }
-      })
-    );
-
-    // 过滤掉null值（不包含portable text字段的类型）
-    const filteredTypes = typesWithFields.filter(type => type !== null);
-
-    return {
-      success: true,
-      data: filteredTypes,
-    }
-  } catch (error) {
-    console.error('Error in getDocumentTypes:', error);
-    return {
-      success: false,
-      error: '获取文档类型失败',
-      data: [],
-    }
   }
-}
+)
 
 // 获取指定类型的文档列表（支持分页和搜索）
 export async function getDocumentsByType(
