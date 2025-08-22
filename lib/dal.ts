@@ -6,7 +6,10 @@ import { auth } from '@clerk/nextjs/server'
 import prisma from './prisma'
 import { sanityServerClient } from '@/lib/sanity-server'
 import { urlFor } from '@/sanity/image'
-import { extractSanityImageId, generateSecureImageUrl } from './secure-image-loader'
+import {
+  extractSanityImageId,
+  generateSecureImageUrl,
+} from './secure-image-loader'
 import { logger } from './logger'
 import { withDatabaseMonitoring } from './sentry-dal-integration'
 import type { SanityImageSource } from '@sanity/image-url/lib/types/types'
@@ -36,33 +39,42 @@ export const getHeroCollections = cache(async () => {
     orderRank
   }`
 
-  const collections = await sanityServerClient.fetch(query, {}, {
-    next: {
-      tags: [
-        'collections',
-        'featured-collections',
-        'homepage-collections'
-      ]
+  const collections = await sanityServerClient.fetch(
+    query,
+    {},
+    {
+      next: {
+        tags: ['collections', 'featured-collections', 'homepage-collections'],
+      },
     }
-  })
-  
+  )
+
   // 为每个collection生成安全的coverImageUrl（返回安全代理URL）
-  return collections.map((collection: { coverImage?: SanityImageSource; [key: string]: unknown }) => {
-    let imageId: string | null = null
-    
-    if (collection.coverImage) {
-      if (typeof collection.coverImage === 'object' && 'asset' in collection.coverImage && collection.coverImage.asset) {
-        imageId = collection.coverImage.asset._ref
-      } else {
-        imageId = extractSanityImageId(urlFor(collection.coverImage).url())
+  return collections.map(
+    (collection: {
+      coverImage?: SanityImageSource
+      [key: string]: unknown
+    }) => {
+      let imageId: string | null = null
+
+      if (collection.coverImage) {
+        if (
+          typeof collection.coverImage === 'object' &&
+          'asset' in collection.coverImage &&
+          collection.coverImage.asset
+        ) {
+          imageId = collection.coverImage.asset._ref
+        } else {
+          imageId = extractSanityImageId(urlFor(collection.coverImage).url())
+        }
+      }
+
+      return {
+        ...collection,
+        coverImageUrl: imageId ? generateSecureImageUrl(imageId) : null,
       }
     }
-    
-    return {
-      ...collection,
-      coverImageUrl: imageId ? generateSecureImageUrl(imageId) : null
-    }
-  })
+  )
 })
 
 // 获取所有的影像组（未来支持分页），用于 /gallery 列表页
@@ -77,32 +89,42 @@ export const getAllCollections = cache(async () => {
     orderRank
   }`
 
-  const collections = await sanityServerClient.fetch(query, {}, {
-    next: {
-      tags: [
-        'collections',
-        'gallery-collections'
-      ]
+  const collections = await sanityServerClient.fetch(
+    query,
+    {},
+    {
+      next: {
+        tags: ['collections', 'gallery-collections'],
+      },
     }
-  })
-  
+  )
+
   // 为每个collection生成安全的coverImageUrl（返回安全代理URL）
-  return collections.map((collection: { coverImage?: SanityImageSource; [key: string]: unknown }) => {
-    let imageId: string | null = null
-    
-    if (collection.coverImage) {
-      if (typeof collection.coverImage === 'object' && 'asset' in collection.coverImage && collection.coverImage.asset) {
-        imageId = collection.coverImage.asset._ref
-      } else {
-        imageId = extractSanityImageId(urlFor(collection.coverImage).url())
+  return collections.map(
+    (collection: {
+      coverImage?: SanityImageSource
+      [key: string]: unknown
+    }) => {
+      let imageId: string | null = null
+
+      if (collection.coverImage) {
+        if (
+          typeof collection.coverImage === 'object' &&
+          'asset' in collection.coverImage &&
+          collection.coverImage.asset
+        ) {
+          imageId = collection.coverImage.asset._ref
+        } else {
+          imageId = extractSanityImageId(urlFor(collection.coverImage).url())
+        }
+      }
+
+      return {
+        ...collection,
+        coverImageUrl: imageId ? generateSecureImageUrl(imageId) : null,
       }
     }
-    
-    return {
-      ...collection,
-      coverImageUrl: imageId ? generateSecureImageUrl(imageId) : null
-    }
-  })
+  )
 })
 
 export const getLogPosts = cache(async (lang: Locale) => {
@@ -113,15 +135,15 @@ export const getLogPosts = cache(async (lang: Locale) => {
     publishedAt,
     excerpt
   }`
-  return sanityServerClient.fetch<LogPost[]>(query, { lang }, {
-    next: {
-      tags: [
-        'logs',
-        `logs:${lang}`,
-        'log-list'
-      ]
+  return sanityServerClient.fetch<LogPost[]>(
+    query,
+    { lang },
+    {
+      next: {
+        tags: ['logs', `logs:${lang}`, 'log-list'],
+      },
     }
-  })
+  )
 })
 
 export const getLogPostBySlug = cache(async (slug: string, lang: Locale) => {
@@ -132,16 +154,15 @@ export const getLogPostBySlug = cache(async (slug: string, lang: Locale) => {
     publishedAt,
     "author": author->{ name, image }
   }`
-  return sanityServerClient.fetch<LogPostDetails>(query, { slug, lang }, {
-    next: {
-      tags: [
-        'logs',
-        `log:${slug}`,
-        `logs:${lang}`,
-        'log-detail'
-      ]
+  return sanityServerClient.fetch<LogPostDetails>(
+    query,
+    { slug, lang },
+    {
+      next: {
+        tags: ['logs', `log:${slug}`, `logs:${lang}`, 'log-detail'],
+      },
     }
-  })
+  )
 })
 
 // 获取所有开发教程合集（用于列表页）
@@ -154,7 +175,7 @@ export const getAllDevCollectionsAndLogs = cache(async (lang: Locale) => {
     coverImage,
     isFeatured,
     orderRank,
-    "logs": *[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref] {
+    "logs": *[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref] | order(publishedAt asc) {
       _id,
       title,
       "slug": slug.current,
@@ -165,35 +186,47 @@ export const getAllDevCollectionsAndLogs = cache(async (lang: Locale) => {
     "logsCount": count(*[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref])
   }`
 
-  const devCollectionsData = await sanityServerClient.fetch<{ coverImage?: SanityImageSource; [key: string]: unknown }[]>(query, {
-    lang,
-  }, {
-    next: {
-      tags: [
-        'dev-collections',
-        `dev-collections:${lang}`,
-        'dev-collection-list'
-      ]
+  const devCollectionsData = await sanityServerClient.fetch<
+    { coverImage?: SanityImageSource; [key: string]: unknown }[]
+  >(
+    query,
+    {
+      lang,
+    },
+    {
+      next: {
+        tags: [
+          'dev-collections',
+          `dev-collections:${lang}`,
+          'dev-collection-list',
+        ],
+      },
     }
-  })
+  )
 
   // 生成安全的图片URL（返回安全代理URL）
-  const devCollections: DevCollection[] = devCollectionsData.map((collection) => {
-    let imageId: string | null = null
-    
-    if (collection.coverImage) {
-      if (typeof collection.coverImage === 'object' && 'asset' in collection.coverImage && collection.coverImage.asset) {
-        imageId = collection.coverImage.asset._ref
-      } else {
-        imageId = extractSanityImageId(urlFor(collection.coverImage).url())
+  const devCollections: DevCollection[] = devCollectionsData.map(
+    (collection) => {
+      let imageId: string | null = null
+
+      if (collection.coverImage) {
+        if (
+          typeof collection.coverImage === 'object' &&
+          'asset' in collection.coverImage &&
+          collection.coverImage.asset
+        ) {
+          imageId = collection.coverImage.asset._ref
+        } else {
+          imageId = extractSanityImageId(urlFor(collection.coverImage).url())
+        }
+      }
+
+      return {
+        ...collection,
+        coverImageUrl: imageId ? generateSecureImageUrl(imageId) : undefined,
       }
     }
-    
-    return {
-      ...collection,
-      coverImageUrl: imageId ? generateSecureImageUrl(imageId) : undefined
-    }
-  }) as DevCollection[]
+  ) as DevCollection[]
 
   return devCollections
 })
@@ -218,7 +251,10 @@ export const getDevCollectionBySlug = cache(
     } [defined(@)]
   }`
 
-    const devCollectionData = await sanityServerClient.fetch<{ coverImage?: SanityImageSource; [key: string]: unknown } | null>(
+    const devCollectionData = await sanityServerClient.fetch<{
+      coverImage?: SanityImageSource
+      [key: string]: unknown
+    } | null>(
       query,
       { slug, lang },
       {
@@ -226,9 +262,9 @@ export const getDevCollectionBySlug = cache(
           tags: [
             'dev-collections',
             `dev-collection:${slug}`,
-            `dev-collections:${lang}`
-          ]
-        }
+            `dev-collections:${lang}`,
+          ],
+        },
       }
     )
 
@@ -241,13 +277,13 @@ export const getDevCollectionBySlug = cache(
       name: devCollectionData.name,
       description: devCollectionData.description,
       slug: devCollectionData.slug,
-      coverImageUrl: devCollectionData.coverImage 
-          ? (
-              typeof devCollectionData.coverImage === 'object' && 'asset' in devCollectionData.coverImage && devCollectionData.coverImage.asset
-                ? devCollectionData.coverImage.asset._ref
-                : extractSanityImageId(urlFor(devCollectionData.coverImage).url())
-            )
-          : undefined,
+      coverImageUrl: devCollectionData.coverImage
+        ? typeof devCollectionData.coverImage === 'object' &&
+          'asset' in devCollectionData.coverImage &&
+          devCollectionData.coverImage.asset
+          ? devCollectionData.coverImage.asset._ref
+          : extractSanityImageId(urlFor(devCollectionData.coverImage).url())
+        : undefined,
       isFeatured: devCollectionData.isFeatured,
       logs: devCollectionData.logs || [],
     } as DevCollection
@@ -286,9 +322,9 @@ export const getTranslationsBySlug = cache(
           tags: [
             'translations',
             `translation:${type}:${slug}`,
-            `translations:${lang}`
-          ]
-        }
+            `translations:${lang}`,
+          ],
+        },
       })
 
       if (!result) {
@@ -339,9 +375,9 @@ export const getLikesAndCommentsForPost = cache(
           sanityDocumentId: true,
           contentType: true,
           likes: {
-            select: { 
+            select: {
               userId: true,
-              createdAt: true 
+              createdAt: true,
             },
           },
           comments: {
@@ -353,10 +389,10 @@ export const getLikesAndCommentsForPost = cache(
               status: true,
               isDeleted: true,
               user: {
-                select: { 
+                select: {
                   id: true,
-                  name: true, 
-                  avatarUrl: true 
+                  name: true,
+                  avatarUrl: true,
                 },
               },
               // 优化：只预加载必要的回复字段
@@ -368,10 +404,10 @@ export const getLikesAndCommentsForPost = cache(
                   status: true,
                   isDeleted: true,
                   user: {
-                    select: { 
+                    select: {
                       id: true,
-                      name: true, 
-                      avatarUrl: true 
+                      name: true,
+                      avatarUrl: true,
                     },
                   },
                 },
@@ -382,7 +418,7 @@ export const getLikesAndCommentsForPost = cache(
                 orderBy: { createdAt: 'asc' },
               },
             },
-            where: { 
+            where: {
               parentId: null,
               status: 'APPROVED',
               isDeleted: false,
@@ -503,7 +539,9 @@ export const deleteComment = withDatabaseMonitoring(
     if (!userId) throw new Error('Unauthorized')
 
     // 只有评论的创建者或管理员才能删除
-    const comment = await prisma.comment.findUnique({ where: { id: commentId } })
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+    })
 
     // 使用类型断言来访问 publicMetadata
     const userRole = (sessionClaims?.publicMetadata as { role?: string })?.role
@@ -529,12 +567,12 @@ export const PHOTOS_PER_PAGE = 12 // 定义每页加载的照片数量
 export const getCollectionAndPhotosBySlug = cache(
   withDatabaseMonitoring(
     async (slug: string, lang: Locale, page: number = 1) => {
-    // 分页逻辑
-    const start = (page - 1) * PHOTOS_PER_PAGE
-    const end = start + PHOTOS_PER_PAGE
+      // 分页逻辑
+      const start = (page - 1) * PHOTOS_PER_PAGE
+      const end = start + PHOTOS_PER_PAGE
 
-    // 1. 从 Sanity 获取基础的照片内容数据（包含SEO字段）
-    const query = groq`*[_type == "collection" && slug.current == $slug][0] {
+      // 1. 从 Sanity 获取基础的照片内容数据（包含SEO字段）
+      const query = groq`*[_type == "collection" && slug.current == $slug][0] {
       _id,
       "name": coalesce(name.${lang}, name.en, ""),
       "description": coalesce(description.${lang}, description.en, ""),
@@ -558,104 +596,104 @@ export const getCollectionAndPhotosBySlug = cache(
       }
     }`
 
-    const collectionDataFromSanity = await sanityServerClient.fetch<GroupAndPhotos>(
-      query,
-      { slug },
-      {
-        next: {
-          tags: [
-            'collections',
-            `collection:${slug}`,
-            'photos',
-            `collection-photos:${slug}`,
-            `lang:${lang}`
-          ]
-        }
+      const collectionDataFromSanity =
+        await sanityServerClient.fetch<GroupAndPhotos>(
+          query,
+          { slug },
+          {
+            next: {
+              tags: [
+                'collections',
+                `collection:${slug}`,
+                'photos',
+                `collection-photos:${slug}`,
+                `lang:${lang}`,
+              ],
+            },
+          }
+        )
+
+      if (!collectionDataFromSanity || !collectionDataFromSanity.photos) {
+        return null
       }
-    )
 
-    if (!collectionDataFromSanity || !collectionDataFromSanity.photos) {
-      return null
-    }
+      // 2. 准备从我们自己的数据库中，批量获取这些照片的交互数据
+      const photoContentIds = collectionDataFromSanity.photos.map(
+        (p: Photo) => p._id
+      )
+      const { userId } = await auth()
 
-    // 2. 准备从我们自己的数据库中，批量获取这些照片的交互数据
-    const photoContentIds = collectionDataFromSanity.photos.map(
-      (p: Photo) => p._id
-    )
-    const { userId } = await auth()
-
-    // 优化查询：批量获取照片交互数据，减少数据传输
-    const photoesInfoFromDb = await prisma.post.findMany({
-      where: {
-        sanityDocumentId: { in: photoContentIds },
-        contentType: 'photo',
-        isDeleted: false,
-      },
-      select: {
-        id: true,
-        sanityDocumentId: true,
-        // 条件性查询用户点赞状态
-        ...(userId && {
-          likes: {
-            where: { userId },
-            select: { id: true },
-            take: 1, // 只需要知道是否存在
-          },
-        }),
-        _count: {
-          select: {
-            likes: true,
-            comments: {
-              where: {
-                status: 'APPROVED',
-                isDeleted: false,
-                parentId: null, // 只计算顶级评论
+      // 优化查询：批量获取照片交互数据，减少数据传输
+      const photoesInfoFromDb = await prisma.post.findMany({
+        where: {
+          sanityDocumentId: { in: photoContentIds },
+          contentType: 'photo',
+          isDeleted: false,
+        },
+        select: {
+          id: true,
+          sanityDocumentId: true,
+          // 条件性查询用户点赞状态
+          ...(userId && {
+            likes: {
+              where: { userId },
+              select: { id: true },
+              take: 1, // 只需要知道是否存在
+            },
+          }),
+          _count: {
+            select: {
+              likes: true,
+              comments: {
+                where: {
+                  status: 'APPROVED',
+                  isDeleted: false,
+                  parentId: null, // 只计算顶级评论
+                },
               },
             },
           },
         },
-      },
-    })
+      })
 
-    // 3. 将 Prisma 数据，转换为一个易于查找的 Map（使用 sanityDocumentId 作为 key）
-    const photoesMap = new Map(
-      photoesInfoFromDb.map((p) => [p.sanityDocumentId, p])
-    )
+      // 3. 将 Prisma 数据，转换为一个易于查找的 Map（使用 sanityDocumentId 作为 key）
+      const photoesMap = new Map(
+        photoesInfoFromDb.map((p) => [p.sanityDocumentId, p])
+      )
 
-    // 4. (关键) "扩充" Sanity 数据，将 Prisma 数据合并进去
-    const enrichedPhotos: EnrichedPhoto[] = collectionDataFromSanity.photos.map(
-      (photo: Photo) => {
-        const photoData = photoesMap.get(photo._id) // 使用 Sanity 的 _id 来查找对应的 Post 记录
+      // 4. (关键) "扩充" Sanity 数据，将 Prisma 数据合并进去
+      const enrichedPhotos: EnrichedPhoto[] =
+        collectionDataFromSanity.photos.map((photo: Photo) => {
+          const photoData = photoesMap.get(photo._id) // 使用 Sanity 的 _id 来查找对应的 Post 记录
 
-        return {
-          ...photo,
-          // 返回原始asset ID供双层代理使用
-          imageUrl: photo.imageFile 
-            ? (
-                typeof photo.imageFile === 'object' && 'asset' in photo.imageFile && photo.imageFile.asset
-                  ? photo.imageFile.asset._ref
-                  : typeof photo.imageFile === 'string'
+          return {
+            ...photo,
+            // 返回原始asset ID供双层代理使用
+            imageUrl: photo.imageFile
+              ? typeof photo.imageFile === 'object' &&
+                'asset' in photo.imageFile &&
+                photo.imageFile.asset
+                ? photo.imageFile.asset._ref
+                : typeof photo.imageFile === 'string'
                   ? photo.imageFile
                   : extractSanityImageId(urlFor(photo.imageFile).url())
-              )
-            : undefined,
-          post: photoData
-            ? {
-                id: photoData.id,
-                likesCount: photoData._count.likes,
-                commentsCount: photoData._count.comments,
-                // 检查用户是否点赞了这张照片
-                isLikedByUser: userId ? photoData.likes.length > 0 : false,
-              }
-            : null,
-        }
-      }
-    )
+              : undefined,
+            post: photoData
+              ? {
+                  id: photoData.id,
+                  likesCount: photoData._count.likes,
+                  commentsCount: photoData._count.comments,
+                  // 检查用户是否点赞了这张照片
+                  isLikedByUser: userId ? photoData.likes.length > 0 : false,
+                }
+              : null,
+          }
+        })
 
-    return {
-      ...collectionDataFromSanity,
-      photos: enrichedPhotos,
-    }
+      return {
+        ...collectionDataFromSanity,
+        photos: enrichedPhotos,
+      }
     },
     'getCollectionAndPhotosBySlug',
     'Collection'
@@ -697,8 +735,8 @@ export const ensureLogPostExists = withDatabaseMonitoring(
 export const getLogPostForStaticGeneration = cache(
   withDatabaseMonitoring(
     async (slug: string, lang: Locale): Promise<EnrichedLogPost | null> => {
-    // 1. 从 Sanity 获取基础的log内容数据（包含SEO字段）
-    const query = groq`*[_type == "log" && slug.current == $slug && language == $lang][0] {
+      // 1. 从 Sanity 获取基础的log内容数据（包含SEO字段）
+      const query = groq`*[_type == "log" && slug.current == $slug && language == $lang][0] {
       _id,
       title,
       excerpt,
@@ -721,50 +759,50 @@ export const getLogPostForStaticGeneration = cache(
       }
     }`
 
-    const logDataFromSanity = await sanityServerClient.fetch<LogPostDetails>(
-      query,
-      { slug, lang },
-      {
-        next: {
-          tags: [
-            'logs',
-            `log:${slug}`,
-            `logs:${lang}`,
-            'log-detail',
-            'log-interactions'
-          ]
+      const logDataFromSanity = await sanityServerClient.fetch<LogPostDetails>(
+        query,
+        { slug, lang },
+        {
+          next: {
+            tags: [
+              'logs',
+              `log:${slug}`,
+              `logs:${lang}`,
+              'log-detail',
+              'log-interactions',
+            ],
+          },
         }
+      )
+
+      if (!logDataFromSanity) {
+        return null
       }
-    )
 
-    if (!logDataFromSanity) {
-      return null
-    }
-
-    // 2. 静态生成时跳过用户认证和数据库操作
-    // 直接从 Postgres 获取基础交互数据（不依赖用户状态）
-    const logInfoFromDb = await prisma.post.findUnique({
-      where: {
-        sanityDocumentId: logDataFromSanity._id,
-      },
-      include: {
-        _count: {
-          select: {
-            likes: true,
-            comments: {
-              where: {
-                status: 'APPROVED',
-                isDeleted: false,
-                parentId: null, // 只计算顶级评论
+      // 2. 静态生成时跳过用户认证和数据库操作
+      // 直接从 Postgres 获取基础交互数据（不依赖用户状态）
+      const logInfoFromDb = await prisma.post.findUnique({
+        where: {
+          sanityDocumentId: logDataFromSanity._id,
+        },
+        include: {
+          _count: {
+            select: {
+              likes: true,
+              comments: {
+                where: {
+                  status: 'APPROVED',
+                  isDeleted: false,
+                  parentId: null, // 只计算顶级评论
+                },
               },
             },
           },
         },
-      },
-    })
+      })
 
-    // 3. 获取所属合集信息
-    const collectionQuery = groq`*[_type == "devCollection" && $logId in logs[]._ref][0] {
+      // 3. 获取所属合集信息
+      const collectionQuery = groq`*[_type == "devCollection" && $logId in logs[]._ref][0] {
       _id,
       "name": name,
       "slug": slug.current,
@@ -778,50 +816,56 @@ export const getLogPostForStaticGeneration = cache(
       } [defined(@)]
     }`
 
-    const collectionData = await sanityServerClient.fetch(collectionQuery, {
-      logId: logDataFromSanity._id,
-      lang,
-    }, {
-      next: {
-        tags: [
-          'dev-collections',
-          `dev-collections:${lang}`,
-          'log-collection-mapping'
-        ]
-      }
-    })
+      const collectionData = await sanityServerClient.fetch(
+        collectionQuery,
+        {
+          logId: logDataFromSanity._id,
+          lang,
+        },
+        {
+          next: {
+            tags: [
+              'dev-collections',
+              `dev-collections:${lang}`,
+              'log-collection-mapping',
+            ],
+          },
+        }
+      )
 
-    // 4. 合并数据并返回 EnrichedLogPost（静态版本，无用户状态）
-    const enrichedLogPost: EnrichedLogPost = {
-      ...logDataFromSanity,
-      // 生成安全的代理URL
-      mainImageUrl: logDataFromSanity.mainImage 
-          ? (
-              typeof logDataFromSanity.mainImage === 'object' && 'asset' in logDataFromSanity.mainImage && logDataFromSanity.mainImage.asset
-                ? generateSecureImageUrl(logDataFromSanity.mainImage.asset._ref)
-                : generateSecureImageUrl(extractSanityImageId(urlFor(logDataFromSanity.mainImage).url()))
-            )
+      // 4. 合并数据并返回 EnrichedLogPost（静态版本，无用户状态）
+      const enrichedLogPost: EnrichedLogPost = {
+        ...logDataFromSanity,
+        // 生成安全的代理URL
+        mainImageUrl: logDataFromSanity.mainImage
+          ? typeof logDataFromSanity.mainImage === 'object' &&
+            'asset' in logDataFromSanity.mainImage &&
+            logDataFromSanity.mainImage.asset
+            ? generateSecureImageUrl(logDataFromSanity.mainImage.asset._ref)
+            : generateSecureImageUrl(
+                extractSanityImageId(urlFor(logDataFromSanity.mainImage).url())
+              )
           : undefined,
-      post: logInfoFromDb
-        ? {
-            id: logInfoFromDb.id,
-            likesCount: logInfoFromDb._count.likes,
-            commentsCount: logInfoFromDb._count.comments,
-            isLikedByUser: false, // 静态生成时默认为 false
-            hasUserCommented: false,
-          }
-        : null,
-      collection: collectionData
-        ? {
-            _id: collectionData._id,
-            name: collectionData.name,
-            slug: collectionData.slug,
-            logs: collectionData.logs || [],
-          }
-        : null,
-    }
+        post: logInfoFromDb
+          ? {
+              id: logInfoFromDb.id,
+              likesCount: logInfoFromDb._count.likes,
+              commentsCount: logInfoFromDb._count.comments,
+              isLikedByUser: false, // 静态生成时默认为 false
+              hasUserCommented: false,
+            }
+          : null,
+        collection: collectionData
+          ? {
+              _id: collectionData._id,
+              name: collectionData.name,
+              slug: collectionData.slug,
+              logs: collectionData.logs || [],
+            }
+          : null,
+      }
 
-    return enrichedLogPost
+      return enrichedLogPost
     },
     'getLogPostForStaticGeneration',
     'LogPost'
@@ -832,8 +876,8 @@ export const getLogPostForStaticGeneration = cache(
 export const getLogPostWithInteractions = cache(
   withDatabaseMonitoring(
     async (slug: string, lang: Locale): Promise<EnrichedLogPost | null> => {
-    // 1. 从 Sanity 获取基础的log内容数据（包含SEO字段）
-    const query = groq`*[_type == "log" && slug.current == $slug && language == $lang][0] {
+      // 1. 从 Sanity 获取基础的log内容数据（包含SEO字段）
+      const query = groq`*[_type == "log" && slug.current == $slug && language == $lang][0] {
       _id,
       title,
       excerpt,
@@ -856,70 +900,71 @@ export const getLogPostWithInteractions = cache(
       }
     }`
 
-    const logDataFromSanity = await sanityServerClient.fetch<LogPostDetails>(
-      query,
-      { slug, lang },
-      {
-        next: {
-          tags: [
-            'logs',
-            `log:${slug}`,
-            `logs:${lang}`,
-            'log-detail',
-            'log-interactions'
-          ]
+      const logDataFromSanity = await sanityServerClient.fetch<LogPostDetails>(
+        query,
+        { slug, lang },
+        {
+          next: {
+            tags: [
+              'logs',
+              `log:${slug}`,
+              `logs:${lang}`,
+              'log-detail',
+              'log-interactions',
+            ],
+          },
         }
+      )
+
+      if (!logDataFromSanity) {
+        return null
       }
-    )
 
-    if (!logDataFromSanity) {
-      return null
-    }
+      // 2. 获取当前用户信息
+      const { userId } = await auth()
 
-    // 2. 获取当前用户信息
-    const { userId } = await auth()
-    
-    // 3. 确保 Postgres 中存在对应的 Post 记录
-    // 使用当前用户ID作为作者，如果没有登录用户则使用默认系统用户ID
-    const authorId = userId || 'system-user-id' // 需要确保这个ID在User表中存在
-    await ensureLogPostExists(logDataFromSanity._id, authorId)
+      // 3. 确保 Postgres 中存在对应的 Post 记录
+      // 使用当前用户ID作为作者，如果没有登录用户则使用默认系统用户ID
+      const authorId = userId || 'system-user-id' // 需要确保这个ID在User表中存在
+      await ensureLogPostExists(logDataFromSanity._id, authorId)
 
-    // 4. 从 Postgres 获取交互数据
-    // 分步查询以避免复杂的类型问题
-    const logInfoFromDb = await prisma.post.findUnique({
-      where: {
-        sanityDocumentId: logDataFromSanity._id,
-      },
-      include: {
-        _count: {
-          select: {
-            likes: true,
-            comments: {
-              where: {
-                status: 'APPROVED',
-                isDeleted: false,
-                parentId: null, // 只计算顶级评论，与评论列表显示逻辑一致
+      // 4. 从 Postgres 获取交互数据
+      // 分步查询以避免复杂的类型问题
+      const logInfoFromDb = await prisma.post.findUnique({
+        where: {
+          sanityDocumentId: logDataFromSanity._id,
+        },
+        include: {
+          _count: {
+            select: {
+              likes: true,
+              comments: {
+                where: {
+                  status: 'APPROVED',
+                  isDeleted: false,
+                  parentId: null, // 只计算顶级评论，与评论列表显示逻辑一致
+                },
               },
             },
           },
         },
-      },
-    })
+      })
 
-    // 单独查询用户是否点赞
-    const userLike = userId && logInfoFromDb
-      ? await prisma.like.findUnique({
-          where: {
-            postId_userId: {
-              postId: logInfoFromDb.id,
-              userId,
-            },
-          },
-        })
-      : null
+      // 单独查询用户是否点赞
+      const userLike =
+        userId && logInfoFromDb
+          ? await prisma.like.findUnique({
+              where: {
+                postId_userId: {
+                  postId: logInfoFromDb.id,
+                  userId,
+                },
+              },
+            })
+          : null
 
-    // 4. 获取所属合集信息
-    const collectionQuery = groq`*[_type == "devCollection" && $logId in logs[]._ref][0] {
+      // 4. 获取所属合集信息
+      const collectionQuery = groq`*[_type == "devCollection" && $logId in logs[]._ref][0] {
       _id,
       "name": name,
       "slug": slug.current,
@@ -933,50 +978,56 @@ export const getLogPostWithInteractions = cache(
       } [defined(@)]
     }`
 
-    const collectionData = await sanityServerClient.fetch(collectionQuery, {
-      logId: logDataFromSanity._id,
-      lang,
-    }, {
-      next: {
-        tags: [
-          'dev-collections',
-          `dev-collections:${lang}`,
-          'log-collection-mapping'
-        ]
-      }
-    })
+      const collectionData = await sanityServerClient.fetch(
+        collectionQuery,
+        {
+          logId: logDataFromSanity._id,
+          lang,
+        },
+        {
+          next: {
+            tags: [
+              'dev-collections',
+              `dev-collections:${lang}`,
+              'log-collection-mapping',
+            ],
+          },
+        }
+      )
 
-    // 5. 合并数据并返回 EnrichedLogPost
-    const enrichedLogPost: EnrichedLogPost = {
-      ...logDataFromSanity,
-      // 生成安全的代理URL
-      mainImageUrl: logDataFromSanity.mainImage 
-          ? (
-              typeof logDataFromSanity.mainImage === 'object' && 'asset' in logDataFromSanity.mainImage && logDataFromSanity.mainImage.asset
-                ? generateSecureImageUrl(logDataFromSanity.mainImage.asset._ref)
-                : generateSecureImageUrl(extractSanityImageId(urlFor(logDataFromSanity.mainImage).url()))
-            )
+      // 5. 合并数据并返回 EnrichedLogPost
+      const enrichedLogPost: EnrichedLogPost = {
+        ...logDataFromSanity,
+        // 生成安全的代理URL
+        mainImageUrl: logDataFromSanity.mainImage
+          ? typeof logDataFromSanity.mainImage === 'object' &&
+            'asset' in logDataFromSanity.mainImage &&
+            logDataFromSanity.mainImage.asset
+            ? generateSecureImageUrl(logDataFromSanity.mainImage.asset._ref)
+            : generateSecureImageUrl(
+                extractSanityImageId(urlFor(logDataFromSanity.mainImage).url())
+              )
           : undefined,
-      post: logInfoFromDb
-        ? {
-            id: logInfoFromDb.id,
-            likesCount: logInfoFromDb._count.likes,
-            commentsCount: logInfoFromDb._count.comments,
-            isLikedByUser: !!userLike,
-            hasUserCommented: false,
-          }
-        : null,
-      collection: collectionData
-        ? {
-            _id: collectionData._id,
-            name: collectionData.name,
-            slug: collectionData.slug,
-            logs: collectionData.logs || [],
-          }
-        : null,
-    }
+        post: logInfoFromDb
+          ? {
+              id: logInfoFromDb.id,
+              likesCount: logInfoFromDb._count.likes,
+              commentsCount: logInfoFromDb._count.comments,
+              isLikedByUser: !!userLike,
+              hasUserCommented: false,
+            }
+          : null,
+        collection: collectionData
+          ? {
+              _id: collectionData._id,
+              name: collectionData.name,
+              slug: collectionData.slug,
+              logs: collectionData.logs || [],
+            }
+          : null,
+      }
 
-    return enrichedLogPost
+      return enrichedLogPost
     },
     'getLogPostWithInteractions',
     'LogPost'
@@ -996,12 +1047,8 @@ export const getCollectionLogsBySlug = cache(
       { logSlug, lang },
       {
         next: {
-          tags: [
-            'logs',
-            `log:${logSlug}`,
-            `logs:${lang}`
-          ]
-        }
+          tags: ['logs', `log:${logSlug}`, `logs:${lang}`],
+        },
       }
     )
 
@@ -1024,26 +1071,31 @@ export const getCollectionLogsBySlug = cache(
       } [defined(@)]
     }`
 
-    const collectionData = await sanityServerClient.fetch(collectionQuery, {
-      logId: logData._id,
-      lang,
-    }, {
-      next: {
-        tags: [
-          'dev-collections',
-          `dev-collections:${lang}`,
-          'collection-logs'
-        ]
+    const collectionData = await sanityServerClient.fetch(
+      collectionQuery,
+      {
+        logId: logData._id,
+        lang,
+      },
+      {
+        next: {
+          tags: [
+            'dev-collections',
+            `dev-collections:${lang}`,
+            'collection-logs',
+          ],
+        },
       }
-    })
+    )
 
     return collectionData
   }
 )
 
 // 获取作者信息（用于 about 页面）
-export const getAuthorBySlug = cache(async (slug: string): Promise<Author | null> => {
-  const query = groq`*[_type == "author" && slug.current == $slug][0] {
+export const getAuthorBySlug = cache(
+  async (slug: string): Promise<Author | null> => {
+    const query = groq`*[_type == "author" && slug.current == $slug][0] {
     _id,
     name,
     "slug": slug.current,
@@ -1059,44 +1111,57 @@ export const getAuthorBySlug = cache(async (slug: string): Promise<Author | null
     socialLinks
   }`
 
-  const authorData = await sanityServerClient.fetch<{ image?: SanityImageSource; socialImage?: SanityImageSource; [key: string]: unknown } | null>(
-    query, 
-    { slug },
-    { next: { tags: ['author-data'] } }
-  )
-  
-  if (!authorData) {
-    return null
-  }
+    const authorData = await sanityServerClient.fetch<{
+      image?: SanityImageSource
+      socialImage?: SanityImageSource
+      [key: string]: unknown
+    } | null>(query, { slug }, { next: { tags: ['author-data'] } })
 
-  // 生成安全的图片URL
-  let imageId: string | null = null
-  let socialImageId: string | null = null
-  
-  if (authorData.image) {
-    if (typeof authorData.image === 'object' && 'asset' in authorData.image && authorData.image.asset) {
-      imageId = authorData.image.asset._ref
-    } else {
-      imageId = extractSanityImageId(urlFor(authorData.image).url())
+    if (!authorData) {
+      return null
     }
-  }
-  
-  if (authorData.socialImage) {
-    if (typeof authorData.socialImage === 'object' && 'asset' in authorData.socialImage && authorData.socialImage.asset) {
-      socialImageId = authorData.socialImage.asset._ref
-    } else {
-      socialImageId = extractSanityImageId(urlFor(authorData.socialImage).url())
+
+    // 生成安全的图片URL
+    let imageId: string | null = null
+    let socialImageId: string | null = null
+
+    if (authorData.image) {
+      if (
+        typeof authorData.image === 'object' &&
+        'asset' in authorData.image &&
+        authorData.image.asset
+      ) {
+        imageId = authorData.image.asset._ref
+      } else {
+        imageId = extractSanityImageId(urlFor(authorData.image).url())
+      }
     }
+
+    if (authorData.socialImage) {
+      if (
+        typeof authorData.socialImage === 'object' &&
+        'asset' in authorData.socialImage &&
+        authorData.socialImage.asset
+      ) {
+        socialImageId = authorData.socialImage.asset._ref
+      } else {
+        socialImageId = extractSanityImageId(
+          urlFor(authorData.socialImage).url()
+        )
+      }
+    }
+
+    const author: Author = {
+      ...authorData,
+      imageUrl: imageId ? generateSecureImageUrl(imageId) : undefined,
+      socialImageUrl: socialImageId
+        ? generateSecureImageUrl(socialImageId)
+        : undefined,
+    } as Author
+
+    return author
   }
-  
-  const author: Author = {
-    ...authorData,
-    imageUrl: imageId ? generateSecureImageUrl(imageId) : undefined,
-    socialImageUrl: socialImageId ? generateSecureImageUrl(socialImageId) : undefined,
-  } as Author
-  
-  return author
-})
+)
 
 // ---- Warmup 相关的数据获取函数 ----
 
@@ -1109,14 +1174,15 @@ export const getCollectionsForWarmup = cache(async () => {
     "photosCount": count(photos)
   }`
 
-  return sanityServerClient.fetch(query, {}, {
-    next: {
-      tags: [
-        'collections',
-        'warmup-collections'
-      ]
+  return sanityServerClient.fetch(
+    query,
+    {},
+    {
+      next: {
+        tags: ['collections', 'warmup-collections'],
+      },
     }
-  })
+  )
 })
 
 // 获取所有dev collection的基本信息（用于warmup选择）
@@ -1128,14 +1194,15 @@ export const getDevCollectionsForWarmup = cache(async () => {
     coverImage
   }`
 
-  return sanityServerClient.fetch(query, {}, {
-    next: {
-      tags: [
-        'dev-collections',
-        'warmup-dev-collections'
-      ]
+  return sanityServerClient.fetch(
+    query,
+    {},
+    {
+      next: {
+        tags: ['dev-collections', 'warmup-dev-collections'],
+      },
     }
-  })
+  )
 })
 
 // 获取指定collection的photo数量
@@ -1144,15 +1211,19 @@ export const getCollectionPhotoCount = cache(async (collectionId: string) => {
     "photosCount": count(photos)
   }`
 
-  const result = await sanityServerClient.fetch(query, { collectionId }, {
-    next: {
-      tags: [
-        'collections',
-        `collection:${collectionId}`,
-        'warmup-photo-count'
-      ]
+  const result = await sanityServerClient.fetch(
+    query,
+    { collectionId },
+    {
+      next: {
+        tags: [
+          'collections',
+          `collection:${collectionId}`,
+          'warmup-photo-count',
+        ],
+      },
     }
-  })
+  )
 
   return result?.photosCount || 0
 })
@@ -1160,27 +1231,29 @@ export const getCollectionPhotoCount = cache(async (collectionId: string) => {
 // 获取所有collection cover images的数量
 export const getAllCollectionCoversCount = cache(async () => {
   const query = groq`count(*[_type == "collection" && defined(coverImage)])`
-  
-  return sanityServerClient.fetch(query, {}, {
-    next: {
-      tags: [
-        'collections',
-        'warmup-covers-count'
-      ]
+
+  return sanityServerClient.fetch(
+    query,
+    {},
+    {
+      next: {
+        tags: ['collections', 'warmup-covers-count'],
+      },
     }
-  })
+  )
 })
 
 // 获取所有dev collection covers的数量
 export const getAllDevCollectionCoversCount = cache(async () => {
   const query = groq`count(*[_type == "devCollection" && defined(coverImage)])`
-  
-  return sanityServerClient.fetch(query, {}, {
-    next: {
-      tags: [
-        'dev-collections',
-        'warmup-dev-covers-count'
-      ]
+
+  return sanityServerClient.fetch(
+    query,
+    {},
+    {
+      next: {
+        tags: ['dev-collections', 'warmup-dev-covers-count'],
+      },
     }
-  })
+  )
 })

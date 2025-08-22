@@ -71,21 +71,20 @@ export function LogPageShell({
                 id="expand-all"
                 checked={isAllExpanded}
                 onChange={toggleAllCollections}
-                className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
+                className="w-3 h-3 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
               />
               <label
                 htmlFor="expand-all"
-                className="text-body-sm font-medium text-foreground"
+                className="text-label-sm font-normal text-muted-foreground"
               >
                 {isAllExpanded
                   ? dictionary.develop.collapseAll
-                  : dictionary.develop.expandAll}{' '}
-                {dictionary.develop.collections}
+                  : dictionary.develop.expandAll}
               </label>
             </div>
-            <div className="text-body-sm text-muted-foreground">
+            {/* <div className="text-body-sm text-muted-foreground">
               {collections.length} {dictionary.develop.collections}
-            </div>
+            </div> */}
           </div>
 
           {/* Collections List */}

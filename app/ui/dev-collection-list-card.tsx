@@ -49,7 +49,7 @@ export function DevCollectionListCard({
         } article list`}
       >
         {/* 上层容器：内容展示区域 */}
-        <div className="flex items-start gap-4">
+        <div className="flex items-center gap-4">
           {/* 左侧：封面图 */}
           <div className="relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-muted">
             {collection.coverImageUrl ? (
@@ -62,7 +62,9 @@ export function DevCollectionListCard({
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-muted">
-                <div className="text-muted-foreground text-caption-xs">No Image</div>
+                <div className="text-muted-foreground text-caption-xs">
+                  No Image
+                </div>
               </div>
             )}
           </div>
@@ -70,14 +72,14 @@ export function DevCollectionListCard({
           {/* 右侧：标题和描述（垂直排列，横向拓展） */}
           <div className="flex-1 min-w-0">
             {/* 标题在上 */}
-            <h3 className="text-display-xs text-foreground mb-2 line-clamp-1">
+            <h3 className="text-display-xs text-foreground py-1 line-clamp-1">
               {collectionName}
             </h3>
 
             {/* 描述在下，横向拓展利用右侧空间 */}
             {collectionDescription && (
               <p
-                className={`text-body-sm text-muted-foreground max-w-2xl mb-2 ${
+                className={`text-body-sm text-muted-foreground max-w-2xl py-1 ${
                   isExpanded ? '' : 'line-clamp-2'
                 }`}
               >
@@ -125,15 +127,15 @@ export function DevCollectionListCard({
                   <div className="flex items-start gap-3 p-1 rounded-md hover:bg-background/80 dark:hover:bg-background/60 transition-colors border border-transparent hover:border-border/50">
                     <div className="w-1.5 h-1.5 bg-blue-500/70 rounded-full flex-shrink-0 mt-2" />
                     <div className="flex-1 min-w-0 max-w-prose">
-                      <h5 className="text-body-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                      <p className="text-body-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
                         {log.title}
-                      </h5>
-                      {log.excerpt && (
+                      </p>
+                      {/* {log.excerpt && (
                         <p className="text-body-sm text-muted-foreground mt-1 line-clamp-2">
                           {log.excerpt}
                         </p>
                       )}
-                      {/* {log.publishedAt && (
+                      {log.publishedAt && (
                         <p className="text-caption-xs text-muted-foreground mt-1">
                           {new Date(log.publishedAt).toLocaleDateString(
                             lang === 'zh' ? 'zh-CN' : 'en-US'
