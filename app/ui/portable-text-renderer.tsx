@@ -39,21 +39,8 @@ const components: PortableTextComponents = {
       return (
         <h1
           id={id}
-          className="group relative scroll-mt-20 text-display-sm sm:text-display-lg font-bold tracking-tight mt-16 mb-3 [&:first-child]:mt-0 pl-4 sm:pl-6"
+          className="group relative scroll-mt-20 text-display-sm sm:text-display-md font-normal tracking-tight mt-16 mb-3 [&:first-child]:mt-0 "
         >
-          {/* 前缀图标 - 向左突出并居中对齐 */}
-          <span
-            className="absolute -left-2 sm:-left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 select-none transition-colors duration-200 group-hover:text-slate-600 dark:group-hover:text-slate-300"
-            aria-hidden="true"
-          >
-            <svg
-              className="w-6 h-6 sm:w-8 sm:h-8"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
-            </svg>
-          </span>
           {children}
         </h1>
       )
@@ -128,7 +115,7 @@ const components: PortableTextComponents = {
     },
     normal: ({ children }) => {
       return (
-        <p className="text-body-sm sm:text-body-sm leading-6 [&:not(:first-child)]:mt-4">
+        <p className="text-body-sm sm:text-body-sm leading-6 [&:not(:first-child)]:mt-1">
           {children}
         </p>
       )
@@ -146,24 +133,24 @@ const components: PortableTextComponents = {
   },
   list: {
     bullet: ({ children }) => (
-      <ul className="my-6 ml-6 space-y-2 list-disc marker:text-slate-400 dark:marker:text-slate-500">
+      <ul className="my-2 ml-2 space-y-1 list-disc marker:text-slate-400 dark:marker:text-slate-500">
         {children}
       </ul>
     ),
     number: ({ children }) => (
-      <ol className="my-6 ml-6 space-y-2 list-decimal marker:text-slate-400 dark:marker:text-slate-500 marker:font-medium">
+      <ol className="my-2 ml-2 space-y-1 list-decimal marker:text-slate-400 dark:marker:text-slate-500 marker:font-medium">
         {children}
       </ol>
     ),
   },
   listItem: {
     bullet: ({ children }) => (
-      <li className="text-body-sm sm:text-body-base text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
+      <li className="text-body-xs sm:text-body-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
         {children}
       </li>
     ),
     number: ({ children }) => (
-      <li className="text-body-sm sm:text-body-base text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
+      <li className="text-body-xs sm:text-body-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
         {children}
       </li>
     ),

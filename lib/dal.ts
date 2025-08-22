@@ -175,7 +175,7 @@ export const getAllDevCollectionsAndLogs = cache(async (lang: Locale) => {
     coverImage,
     isFeatured,
     orderRank,
-    "logs": *[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref] | order(publishedAt asc) {
+    "logs": *[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref] | order(orderRank asc, publishedAt asc) {
       _id,
       title,
       "slug": slug.current,

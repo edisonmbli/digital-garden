@@ -84,8 +84,10 @@ export function LogDetailPage({
         collection: collection?.name,
         language: lang,
         hasMainImage: !!enrichedLogPost.mainImageUrl,
-        wordCount: enrichedLogPost.content ? JSON.stringify(enrichedLogPost.content).length : 0,
-        author: enrichedLogPost.author?.name
+        wordCount: enrichedLogPost.content
+          ? JSON.stringify(enrichedLogPost.content).length
+          : 0,
+        author: enrichedLogPost.author?.name,
       })
     } catch (error) {
       // 捕获分析追踪错误，不影响页面正常渲染
@@ -93,21 +95,27 @@ export function LogDetailPage({
         scope.setTag('component', 'LogDetailPage')
         scope.setTag('error_type', 'analytics_tracking')
         scope.setLevel('warning')
-        
+
         scope.setContext('analytics', {
           postId: enrichedLogPost._id,
           postTitle: enrichedLogPost.title,
-          language: lang
+          language: lang,
         })
-        
+
         Sentry.captureException(error)
       })
-      
+
       console.warn('Analytics tracking failed:', error)
     }
-  }, [enrichedLogPost._id, enrichedLogPost.title, enrichedLogPost.mainImageUrl, enrichedLogPost.content, collection?.name, lang, enrichedLogPost.author?.name])
-
-
+  }, [
+    enrichedLogPost._id,
+    enrichedLogPost.title,
+    enrichedLogPost.mainImageUrl,
+    enrichedLogPost.content,
+    collection?.name,
+    lang,
+    enrichedLogPost.author?.name,
+  ])
 
   // 处理从 PortableTextRenderer 提取的标题
   const handleHeadingsExtracted = useCallback(
@@ -225,10 +233,10 @@ export function LogDetailPage({
           </div>
         )}
       </div>
-      
+
       {/* 弹性空间 */}
       <div className="flex-grow"></div>
-      
+
       {/* 底部自推广卡片 */}
       <div className="flex-shrink-0">
         <SelfPromotionCard
@@ -245,6 +253,7 @@ export function LogDetailPage({
       <TableOfContents
         headings={headings}
         title={dictionary.common?.tableOfContents || '目录'}
+        excludeH1={true}
       />
     </div>
   )
@@ -266,7 +275,7 @@ export function LogDetailPage({
           <main className="flex-1 min-w-0 py-8 lg:py-12">
             <article className="max-w-3xl mx-auto">
               {/* 文章标题 */}
-              <header className="mb-8 text-center">
+              {/* <header className="mb-8 text-center">
                 <h1 className="text-display-sm md:text-display-md text-foreground mb-4">
                   {enrichedLogPost.title}
                 </h1>
@@ -288,7 +297,7 @@ export function LogDetailPage({
                     </span>
                   )}
                 </div>
-              </header>
+              </header> */}
 
               {/* 文章内容 */}
               <ProtectedContent showWatermark={true}>
@@ -302,9 +311,9 @@ export function LogDetailPage({
 
               {/* 版权声明 */}
               <div className="mt-16">
-                <CopyrightNotice 
-                  contentType="tutorial" 
-                  variant="default" 
+                <CopyrightNotice
+                  contentType="tutorial"
+                  variant="default"
                   copyrightData={copyrightData}
                 />
               </div>

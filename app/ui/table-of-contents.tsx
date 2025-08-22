@@ -9,6 +9,7 @@ interface TableOfContentsProps {
   title?: string
   className?: string
   onItemClick?: () => void
+  excludeH1?: boolean
 }
 
 export function TableOfContents({
@@ -16,11 +17,15 @@ export function TableOfContents({
   title = '目录',
   className,
   onItemClick,
+  excludeH1 = false,
 }: TableOfContentsProps) {
   const [activeId, setActiveId] = useState<string>('')
+  const displayHeadings = excludeH1
+    ? headings.filter((h) => h.level !== 1)
+    : headings
 
   useEffect(() => {
-    if (!headings.length) return
+    if (!displayHeadings.length) return
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -44,7 +49,7 @@ export function TableOfContents({
 
           // 如果滚动到接近底部（距离底部小于100px），激活最后一个标题
           if (documentHeight - (scrollTop + windowHeight) < 100) {
-            const lastHeading = headings[headings.length - 1]
+            const lastHeading = displayHeadings[displayHeadings.length - 1]
             if (lastHeading) {
               setActiveId(lastHeading.id)
             }
@@ -59,7 +64,7 @@ export function TableOfContents({
 
     // 观察所有标题元素
     const elements: Element[] = []
-    headings.forEach((heading) => {
+    displayHeadings.forEach((heading) => {
       const element = document.getElementById(heading.id)
       if (element) {
         elements.push(element)
@@ -75,7 +80,7 @@ export function TableOfContents({
 
       // 如果滚动到接近底部，激活最后一个标题
       if (documentHeight - (scrollTop + windowHeight) < 50) {
-        const lastHeading = headings[headings.length - 1]
+        const lastHeading = displayHeadings[displayHeadings.length - 1]
         if (lastHeading && activeId !== lastHeading.id) {
           setActiveId(lastHeading.id)
         }
@@ -99,7 +104,7 @@ export function TableOfContents({
       observer.disconnect()
       window.removeEventListener('scroll', handleScroll)
     }
-  }, [headings, activeId])
+  }, [displayHeadings, activeId])
 
   const handleClick = (id: string) => {
     const element = document.getElementById(id)
@@ -116,13 +121,13 @@ export function TableOfContents({
 
       // 立即更新活动状态
       setActiveId(id)
-      
+
       // 调用回调函数（如果提供）
       onItemClick?.()
     }
   }
 
-  if (!headings.length) {
+  if (!displayHeadings.length) {
     return null
   }
 
@@ -130,7 +135,7 @@ export function TableOfContents({
     <nav className={cn('space-y-2', className)}>
       <h4 className="text-body-md font-semibold text-foreground mb-3">{title}</h4>
       <ul className="space-y-1">
-        {headings.map((heading) => (
+        {displayHeadings.map((heading) => (
           <li key={heading.id}>
             <button
               onClick={() => handleClick(heading.id)}
