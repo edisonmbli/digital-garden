@@ -136,7 +136,7 @@ export default function SpamManagementPanel() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">反恶意攻击详情</h1>
+        <h1 className="text-display-sm font-bold">反恶意攻击详情</h1>
         <div className="space-x-2">
           <Button onClick={fetchData} variant="outline">
             刷新数据
@@ -151,25 +151,25 @@ export default function SpamManagementPanel() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg border">
           <h3 className="text-body-sm font-medium text-gray-500">被封禁IP</h3>
-          <p className="text-2xl font-bold text-red-600">
+          <p className="text-display-sm font-bold text-red-600">
             {data.stats.blockedIPs}
           </p>
         </div>
         <div className="bg-white p-4 rounded-lg border">
           <h3 className="text-body-sm font-medium text-gray-500">活跃限流</h3>
-          <p className="text-2xl font-bold text-yellow-600">
+          <p className="text-display-sm font-bold text-yellow-600">
             {data.stats.activeRateLimits}
           </p>
         </div>
         <div className="bg-white p-4 rounded-lg border">
           <h3 className="text-body-sm font-medium text-gray-500">内容模式</h3>
-          <p className="text-2xl font-bold text-blue-600">
+          <p className="text-display-sm font-bold text-blue-600">
             {data.stats.contentPatterns}
           </p>
         </div>
         <div className="bg-white p-4 rounded-lg border">
           <h3 className="text-body-sm font-medium text-gray-500">最大评论/分钟</h3>
-          <p className="text-2xl font-bold text-green-600">
+          <p className="text-display-sm font-bold text-green-600">
             {data.stats.config.MAX_COMMENTS_PER_MINUTE}
           </p>
         </div>

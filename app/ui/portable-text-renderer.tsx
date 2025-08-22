@@ -5,9 +5,20 @@ import React, { useEffect } from 'react'
 import { PortableText, PortableTextComponents } from '@portabletext/react'
 import { PortableTextBlock } from '@portabletext/types'
 import { cn } from '@/lib/utils'
-import { Highlight, themes } from 'prism-react-renderer'
 import Image from 'next/image'
-import { extractSanityImageId, generateSecureImageUrl } from '@/lib/secure-image-loader'
+import {
+  extractSanityImageId,
+  generateSecureImageUrl,
+} from '@/lib/secure-image-loader'
+import '@/app/ui/code-block-theme.css'
+import { Highlight, themes } from 'prism-react-renderer'
+import { useTheme } from 'next-themes'
+
+// Hook to get code theme based on current theme
+function useCodeTheme() {
+  const { theme } = useTheme()
+  return theme === 'dark' ? themes.vsDark : themes.github
+}
 
 interface PortableTextRendererProps {
   content: PortableTextBlock[]
@@ -164,7 +175,7 @@ const components: PortableTextComponents = {
     ),
     em: ({ children }) => <em className="italic">{children}</em>,
     code: ({ children }) => (
-      <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-code-sm font-semibold">
+      <code className="unified-inline-code px-[0.3rem] py-[0.2rem] font-mono text-code-sm font-semibold rounded border">
         {children}
       </code>
     ),
@@ -313,27 +324,31 @@ const components: PortableTextComponents = {
     image: ({ value }) => {
       // 提取 Sanity asset ID 并生成安全 URL
       let imageUrl: string | undefined
-      
+
       if (value.asset) {
         let imageId: string | null = null
-        
-        if (typeof value.asset === 'object' && 'asset' in value.asset && value.asset.asset) {
+
+        if (
+          typeof value.asset === 'object' &&
+          'asset' in value.asset &&
+          value.asset.asset
+        ) {
           imageId = value.asset.asset._ref
         } else if (typeof value.asset === 'object' && '_ref' in value.asset) {
           imageId = value.asset._ref
         } else if (value.asset.url) {
           imageId = extractSanityImageId(value.asset.url)
         }
-        
+
         if (imageId) {
           imageUrl = generateSecureImageUrl(imageId)
         }
       }
-      
+
       if (!imageUrl) {
         return null
       }
-      
+
       return (
         <figure className="my-8 group">
           <div className="relative overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
@@ -357,56 +372,7 @@ const components: PortableTextComponents = {
       )
     },
 
-    // 代码块 - 使用语法高亮
-    codeBlock: ({ value }) => {
-      const language = value.language || 'text'
-      const code = value.code || ''
-
-      return (
-        <div className="my-2 group">
-          {value.filename && (
-            <div className="bg-slate-100 dark:bg-slate-800 px-4 py-2 text-body-sm font-mono border-b border-slate-200 dark:border-slate-700 rounded-t-lg flex items-center justify-between">
-              <span className="text-slate-700 dark:text-slate-300">
-                {value.filename}
-              </span>
-              {language && (
-                <span className="text-caption-xs text-slate-500 dark:text-slate-400 uppercase">
-                  {language}
-                </span>
-              )}
-            </div>
-          )}
-          <div className="relative">
-            <Highlight theme={themes.github} code={code} language={language}>
-              {({ style, tokens, getLineProps, getTokenProps }) => (
-                <pre
-                  className={cn(
-                    'overflow-x-auto bg-gray-300/20 dark:bg-gray-100/10 p-2 text-code-sm font-mono',
-                    'border border-slate-200 dark:border-slate-700',
-                    value.filename ? 'rounded-b-lg' : 'rounded-lg',
-                    'scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
-                  )}
-                  style={style}
-                >
-                  {tokens.map((line, i) => (
-                    <div key={i} {...getLineProps({ line })}>
-                      {line.map((token, key) => (
-                        <span key={key} {...getTokenProps({ token })} />
-                      ))}
-                    </div>
-                  ))}
-                </pre>
-              )}
-            </Highlight>
-            {!value.filename && language && language !== 'text' && (
-              <div className="absolute top-2 right-2 text-caption-xs text-slate-500 dark:text-slate-700 bg-slate-100 dark:bg-gray-600/50 px-2 py-1 rounded uppercase">
-                {language}
-              </div>
-            )}
-          </div>
-        </div>
-      )
-    },
+    // 代码块将在PortableTextRenderer组件中定义以使用hooks
 
     // 高亮块
     highlightBlock: ({ value }) => {
@@ -477,6 +443,13 @@ const components: PortableTextComponents = {
         </div>
       )
     },
+
+    // 分隔线块
+    separator: () => (
+      <div className="my-8 flex justify-center">
+        <div className="w-full max-w-xs h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-600 to-transparent"></div>
+      </div>
+    ),
   },
 }
 
@@ -540,6 +513,8 @@ export function PortableTextRenderer({
   content,
   onHeadingsExtracted,
 }: PortableTextRendererProps) {
+  const codeTheme = useCodeTheme()
+
   useEffect(() => {
     if (onHeadingsExtracted && content) {
       const headings = extractHeadings(content)
@@ -551,9 +526,66 @@ export function PortableTextRenderer({
     return null
   }
 
+  // Create components with access to hooks
+  const themedComponents: PortableTextComponents = {
+    ...components,
+    types: {
+      ...components.types,
+      codeBlock: ({ value }) => {
+        const language = value.language || 'text'
+        const code = value.code || ''
+
+        return (
+          <div className="my-2 group">
+            {value.filename && (
+              <div className="unified-filename px-4 py-2 text-body-sm font-mono border-b rounded-t-lg flex items-center justify-between">
+                <span>{value.filename}</span>
+                {language && (
+                  <span className="unified-language-tag text-caption-xs uppercase px-2 py-1 rounded">
+                    {language}
+                  </span>
+                )}
+              </div>
+            )}
+            <div className="relative">
+              <Highlight theme={codeTheme} code={code} language={language}>
+                {({ style, tokens, getLineProps, getTokenProps }) => (
+                  <pre
+                    className={cn(
+                      'unified-code-block overflow-x-auto p-2 text-code-sm font-mono border',
+                      value.filename ? 'rounded-b-lg' : 'rounded-lg',
+                      'scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
+                    )}
+                    style={{
+                      ...style,
+                      margin: 0,
+                    }}
+                  >
+                    {tokens.map((line, i) => (
+                      <div key={i} {...getLineProps({ line })}>
+                        {line.map((token, key) => (
+                          <span key={key} {...getTokenProps({ token })} />
+                        ))}
+                      </div>
+                    ))}
+                  </pre>
+                )}
+              </Highlight>
+              {!value.filename && language && language !== 'text' && (
+                <div className="absolute top-2 right-2 unified-language-tag text-caption-xs px-2 py-1 rounded uppercase">
+                  {language}
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      },
+    },
+  }
+
   return (
     <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert prose-slate">
-      <PortableText value={content} components={components} />
+      <PortableText value={content} components={themedComponents} />
     </div>
   )
 }

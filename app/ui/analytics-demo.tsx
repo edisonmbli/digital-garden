@@ -106,10 +106,10 @@ export function AnalyticsDemo() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 text-body-sm">
             <div>
               <strong>会话ID:</strong> 
-              <Badge variant="outline" className="ml-2 font-mono text-xs">
+              <Badge variant="outline" className="ml-2 font-mono text-body-xs">
                 {sessionId.slice(0, 16)}...
               </Badge>
             </div>
@@ -126,7 +126,7 @@ export function AnalyticsDemo() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">基础事件追踪</CardTitle>
+            <CardTitle className="text-body-lg">基础事件追踪</CardTitle>
             <CardDescription>追踪自定义事件</CardDescription>
           </CardHeader>
           <CardContent>
@@ -138,7 +138,7 @@ export function AnalyticsDemo() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">用户交互追踪</CardTitle>
+            <CardTitle className="text-body-lg">用户交互追踪</CardTitle>
             <CardDescription>追踪用户界面交互</CardDescription>
           </CardHeader>
           <CardContent>
@@ -150,7 +150,7 @@ export function AnalyticsDemo() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">业务事件追踪</CardTitle>
+            <CardTitle className="text-body-lg">业务事件追踪</CardTitle>
             <CardDescription>追踪业务相关事件</CardDescription>
           </CardHeader>
           <CardContent>
@@ -162,7 +162,7 @@ export function AnalyticsDemo() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">性能监控</CardTitle>
+            <CardTitle className="text-body-lg">性能监控</CardTitle>
             <CardDescription>追踪性能指标</CardDescription>
           </CardHeader>
           <CardContent>
@@ -174,7 +174,7 @@ export function AnalyticsDemo() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">错误追踪</CardTitle>
+            <CardTitle className="text-body-lg">错误追踪</CardTitle>
             <CardDescription>追踪和记录错误</CardDescription>
           </CardHeader>
           <CardContent>
@@ -186,7 +186,7 @@ export function AnalyticsDemo() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">用户识别</CardTitle>
+            <CardTitle className="text-body-lg">用户识别</CardTitle>
             <CardDescription>设置用户属性</CardDescription>
           </CardHeader>
           <CardContent>
@@ -199,7 +199,7 @@ export function AnalyticsDemo() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">队列管理</CardTitle>
+          <CardTitle className="text-body-lg">队列管理</CardTitle>
           <CardDescription>
             事件会自动批量发送，或者你可以手动刷新队列
           </CardDescription>
@@ -213,9 +213,9 @@ export function AnalyticsDemo() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">使用说明</CardTitle>
+          <CardTitle className="text-body-lg">使用说明</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
+        <CardContent className="space-y-2 text-body-sm text-muted-foreground">
           <p>• 事件会自动批量发送到服务器（每10个事件或5秒间隔）</p>
           <p>• 所有事件都会保存到 <code>logs/analytics/</code> 目录下</p>
           <p>• 在开发环境下，控制台会显示详细的事件信息</p>
@@ -226,12 +226,12 @@ export function AnalyticsDemo() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">🚀 Vercel Analytics 集成</CardTitle>
+          <CardTitle className="text-body-lg">🚀 Vercel Analytics 集成</CardTitle>
           <CardDescription>
             已集成 Vercel Analytics 和 Speed Insights
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
+        <CardContent className="space-y-2 text-body-sm text-muted-foreground">
           <p>• <strong>Vercel Analytics:</strong> 自动追踪页面访问量 (PV) 和独立访客数 (UV)</p>
           <p>• <strong>Speed Insights:</strong> 自动监控页面性能指标 (Core Web Vitals)</p>
           <p>• <strong>无冲突设计:</strong> 与自建分析系统完美共存，各司其职</p>

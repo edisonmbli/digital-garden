@@ -13,7 +13,7 @@ export default function CacheManagementPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">缓存管理</h1>
+          <h1 className="text-display-md">缓存管理</h1>
           <p className="text-muted-foreground">统一管理和监控系统缓存</p>
         </div>
         <Badge variant="outline" className="text-body-sm">

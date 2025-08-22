@@ -52,6 +52,7 @@ ngrok*
 # documents
 /docs/*
 /tutorials/*
+/tutorials_public/*
 
 # backup scripts
 /scripts/*

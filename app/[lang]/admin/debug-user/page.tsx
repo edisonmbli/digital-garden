@@ -17,7 +17,7 @@ export default function DebugUserPage() {
 
   return (
     <div className="container mx-auto p-8 space-y-6">
-      <h1 className="text-2xl font-bold">用户调试信息</h1>
+      <h1 className="text-display-sm">用户调试信息</h1>
       
       <Card>
         <CardHeader>

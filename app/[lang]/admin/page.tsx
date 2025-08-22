@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   CheckCircle,
   XCircle,
+  FileText,
 } from 'lucide-react'
 import { 
   runSystemTestsAction, 
@@ -213,7 +214,7 @@ export default function AdminPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">系统管理面板</h1>
+          <h1 className="text-display-md">系统管理面板</h1>
           <p className="text-muted-foreground">管理和监控系统状态</p>
         </div>
         <Badge variant="outline" className="text-body-sm">
@@ -235,11 +236,11 @@ export default function AdminPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-body-sm font-medium">系统状态</CardTitle>
+                <CardTitle className="text-body-sm">系统状态</CardTitle>
                 <CheckCircle className="h-4 w-4 text-green-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">正常</div>
+                <div className="text-display-sm text-green-600">正常</div>
                 <p className="text-caption-xs text-muted-foreground">
                   所有服务运行正常
                 </p>
@@ -248,26 +249,26 @@ export default function AdminPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-body-sm font-medium">
+                <CardTitle className="text-body-sm">
                   数据库连接
                 </CardTitle>
                 <Database className="h-4 w-4 text-blue-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-600">活跃</div>
+                <div className="text-display-sm text-blue-600">活跃</div>
                 <p className="text-caption-xs text-muted-foreground">Prisma 连接正常</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-body-sm font-medium">
+                <CardTitle className="text-body-sm">
                   恶意攻击防护
                 </CardTitle>
                 <Shield className="h-4 w-4 text-orange-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-orange-600">启用</div>
+                <div className="text-display-sm text-orange-600">启用</div>
                 <p className="text-caption-xs text-muted-foreground">
                   反恶意攻击系统运行中
                 </p>
@@ -276,11 +277,11 @@ export default function AdminPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-body-sm font-medium">评论系统</CardTitle>
+                <CardTitle className="text-body-sm">评论系统</CardTitle>
                 <MessageSquare className="h-4 w-4 text-purple-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-purple-600">正常</div>
+                <div className="text-display-sm text-purple-600">正常</div>
                 <p className="text-caption-xs text-muted-foreground">
                   评论功能正常运行
                 </p>
@@ -294,7 +295,7 @@ export default function AdminPage() {
               <CardDescription>常用的管理操作</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Button onClick={runSystemTests} disabled={isTestingSystem}>
                   <TestTube className="w-4 h-4 mr-2" />
                   {isTestingSystem ? '运行中...' : '运行系统测试'}
@@ -311,6 +312,12 @@ export default function AdminPage() {
                   <AlertTriangle className="w-4 h-4 mr-2" />
                   清理过期数据
                 </Button>
+                <Link href="/zh/admin/markdown-converter">
+                  <Button variant="outline" className="w-full">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Markdown 转换器
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
@@ -340,7 +347,7 @@ export default function AdminPage() {
                 <div className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-4">
                     <div className="text-center">
-                      <div className="text-2xl font-bold">
+                      <div className="text-display-sm">
                         {systemTestResults.summary.total}
                       </div>
                       <div className="text-body-sm text-muted-foreground">
@@ -348,19 +355,19 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
+                      <div className="text-display-sm text-green-600">
                         {systemTestResults.summary.passed}
                       </div>
                       <div className="text-body-sm text-muted-foreground">通过</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-red-600">
+                      <div className="text-display-sm text-red-600">
                         {systemTestResults.summary.failed}
                       </div>
                       <div className="text-body-sm text-muted-foreground">失败</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold">
+                      <div className="text-display-sm">
                         {systemTestResults.summary.passRate}
                       </div>
                       <div className="text-body-sm text-muted-foreground">
@@ -382,7 +389,7 @@ export default function AdminPage() {
                             <XCircle className="w-5 h-5 text-red-500" />
                           )}
                           <div>
-                            <div className="font-medium">{result.name}</div>
+                            <div className="text-body-base font-medium">{result.name}</div>
                             <div className="text-body-sm text-muted-foreground">
                               {result.message}
                             </div>
@@ -414,7 +421,7 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <div className="text-body-sm font-medium">测试内容</div>
+                <div className="text-body-sm">测试内容</div>
                 <Textarea
                   value={sensitiveTestContent}
                   onChange={(e) => setSensitiveTestContent(e.target.value)}
@@ -435,7 +442,7 @@ export default function AdminPage() {
                 <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
                   <div className="grid gap-4 md:grid-cols-3">
                     <div className="text-center">
-                      <div className="text-body-lg font-bold">
+                      <div className="text-body-lg">
                         {sensitiveTestResult.contentLength}
                       </div>
                       <div className="text-body-sm text-muted-foreground">
@@ -443,7 +450,7 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div className="text-center">
-                      <div className={`text-body-lg font-bold ${
+                      <div className={`text-body-lg ${
                         sensitiveTestResult.hasSensitiveWords ? 'text-red-600' : 'text-green-600'
                       }`}>
                         {sensitiveTestResult.hasSensitiveWords ? '是' : '否'}
@@ -453,7 +460,7 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div className="text-center">
-                      <div className="text-body-lg font-bold text-orange-600">
+                      <div className="text-body-lg text-orange-600">
                         {sensitiveTestResult.wordsCount}
                       </div>
                       <div className="text-body-sm text-muted-foreground">
@@ -464,7 +471,7 @@ export default function AdminPage() {
 
                   {sensitiveTestResult.foundWords.length > 0 && (
                     <div>
-                      <div className="text-body-sm font-medium mb-2">检测到的敏感词：</div>
+                      <div className="text-body-sm mb-2">检测到的敏感词：</div>
                       <div className="flex flex-wrap gap-2">
                         {sensitiveTestResult.foundWords.map((word, index) => (
                           <Badge key={index} variant="destructive">
@@ -517,7 +524,7 @@ export default function AdminPage() {
                 <div className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-3">
                     <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold">
+                      <div className="text-display-sm">
                         {spamStats.stats?.activeRateLimits || 0}
                       </div>
                       <div className="text-body-sm text-muted-foreground">
@@ -525,7 +532,7 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-red-600">
+                      <div className="text-display-sm text-red-600">
                         {spamStats.stats?.contentPatterns || 0}
                       </div>
                       <div className="text-body-sm text-muted-foreground">
@@ -533,7 +540,7 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-orange-600">
+                      <div className="text-display-sm text-orange-600">
                         {spamStats.blockedIPs?.length || 0}
                       </div>
                       <div className="text-body-sm text-muted-foreground">
@@ -544,7 +551,7 @@ export default function AdminPage() {
 
                   {spamStats.blockedIPs && spamStats.blockedIPs.length > 0 && (
                     <div>
-                      <h4 className="font-medium mb-2">被封IP列表</h4>
+                      <h4 className="text-body-base font-medium mb-2">被封IP列表</h4>
                       <div className="space-y-2">
                         {spamStats.blockedIPs.map(
                           (ip: string, index: number) => (
@@ -590,7 +597,7 @@ export default function AdminPage() {
                     {isLoadingSensitiveWords ? '加载中...' : '加载敏感词'}
                   </Button>
                   <div className="text-body-sm text-muted-foreground">
-                    当前敏感词数量: <span className="font-medium">{sensitiveWordsCount}</span>
+                    当前敏感词数量: <span className="text-body-base font-medium">{sensitiveWordsCount}</span>
                   </div>
                 </div>
                 <Button 
@@ -602,7 +609,7 @@ export default function AdminPage() {
               </div>
 
               <div className="space-y-2">
-                <div className="text-body-sm font-medium">敏感词列表</div>
+                <div className="text-body-sm">敏感词列表</div>
                 <div className="text-caption-xs text-muted-foreground">
                   • 每个敏感词用英文逗号(,)、中文逗号(，)、换行符或分号分隔
                   <br />
@@ -638,7 +645,7 @@ export default function AdminPage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold">缓存管理</h2>
+                <h2 className="text-display-sm">缓存管理</h2>
                 <p className="text-muted-foreground">统一管理和监控系统缓存</p>
               </div>
               <Badge variant="outline" className="text-body-sm">

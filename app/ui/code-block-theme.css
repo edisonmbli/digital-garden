@@ -1,0 +1,51 @@
+/* 简化的代码块主题样式 */
+
+/* 统一的代码块容器样式 */
+.unified-code-block {
+  /* 让prism-react-renderer主题控制背景和文字颜色 */
+}
+
+/* 行内代码样式 */
+.unified-inline-code {
+  background-color: #f6f8fa;
+  border: 1px solid #e1e4e8;
+}
+
+.dark .unified-inline-code {
+  background-color: #2d3748;
+  border: 1px solid #4a5568;
+  color: #e2e8f0;
+}
+
+/* 文件名栏样式 */
+.unified-filename {
+  background-color: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  color: #586069;
+}
+
+.dark .unified-filename {
+  background-color: #2d3748;
+  border: 1px solid #4a5568;
+  color: #a0aec0;
+}
+
+/* 语言标签样式 */
+.unified-language-tag {
+  background-color: #f1f3f4;
+  color: #5f6368;
+}
+
+.dark .unified-language-tag {
+  background-color: #374151;
+  color: #9ca3af;
+}
+
+/* 确保代码块容器使用统一样式 */
+.markdown-code-block {
+  @apply unified-code-block;
+}
+
+.markdown-inline-code {
+  @apply unified-inline-code;
+}

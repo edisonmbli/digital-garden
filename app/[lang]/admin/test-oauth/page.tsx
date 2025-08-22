@@ -156,7 +156,7 @@ export default function TestOAuthPage() {
   return (
     <div className="container mx-auto py-8 space-y-6">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">OAuth 配置测试</h1>
+        <h1 className="text-display-md">OAuth 配置测试</h1>
         <p className="text-muted-foreground">
           检查 Clerk OAuth 配置和认证状态
         </p>
@@ -196,12 +196,12 @@ export default function TestOAuthPage() {
                 {getStatusIcon(check.status)}
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium">{check.name}</h4>
+                    <h4 className="text-body-base font-medium">{check.name}</h4>
                     {getStatusBadge(check.status)}
                   </div>
-                  <p className="text-sm text-muted-foreground">{check.message}</p>
+                  <p className="text-body-sm text-muted-foreground">{check.message}</p>
                   {check.details && (
-                    <p className="text-xs text-muted-foreground font-mono bg-muted p-2 rounded">
+                    <p className="text-body-xs text-muted-foreground font-mono bg-muted p-2 rounded">
                       {check.details}
                     </p>
                   )}
@@ -222,16 +222,16 @@ export default function TestOAuthPage() {
             {userId ? (
               <div className="space-y-4">
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-medium text-green-800">登录成功！</h4>
-                  <p className="text-sm text-green-600 mt-1">
+                  <h4 className="text-body-base font-medium text-green-800">登录成功！</h4>
+                  <p className="text-body-sm text-green-600 mt-1">
                     用户已通过 Clerk 成功认证
                   </p>
                 </div>
                 
                 {user && (
                   <div className="space-y-2">
-                    <h5 className="font-medium">用户信息：</h5>
-                    <div className="text-sm space-y-1">
+                    <h5 className="text-body-base font-medium">用户信息：</h5>
+                    <div className="text-body-sm space-y-1">
                       <p><strong>ID:</strong> {user.id}</p>
                       <p><strong>邮箱:</strong> {user.primaryEmailAddress?.emailAddress}</p>
                       <p><strong>姓名:</strong> {user.fullName || '未设置'}</p>
@@ -243,8 +243,8 @@ export default function TestOAuthPage() {
             ) : (
               <div className="space-y-4">
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <h4 className="font-medium text-yellow-800">未登录</h4>
-                  <p className="text-sm text-yellow-600 mt-1">
+                  <h4 className="text-body-base font-medium text-yellow-800">未登录</h4>
+                  <p className="text-body-sm text-yellow-600 mt-1">
                     请使用下方的登录按钮测试 OAuth 功能
                   </p>
                 </div>
@@ -261,7 +261,7 @@ export default function TestOAuthPage() {
                 
                 {showSignIn && (
                   <div className="mt-4 p-4 border rounded-lg">
-                    <h5 className="font-medium mb-3">内嵌登录组件：</h5>
+                    <h5 className="text-body-base font-medium mb-3">内嵌登录组件：</h5>
                     <SignIn 
                       routing="hash"
                       appearance={{
@@ -286,8 +286,8 @@ export default function TestOAuthPage() {
           <CardTitle>故障排除建议</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="text-sm space-y-2">
-            <h5 className="font-medium">如果 OAuth 登录失败，请检查：</h5>
+          <div className="text-body-sm space-y-2">
+            <h5 className="text-body-base font-medium">如果 OAuth 登录失败，请检查：</h5>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
               <li>Clerk Dashboard 中的 OAuth 提供商配置（Google、GitHub）</li>
               <li>Google Cloud Console 中的 OAuth 客户端配置</li>
@@ -297,8 +297,8 @@ export default function TestOAuthPage() {
             </ul>
           </div>
           
-          <div className="text-sm space-y-2">
-            <h5 className="font-medium">常见错误解决方案：</h5>
+          <div className="text-body-sm space-y-2">
+            <h5 className="text-body-base font-medium">常见错误解决方案：</h5>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
               <li><strong>Error 400: invalid_request</strong> - 检查 client_id 配置</li>
               <li><strong>redirect_uri_mismatch</strong> - 检查重定向 URI 配置</li>

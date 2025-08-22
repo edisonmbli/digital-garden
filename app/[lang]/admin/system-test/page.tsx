@@ -99,14 +99,14 @@ export default function SystemTestPage() {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
-      <h1 className="text-3xl font-bold mb-6">系统测试面板</h1>
+      <h1 className="text-display-md mb-6">系统测试面板</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 测试控制面板 */}
         <div className="space-y-6">
           {/* 数据库测试 */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-            <h2 className="text-display-sm font-semibold mb-4">数据库测试</h2>
+            <h2 className="text-display-sm mb-4">数据库测试</h2>
             <div className="grid grid-cols-1 gap-3">
               <button
                 onClick={() => runServerAction('数据库连接测试', testDatabaseConnectionAction)}
@@ -127,7 +127,7 @@ export default function SystemTestPage() {
 
           {/* 敏感词检测测试 */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-            <h2 className="text-display-sm font-semibold mb-4">敏感词检测测试</h2>
+            <h2 className="text-display-sm mb-4">敏感词检测测试</h2>
             <div className="grid grid-cols-1 gap-3">
               <button
                 onClick={() => runSensitiveWordsTest('这是正常内容', '正常内容测试')}
@@ -155,7 +155,7 @@ export default function SystemTestPage() {
 
           {/* 系统管理 */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-            <h2 className="text-display-sm font-semibold mb-4">系统管理</h2>
+            <h2 className="text-display-sm mb-4">系统管理</h2>
             <div className="grid grid-cols-1 gap-3">
               <button
                 onClick={() => runServerAction('重置垃圾邮件系统', resetSpamSystemAction)}
@@ -186,7 +186,7 @@ export default function SystemTestPage() {
 
         {/* 测试结果面板 */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-          <h2 className="text-display-sm font-semibold mb-4">测试结果</h2>
+          <h2 className="text-display-sm mb-4">测试结果</h2>
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {testResults.length === 0 ? (
               <p className="text-gray-500">暂无测试结果</p>
@@ -201,7 +201,7 @@ export default function SystemTestPage() {
                   }`}
                 >
                   <div className="flex justify-between items-start">
-                    <h3 className="font-medium">{result.name}</h3>
+                    <h3 className="text-body-base font-medium">{result.name}</h3>
                     <span className="text-caption-xs text-gray-500">{result.timestamp}</span>
                   </div>
                   <p className="text-body-sm mt-1">{result.message}</p>

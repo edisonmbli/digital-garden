@@ -7,7 +7,7 @@ export default function WarmupPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">图片缓存预热</h1>
+        <h1 className="text-display-md">图片缓存预热</h1>
         <p className="text-muted-foreground">
           手动触发图片缓存预热，提升用户访问体验
         </p>

@@ -11,6 +11,7 @@ import { type Locale, generateStaticParams } from '@/i18n-config'
 import { I18nProvider } from '@/app/context/i18n-provider'
 import { PageTransitionRecommended } from '@/app/ui/page-transition'
 import { AnalyticsProvider } from '@/components/analytics-provider'
+
 // 导入环境变量验证（仅在开发环境自动执行）
 import '@/lib/env-validation'
 
@@ -114,6 +115,7 @@ export default async function RootLayout({
           >
             <I18nProvider dictionary={dictionary}>
               <AnalyticsProvider>
+  
                 <div className="relative flex flex-col min-h-screen w-full">
                   <Header lang={lang} dictionary={dictionary} />
                   <main className="flex-1 w-full">

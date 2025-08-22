@@ -551,7 +551,7 @@ export function CommentsManagementPanel({
               {/* 批量操作 */}
               {selectedComments.length > 0 && (
                 <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
-                  <span className="text-sm text-blue-700">
+                  <span className="text-body-sm text-blue-700">
                     已选择 {selectedComments.length} 条评论
                   </span>
                   <div className="flex gap-2 ml-auto">
@@ -599,7 +599,7 @@ export function CommentsManagementPanel({
                           {(batchAction.action === 'reject' ||
                             batchAction.action === 'delete') && (
                             <div>
-                              <label className="text-sm font-medium">
+                              <label className="text-body-sm font-medium">
                                 操作原因（可选）
                               </label>
                               <textarea
@@ -712,7 +712,7 @@ export function CommentsManagementPanel({
                       }
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="text-sm text-gray-500">全选</span>
+                    <span className="text-body-sm text-gray-500">全选</span>
                   </div>
                 </div>
               </div>
@@ -769,11 +769,11 @@ export function CommentsManagementPanel({
                               <div className="flex-1 space-y-2">
                                 {/* 评论内容 */}
                                 <div className="bg-gray-50 rounded p-3">
-                                  <p className="text-gray-900">{comment.content}</p>
+                                  <p className="text-body-md text-gray-900">{comment.content}</p>
                                 </div>
 
                                 {/* 元信息 */}
-                                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                                <div className="flex flex-wrap items-center gap-4 text-body-sm text-gray-500">
                                   <div className="flex items-center gap-1">
                                     <User className="w-4 h-4" />
                                     <span>
@@ -910,7 +910,7 @@ export function CommentsManagementPanel({
                                     <Badge variant="default" className="bg-blue-600 text-white text-xs">
                                       作者回复
                                     </Badge>
-                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                    <div className="flex items-center gap-2 text-body-sm text-gray-600">
                                       <User className="w-4 h-4" />
                                       <span>{authorReply.user.name || authorReply.user.email}</span>
                                       <Calendar className="w-4 h-4" />
@@ -920,7 +920,7 @@ export function CommentsManagementPanel({
                                   </div>
 
                                   <div className="bg-white rounded p-3 border">
-                                    <p className="text-gray-900">{authorReply.content}</p>
+                                    <p className="text-body-md text-gray-900">{authorReply.content}</p>
                                   </div>
 
                                   <div className="flex items-center justify-end gap-1">
@@ -998,7 +998,7 @@ export function CommentsManagementPanel({
               {/* 分页 */}
               {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-body-sm text-gray-500">
                     共 {pagination.total} 条评论，第 {pagination.page} /{' '}
                     {pagination.totalPages} 页
                   </p>
@@ -1048,7 +1048,7 @@ export function CommentsManagementPanel({
                 </p>
 
                 <div>
-                  <label className="text-sm font-medium">
+                  <label className="text-body-sm font-medium">
                     {singleAction.action === 'reject' ? '拒绝' : '删除'}
                     原因（可选）
                   </label>
@@ -1106,7 +1106,7 @@ export function CommentsManagementPanel({
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium">回复内容</label>
+                  <label className="text-body-sm font-medium">回复内容</label>
                   <textarea
                     value={replyAction.content}
                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>

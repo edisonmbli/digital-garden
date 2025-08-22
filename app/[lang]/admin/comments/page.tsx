@@ -42,7 +42,7 @@ function StatCard({
         <div className="flex items-center justify-between">
           <div>
             <p className="text-body-sm font-medium text-gray-600">{title}</p>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-display-sm text-gray-900">
               {value.toLocaleString()}
             </p>
             {description && (
@@ -248,7 +248,7 @@ export default function CommentsManagementPage() {
     <div className="container mx-auto py-8 space-y-8">
       {/* 统计面板 */}
       <div className="max-w-5xl mx-auto">
-        <h2 className="text-display-sm font-semibold text-gray-900 mb-4">评论统计</h2>
+        <h2 className="text-display-sm text-gray-900 mb-4">评论统计</h2>
         <Suspense fallback={<LoadingStats />}>
           <CommentStats />
         </Suspense>

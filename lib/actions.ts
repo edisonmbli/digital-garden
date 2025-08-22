@@ -1,4 +1,4 @@
-// app/lib/actions.ts
+// lib/actions.ts
 'use server'
 
 import { PHOTOS_PER_PAGE } from './dal'

@@ -193,11 +193,11 @@ export function AnalyticsDashboard() {
                     <Badge className={getEventTypeColor(item.eventType)}>
                       {item.eventType}
                     </Badge>
-                    <span className="text-2xl font-bold">{item.count}</span>
+                    <span className="text-display-sm font-bold">{item.count}</span>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body-sm text-muted-foreground">
                     最后记录: {item.lastSeen}
                   </p>
                 </CardContent>

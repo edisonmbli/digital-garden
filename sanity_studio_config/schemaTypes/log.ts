@@ -74,9 +74,10 @@ export default defineType({
     defineField({
       name: 'content',
       title: 'Content',
-      type: 'array', // 使用 Portable Text 来实现富文本
+      type: 'array',
       group: 'content',
       of: fullPortableTextConfig,
+      description: 'Rich text content with support for images, code blocks, formatting, and custom components',
     }),
 
     defineField({

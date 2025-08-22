@@ -179,9 +179,8 @@ export const codeBlockConfig = {
     select: {
       title: 'filename',
       subtitle: 'language',
-      code: 'code',
     },
-    prepare({title, subtitle, code}: any) {
+    prepare({title, subtitle}: {title?: string; subtitle?: string}) {
       return {
         title: title || 'Code Block',
         subtitle: subtitle || 'Plain Text',
@@ -242,7 +241,7 @@ export const highlightBlockConfig = {
       title: 'title',
       type: 'type',
     },
-    prepare({title, type}: any) {
+    prepare({title, type}: {title?: string; type?: string}) {
       const icons: Record<string, string> = {
         info: 'ℹ️',
         warning: '⚠️',
@@ -253,7 +252,38 @@ export const highlightBlockConfig = {
       return {
         title: title || `${type?.toUpperCase()} Block`,
         subtitle: type,
-        media: () => icons[type] || '✨',
+        media: () => icons[type || 'info'] || '✨',
+      }
+    },
+  },
+}
+
+// 分隔线配置
+export const separatorConfig = {
+  type: 'object' as const,
+  name: 'separator',
+  title: 'Separator',
+  icon: () => '➖',
+  fields: [
+    {
+      name: 'style',
+      title: 'Style',
+      type: 'string',
+      options: {
+        list: [
+          {title: 'Default', value: 'default'},
+          {title: 'Dashed', value: 'dashed'},
+          {title: 'Dotted', value: 'dotted'},
+        ],
+      },
+      initialValue: 'default',
+    },
+  ],
+  preview: {
+    prepare() {
+      return {
+        title: 'Separator',
+        subtitle: '---',
       }
     },
   },
@@ -265,6 +295,7 @@ export const fullPortableTextConfig = [
   imageConfig,
   codeBlockConfig,
   highlightBlockConfig,
+  separatorConfig,
 ]
 
 // 简化的富文本配置（用于 author.bio，不包含代码块和高亮块）
