@@ -7,9 +7,10 @@ import { generateLogSEO, generateStructuredData } from '@/lib/seo-utils'
 import { type Locale } from '@/i18n-config'
 import { notFound } from 'next/navigation'
 import { LogDetailPage } from '@/app/ui/log-detail-page'
-import { LogDetailErrorBoundary } from '@/app/ui/log-detail-error-boundary'
+import { ErrorBoundary } from '@/app/ui/error-boundary'
 import { sanityServerClient } from '@/lib/sanity-server'
 import { groq } from 'next-sanity'
+// import * as Sentry from '@sentry/nextjs'
 
 export async function generateStaticParams() {
   // 构建时使用生产客户端获取已发布的内容
@@ -32,14 +33,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang, 'log-slug': logSlug } = await params
   const enrichedLogPost = await getLogPostWithInteractions(logSlug, lang)
-  
+
   if (!enrichedLogPost) {
     return {
       title: 'Article Not Found',
       description: 'The requested article could not be found.',
     }
   }
-  
+
   // 使用智能的多层级SEO内容生成策略
   return generateLogSEO({
     log: enrichedLogPost,
@@ -55,21 +56,22 @@ export default async function LogPostPage({
 }) {
   const { lang, 'log-slug': logSlug } = await params
 
-  try {
-    // 获取字典
-    const dictionary = await getDictionary(lang)
+  // 获取字典
+  const dictionary = await getDictionary(lang)
 
-    // 获取文章数据和交互数据
-    const enrichedLogPost = await getLogPostWithInteractions(logSlug, lang)
+  // 获取文章数据和交互数据
+  const enrichedLogPost = await getLogPostWithInteractions(logSlug, lang)
 
-    if (!enrichedLogPost) {
-      notFound()
-    }
+  if (!enrichedLogPost) {
+    notFound()
+  }
 
   // 从enrichedLogPost中提取合集和所有文章数据
-  const collection = enrichedLogPost.collection ? {
-    name: enrichedLogPost.collection.name
-  } : null
+  const collection = enrichedLogPost.collection
+    ? {
+        name: enrichedLogPost.collection.name,
+      }
+    : null
   const allLogsInCollection = enrichedLogPost.collection?.logs || []
 
   // 获取翻译映射 - 暂时使用空对象，后续可以实现
@@ -88,22 +90,24 @@ export default async function LogPostPage({
     structuredDescription = enrichedLogPost.excerpt
   } else if (enrichedLogPost.content && enrichedLogPost.content.length > 0) {
     const textBlocks = enrichedLogPost.content
-      .filter(block => block._type === 'block' && block.children)
+      .filter((block) => block._type === 'block' && block.children)
       .slice(0, 2)
-    
+
     const extractedText = textBlocks
-      .map(block => 
+      .map((block) =>
         block.children
-          ?.filter(child => child._type === 'span' && child.text)
-          .map(child => child.text)
+          ?.filter((child) => child._type === 'span' && child.text)
+          .map((child) => child.text)
           .join('')
       )
       .join(' ')
       .trim()
-    
-    structuredDescription = extractedText.length > 160 
-      ? extractedText.substring(0, 157) + '...'
-      : extractedText || `Read about ${enrichedLogPost.title} in our development blog`
+
+    structuredDescription =
+      extractedText.length > 160
+        ? extractedText.substring(0, 157) + '...'
+        : extractedText ||
+          `Read about ${enrichedLogPost.title} in our development blog`
   } else {
     structuredDescription = `Read about ${enrichedLogPost.title} in our development blog`
   }
@@ -118,75 +122,41 @@ export default async function LogPostPage({
     author: enrichedLogPost.author?.name || 'Anonymous',
   })
 
-    return (
-      <>
-        {/* 结构化数据 */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-        />
-        
-        <LogDetailErrorBoundary 
-          logSlug={logSlug}
+  return (
+    <>
+      {/* 结构化数据 */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+
+      <ErrorBoundary
+        level="page"
+        context={{
+          module: 'log-detail',
+          feature: 'article-view',
+        }}
+      >
+        <LogDetailPage
+          enrichedLogPost={enrichedLogPost}
+          allLogsInCollection={allLogsInCollection}
+          currentLogSlug={logSlug}
+          collection={collection}
           lang={lang}
-        >
-          <LogDetailPage
-            enrichedLogPost={enrichedLogPost}
-            allLogsInCollection={allLogsInCollection}
-            currentLogSlug={logSlug}
-            collection={collection}
-            lang={lang}
-            dictionary={{
-              develop: {
-                title: dictionary.develop.title,
-                publishedOn: dictionary.develop.publishedOn,
-                by: dictionary.develop.by
-              },
-              common: {
-                tableOfContents: dictionary.common.tableOfContents
-              }
-            }}
-            translationMap={translationMap}
-            copyrightData={copyrightData}
-          />
-        </LogDetailErrorBoundary>
-      </>
-    )
-  } catch (error) {
-    // 服务器端错误处理和Sentry上报
-    const Sentry = await import('@sentry/nextjs')
-    
-    Sentry.withScope((scope) => {
-      scope.setTag('component', 'LogPostPage')
-      scope.setTag('error_type', 'server_component')
-      scope.setLevel('error')
-      
-      scope.setContext('page', {
-        type: 'log-detail',
-        slug: logSlug,
-        language: lang
-      })
-      
-      scope.addBreadcrumb({
-        message: 'Log detail page server error',
-        category: 'error',
-        level: 'error',
-        data: {
-          logSlug,
-          lang,
-          errorMessage: error instanceof Error ? error.message : 'Unknown error'
-        }
-      })
-      
-      Sentry.captureException(error)
-    })
-    
-    // 在开发环境记录详细错误
-    if (process.env.NODE_ENV === 'development') {
-      console.error('LogPostPage server error:', error)
-    }
-    
-    // 抛出错误让Next.js的错误处理机制接管
-    throw error
-  }
+          dictionary={{
+            develop: {
+              title: dictionary.develop.title,
+              publishedOn: dictionary.develop.publishedOn,
+              by: dictionary.develop.by,
+            },
+            common: {
+              tableOfContents: dictionary.common.tableOfContents,
+            },
+          }}
+          translationMap={translationMap}
+          copyrightData={copyrightData}
+        />
+      </ErrorBoundary>
+    </>
+  )
 }

@@ -107,65 +107,7 @@ export function LogDetailPage({
     }
   }, [enrichedLogPost._id, enrichedLogPost.title, enrichedLogPost.mainImageUrl, enrichedLogPost.content, collection?.name, lang, enrichedLogPost.author?.name])
 
-  // 全局错误处理
-  useEffect(() => {
-    const handleUnhandledError = (event: ErrorEvent) => {
-      Sentry.withScope((scope) => {
-        scope.setTag('component', 'LogDetailPage')
-        scope.setTag('error_type', 'unhandled_error')
-        scope.setLevel('error')
-        
-        scope.setContext('page', {
-          type: 'log-detail',
-          slug: currentLogSlug,
-          language: lang
-        })
-        
-        scope.addBreadcrumb({
-          message: 'Unhandled error in log detail page',
-          category: 'error',
-          level: 'error',
-          data: {
-            filename: event.filename,
-            lineno: event.lineno,
-            colno: event.colno
-          }
-        })
-        
-        Sentry.captureException(event.error || new Error(event.message))
-      })
-    }
 
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      Sentry.withScope((scope) => {
-        scope.setTag('component', 'LogDetailPage')
-        scope.setTag('error_type', 'unhandled_promise_rejection')
-        scope.setLevel('error')
-        
-        scope.setContext('page', {
-          type: 'log-detail',
-          slug: currentLogSlug,
-          language: lang
-        })
-        
-        scope.addBreadcrumb({
-          message: 'Unhandled promise rejection in log detail page',
-          category: 'error',
-          level: 'error'
-        })
-        
-        Sentry.captureException(event.reason)
-      })
-    }
-
-    window.addEventListener('error', handleUnhandledError)
-    window.addEventListener('unhandledrejection', handleUnhandledRejection)
-
-    return () => {
-      window.removeEventListener('error', handleUnhandledError)
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
-    }
-  }, [currentLogSlug, lang])
 
   // 处理从 PortableTextRenderer 提取的标题
   const handleHeadingsExtracted = useCallback(
