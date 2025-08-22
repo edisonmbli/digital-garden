@@ -693,6 +693,142 @@ export const ensureLogPostExists = withDatabaseMonitoring(
 )
 
 // 获取log文章及其交互数据（参考getCollectionAndPhotosBySlug的模式）
+// 静态生成专用版本 - 不依赖用户认证
+export const getLogPostForStaticGeneration = cache(
+  withDatabaseMonitoring(
+    async (slug: string, lang: Locale): Promise<EnrichedLogPost | null> => {
+    // 1. 从 Sanity 获取基础的log内容数据（包含SEO字段）
+    const query = groq`*[_type == "log" && slug.current == $slug && language == $lang][0] {
+      _id,
+      title,
+      excerpt,
+      content,
+      publishedAt,
+      "slug": slug.current,
+      language,
+      tags,
+      "author": author->{ name, image },
+      mainImage,
+      // SEO 字段（单语言）
+      seo {
+        metaTitle,
+        metaDescription,
+        focusKeyword,
+        socialImage,
+        canonicalUrl,
+        noIndex,
+        readingTime
+      }
+    }`
+
+    const logDataFromSanity = await sanityServerClient.fetch<LogPostDetails>(
+      query,
+      { slug, lang },
+      {
+        next: {
+          tags: [
+            'logs',
+            `log:${slug}`,
+            `logs:${lang}`,
+            'log-detail',
+            'log-interactions'
+          ]
+        }
+      }
+    )
+
+    if (!logDataFromSanity) {
+      return null
+    }
+
+    // 2. 静态生成时跳过用户认证和数据库操作
+    // 直接从 Postgres 获取基础交互数据（不依赖用户状态）
+    const logInfoFromDb = await prisma.post.findUnique({
+      where: {
+        sanityDocumentId: logDataFromSanity._id,
+      },
+      include: {
+        _count: {
+          select: {
+            likes: true,
+            comments: {
+              where: {
+                status: 'APPROVED',
+                isDeleted: false,
+                parentId: null, // 只计算顶级评论
+              },
+            },
+          },
+        },
+      },
+    })
+
+    // 3. 获取所属合集信息
+    const collectionQuery = groq`*[_type == "devCollection" && $logId in logs[]._ref][0] {
+      _id,
+      "name": name,
+      "slug": slug.current,
+      "logs": *[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref] {
+        _id,
+        title,
+        "slug": slug.current,
+        publishedAt,
+        excerpt,
+        language
+      } [defined(@)]
+    }`
+
+    const collectionData = await sanityServerClient.fetch(collectionQuery, {
+      logId: logDataFromSanity._id,
+      lang,
+    }, {
+      next: {
+        tags: [
+          'dev-collections',
+          `dev-collections:${lang}`,
+          'log-collection-mapping'
+        ]
+      }
+    })
+
+    // 4. 合并数据并返回 EnrichedLogPost（静态版本，无用户状态）
+    const enrichedLogPost: EnrichedLogPost = {
+      ...logDataFromSanity,
+      // 生成安全的代理URL
+      mainImageUrl: logDataFromSanity.mainImage 
+          ? (
+              typeof logDataFromSanity.mainImage === 'object' && 'asset' in logDataFromSanity.mainImage && logDataFromSanity.mainImage.asset
+                ? generateSecureImageUrl(logDataFromSanity.mainImage.asset._ref)
+                : generateSecureImageUrl(extractSanityImageId(urlFor(logDataFromSanity.mainImage).url()))
+            )
+          : undefined,
+      post: logInfoFromDb
+        ? {
+            id: logInfoFromDb.id,
+            likesCount: logInfoFromDb._count.likes,
+            commentsCount: logInfoFromDb._count.comments,
+            isLikedByUser: false, // 静态生成时默认为 false
+            hasUserCommented: false,
+          }
+        : null,
+      collection: collectionData
+        ? {
+            _id: collectionData._id,
+            name: collectionData.name,
+            slug: collectionData.slug,
+            logs: collectionData.logs || [],
+          }
+        : null,
+    }
+
+    return enrichedLogPost
+    },
+    'getLogPostForStaticGeneration',
+    'LogPost'
+  )
+)
+
+// 动态渲染专用版本 - 包含用户认证
 export const getLogPostWithInteractions = cache(
   withDatabaseMonitoring(
     async (slug: string, lang: Locale): Promise<EnrichedLogPost | null> => {

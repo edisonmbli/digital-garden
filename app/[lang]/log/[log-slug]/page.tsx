@@ -7,6 +7,7 @@ import { generateLogSEO, generateStructuredData } from '@/lib/seo-utils'
 import { type Locale } from '@/i18n-config'
 import { notFound } from 'next/navigation'
 import { LogDetailPage } from '@/app/ui/log-detail-page'
+import { LogDetailErrorBoundary } from '@/app/ui/log-detail-error-boundary'
 import { sanityServerClient } from '@/lib/sanity-server'
 import { groq } from 'next-sanity'
 
@@ -54,15 +55,16 @@ export default async function LogPostPage({
 }) {
   const { lang, 'log-slug': logSlug } = await params
 
-  // 获取字典
-  const dictionary = await getDictionary(lang)
+  try {
+    // 获取字典
+    const dictionary = await getDictionary(lang)
 
-  // 获取文章数据和交互数据
-  const enrichedLogPost = await getLogPostWithInteractions(logSlug, lang)
+    // 获取文章数据和交互数据
+    const enrichedLogPost = await getLogPostWithInteractions(logSlug, lang)
 
-  if (!enrichedLogPost) {
-    notFound()
-  }
+    if (!enrichedLogPost) {
+      notFound()
+    }
 
   // 从enrichedLogPost中提取合集和所有文章数据
   const collection = enrichedLogPost.collection ? {
@@ -116,33 +118,75 @@ export default async function LogPostPage({
     author: enrichedLogPost.author?.name || 'Anonymous',
   })
 
-  return (
-    <>
-      {/* 结构化数据 */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-      />
+    return (
+      <>
+        {/* 结构化数据 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+        
+        <LogDetailErrorBoundary 
+          logSlug={logSlug}
+          lang={lang}
+        >
+          <LogDetailPage
+            enrichedLogPost={enrichedLogPost}
+            allLogsInCollection={allLogsInCollection}
+            currentLogSlug={logSlug}
+            collection={collection}
+            lang={lang}
+            dictionary={{
+              develop: {
+                title: dictionary.develop.title,
+                publishedOn: dictionary.develop.publishedOn,
+                by: dictionary.develop.by
+              },
+              common: {
+                tableOfContents: dictionary.common.tableOfContents
+              }
+            }}
+            translationMap={translationMap}
+            copyrightData={copyrightData}
+          />
+        </LogDetailErrorBoundary>
+      </>
+    )
+  } catch (error) {
+    // 服务器端错误处理和Sentry上报
+    const Sentry = await import('@sentry/nextjs')
+    
+    Sentry.withScope((scope) => {
+      scope.setTag('component', 'LogPostPage')
+      scope.setTag('error_type', 'server_component')
+      scope.setLevel('error')
       
-      <LogDetailPage
-        enrichedLogPost={enrichedLogPost}
-        allLogsInCollection={allLogsInCollection}
-        currentLogSlug={logSlug}
-        collection={collection}
-        lang={lang}
-        dictionary={{
-          develop: {
-            title: dictionary.develop.title,
-            publishedOn: dictionary.develop.publishedOn,
-            by: dictionary.develop.by
-          },
-          common: {
-            tableOfContents: dictionary.common.tableOfContents
-          }
-        }}
-        translationMap={translationMap}
-        copyrightData={copyrightData}
-      />
-    </>
-  )
+      scope.setContext('page', {
+        type: 'log-detail',
+        slug: logSlug,
+        language: lang
+      })
+      
+      scope.addBreadcrumb({
+        message: 'Log detail page server error',
+        category: 'error',
+        level: 'error',
+        data: {
+          logSlug,
+          lang,
+          errorMessage: error instanceof Error ? error.message : 'Unknown error'
+        }
+      })
+      
+      Sentry.captureException(error)
+    })
+    
+    // 在开发环境记录详细错误
+    if (process.env.NODE_ENV === 'development') {
+      console.error('LogPostPage server error:', error)
+    }
+    
+    // 抛出错误让Next.js的错误处理机制接管
+    throw error
+  }
 }

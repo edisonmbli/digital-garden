@@ -16,6 +16,7 @@ import { SelfPromotionCard } from '@/app/ui/self-promotion-card'
 import { ProtectedContent } from '@/app/ui/protected-content'
 import { CopyrightNotice } from '@/app/ui/copyright-notice'
 import { analytics } from '@/lib/analytics-logger'
+import * as Sentry from '@sentry/nextjs'
 
 import { type EnrichedLogPost } from '@/types/sanity'
 import { type Locale } from '@/i18n-config'
@@ -77,15 +78,94 @@ export function LogDetailPage({
 
   // 追踪页面浏览
   useEffect(() => {
-    analytics.trackPostView(enrichedLogPost._id, 'log', {
-      title: enrichedLogPost.title,
-      collection: collection?.name,
-      language: lang,
-      hasMainImage: !!enrichedLogPost.mainImageUrl,
-      wordCount: enrichedLogPost.content ? JSON.stringify(enrichedLogPost.content).length : 0,
-      author: enrichedLogPost.author?.name
-    })
+    try {
+      analytics.trackPostView(enrichedLogPost._id, 'log', {
+        title: enrichedLogPost.title,
+        collection: collection?.name,
+        language: lang,
+        hasMainImage: !!enrichedLogPost.mainImageUrl,
+        wordCount: enrichedLogPost.content ? JSON.stringify(enrichedLogPost.content).length : 0,
+        author: enrichedLogPost.author?.name
+      })
+    } catch (error) {
+      // 捕获分析追踪错误，不影响页面正常渲染
+      Sentry.withScope((scope) => {
+        scope.setTag('component', 'LogDetailPage')
+        scope.setTag('error_type', 'analytics_tracking')
+        scope.setLevel('warning')
+        
+        scope.setContext('analytics', {
+          postId: enrichedLogPost._id,
+          postTitle: enrichedLogPost.title,
+          language: lang
+        })
+        
+        Sentry.captureException(error)
+      })
+      
+      console.warn('Analytics tracking failed:', error)
+    }
   }, [enrichedLogPost._id, enrichedLogPost.title, enrichedLogPost.mainImageUrl, enrichedLogPost.content, collection?.name, lang, enrichedLogPost.author?.name])
+
+  // 全局错误处理
+  useEffect(() => {
+    const handleUnhandledError = (event: ErrorEvent) => {
+      Sentry.withScope((scope) => {
+        scope.setTag('component', 'LogDetailPage')
+        scope.setTag('error_type', 'unhandled_error')
+        scope.setLevel('error')
+        
+        scope.setContext('page', {
+          type: 'log-detail',
+          slug: currentLogSlug,
+          language: lang
+        })
+        
+        scope.addBreadcrumb({
+          message: 'Unhandled error in log detail page',
+          category: 'error',
+          level: 'error',
+          data: {
+            filename: event.filename,
+            lineno: event.lineno,
+            colno: event.colno
+          }
+        })
+        
+        Sentry.captureException(event.error || new Error(event.message))
+      })
+    }
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      Sentry.withScope((scope) => {
+        scope.setTag('component', 'LogDetailPage')
+        scope.setTag('error_type', 'unhandled_promise_rejection')
+        scope.setLevel('error')
+        
+        scope.setContext('page', {
+          type: 'log-detail',
+          slug: currentLogSlug,
+          language: lang
+        })
+        
+        scope.addBreadcrumb({
+          message: 'Unhandled promise rejection in log detail page',
+          category: 'error',
+          level: 'error'
+        })
+        
+        Sentry.captureException(event.reason)
+      })
+    }
+
+    window.addEventListener('error', handleUnhandledError)
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+    return () => {
+      window.removeEventListener('error', handleUnhandledError)
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+    }
+  }, [currentLogSlug, lang])
 
   // 处理从 PortableTextRenderer 提取的标题
   const handleHeadingsExtracted = useCallback(
