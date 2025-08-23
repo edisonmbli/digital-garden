@@ -72,14 +72,14 @@ export function DevCollectionListCard({
           {/* 右侧：标题和描述（垂直排列，横向拓展） */}
           <div className="flex-1 min-w-0">
             {/* 标题在上 */}
-            <h3 className="text-display-xs text-foreground py-1 line-clamp-1">
+            <h3 className="text-display-sm text-foreground py-1 line-clamp-1">
               {collectionName}
             </h3>
 
             {/* 描述在下，横向拓展利用右侧空间 */}
             {collectionDescription && (
               <p
-                className={`text-body-sm text-muted-foreground max-w-2xl py-1 ${
+                className={`text-body-base text-muted-foreground max-w-2xl py-1 ${
                   isExpanded ? '' : 'line-clamp-2'
                 }`}
               >
@@ -127,7 +127,7 @@ export function DevCollectionListCard({
                   <div className="flex items-start gap-3 p-1 rounded-md hover:bg-background/80 dark:hover:bg-background/60 transition-colors border border-transparent hover:border-border/50">
                     <div className="w-1.5 h-1.5 bg-blue-500/70 rounded-full flex-shrink-0 mt-2" />
                     <div className="flex-1 min-w-0 max-w-prose">
-                      <p className="text-body-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                      <p className="text-body-base font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
                         {log.title}
                       </p>
                       {/* {log.excerpt && (

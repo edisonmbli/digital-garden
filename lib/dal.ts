@@ -968,7 +968,7 @@ export const getLogPostWithInteractions = cache(
       _id,
       "name": name,
       "slug": slug.current,
-      "logs": *[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref] {
+      "logs": *[_type == "log" && language == $lang && defined(slug.current) && _id in ^.logs[]._ref] | order(orderRank asc, publishedAt asc) {
         _id,
         title,
         "slug": slug.current,

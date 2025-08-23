@@ -115,7 +115,7 @@ const components: PortableTextComponents = {
     },
     normal: ({ children }) => {
       return (
-        <p className="text-body-sm sm:text-body-sm leading-6 [&:not(:first-child)]:mt-1">
+        <p className="text-body-base sm:text-body-sm leading-6 [&:not(:first-child)]:mt-1">
           {children}
         </p>
       )
@@ -145,12 +145,12 @@ const components: PortableTextComponents = {
   },
   listItem: {
     bullet: ({ children }) => (
-      <li className="text-body-xs sm:text-body-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
+      <li className="text-body-base sm:text-body-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
         {children}
       </li>
     ),
     number: ({ children }) => (
-      <li className="text-body-xs sm:text-body-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
+      <li className="text-body-base sm:text-body-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
         {children}
       </li>
     ),
@@ -173,7 +173,7 @@ const components: PortableTextComponents = {
 
     // 自定义高亮装饰器
     highlight: ({ children }) => (
-      <mark className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-200 px-1.5 py-0.5 rounded-md font-medium">
+      <mark className="bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30  dark:text-yellow-200 px-1.5 py-0.5 rounded-md font-medium">
         {children}
       </mark>
     ),
@@ -367,7 +367,7 @@ const components: PortableTextComponents = {
         info: {
           container:
             'border-blue-200 bg-blue-50/50 dark:border-blue-400 dark:bg-blue-100/10',
-          leftBorder: 'border-l-blue-500 dark:border-l-blue-400',
+          leftBorder: 'border-l-blue-300 dark:border-l-blue-400',
           title: 'text-blue-500 dark:text-blue-200',
           icon: '💡',
         },
