@@ -3,6 +3,15 @@
 import { useState, useEffect, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -15,9 +24,9 @@ import {
   Loader2,
   Database,
   AlertTriangle,
-  CheckCircle,
   RefreshCw,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 // 导入Server Actions
 import {
@@ -31,7 +40,6 @@ interface SanitySyncFormProps {
   markdownContent: string
   onSync?: (result: { success: boolean; message: string }) => void
   className?: string
-  renderSyncButton?: (syncButton: React.ReactNode) => React.ReactNode
 }
 
 interface DocumentType {
@@ -48,18 +56,24 @@ export function SanitySyncForm({
   markdownContent,
   onSync,
   className,
-  renderSyncButton,
 }: SanitySyncFormProps) {
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([])
   const [selectedType, setSelectedType] = useState<string>('')
-  const [selectedDocument, setSelectedDocument] = useState<string>('')
   const [selectedField, setSelectedField] = useState<string>('')
+  const [selectedDocument, setSelectedDocument] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [isConnected, setIsConnected] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  // 当弹窗打开且未连接时，获取文档类型
+  useEffect(() => {
+    if (isDialogOpen && !isConnected && !isLoading) {
+      fetchDocumentTypes()
+    }
+  }, [isDialogOpen, isConnected, isLoading])
 
   // 手动获取文档类型
   const fetchDocumentTypes = async () => {
@@ -109,22 +123,14 @@ export function SanitySyncForm({
     }
   }, [selectedType, documentTypes])
 
-  const handleSync = async () => {
-    if (
-      !markdownContent ||
-      !selectedType ||
-      !selectedDocument ||
-      !selectedField
-    ) {
-      setError('请完善所有选项')
-      return
-    }
-
-    setError(null)
-    setSuccessMessage(null)
-
+  const handleSync = () => {
     startTransition(async () => {
       try {
+        if (!selectedType || !selectedDocument || !selectedField) {
+          toast.error('请先完成所有选择')
+          return
+        }
+
         const result = await syncToSanity({
           markdownContent,
           documentType: selectedType,
@@ -133,225 +139,168 @@ export function SanitySyncForm({
         })
 
         if (result.success) {
-          setSuccessMessage(result.message)
-          // 3秒后自动清除成功消息
-          setTimeout(() => setSuccessMessage(null), 3000)
+          toast.success(result.message || '同步成功！')
           onSync?.(result)
+          setIsDialogOpen(false) // 同步成功后关闭弹窗
         } else {
-          setError(result.message)
+          toast.error(result.message || '同步失败')
         }
       } catch (err) {
-        setError('同步过程中发生错误')
+        toast.error('同步过程中发生错误')
         console.error('同步错误:', err)
+      } finally {
+        // startTransition 会自动管理 isPending 状态
       }
     })
   }
 
   const handleTestConnection = async () => {
     setIsTestingConnection(true)
-    setError(null)
-    setSuccessMessage(null)
 
     try {
       const result = await testSanityConnection()
 
       if (result.success) {
-        setSuccessMessage('Sanity连接测试成功！')
-        // 3秒后自动清除成功消息
-        setTimeout(() => setSuccessMessage(null), 3000)
+        toast.success(result.message || 'Sanity 连接测试成功！')
       } else {
-        setError(result.error || '连接测试失败')
+        toast.error(result.error || '连接测试失败')
       }
     } catch (err) {
-      setError('连接测试过程中发生错误')
+      toast.error('连接测试过程中发生错误')
       console.error('连接测试错误:', err)
     } finally {
       setIsTestingConnection(false)
     }
   }
 
-  const selectedTypeData = documentTypes.find((t) => t.name === selectedType)
+  const selectedTypeData = documentTypes.find(t => t.name === selectedType)
   const portableTextFields = selectedTypeData?.fields || []
 
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn('flex items-center gap-2', className)}>
+      <Button
+        onClick={handleTestConnection}
+        disabled={isTestingConnection}
+        variant="outline"
+        size="sm"
+      >
+        {isTestingConnection ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Database className="mr-2 h-4 w-4" />
+        )}
+        测试连接
+      </Button>
 
-      {/* 连接测试区域 */}
-      {!isConnected && (
-        <div className="text-center space-y-4 py-8 border-2 border-dashed border-gray-300 rounded-lg">
-          <Database className="h-12 w-12 mx-auto text-gray-400" />
-          <div className="space-y-2">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-              连接到 Sanity
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              点击下方按钮测试 Sanity 连接并加载文档类型
-            </p>
-          </div>
-          <div className="flex gap-2 justify-center">
-            <Button
-              onClick={handleTestConnection}
-              disabled={isTestingConnection}
-              variant="outline"
-            >
-              {isTestingConnection ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  测试连接中...
-                </>
-              ) : (
-                <>
-                  <Database className="mr-2 h-4 w-4" />
-                  测试连接
-                </>
-              )}
-            </Button>
-            <Button
-              onClick={fetchDocumentTypes}
-              disabled={isLoading}
-              variant="default"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  加载中...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  加载文档类型
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      )}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogTrigger asChild>
+          <Button variant="default" size="sm">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            同步 Sanity
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[650px]">
+          <DialogHeader>
+            <DialogTitle>同步到 Sanity</DialogTitle>
+            <DialogDescription>
+              选择文档类型、目标文档和字段，将当前 Markdown 内容同步过去。
+            </DialogDescription>
+          </DialogHeader>
 
-      {/* 选择器区域 - 只有连接成功后才显示 */}
-      {isConnected && (
-        <div className="flex justify-between items-end gap-6">
-          {/* 左侧：选择器组 */}
-          <div className="flex gap-4 flex-1 pr-8">
-            {/* 文档类型选择 */}
-            <div className="space-y-2">
-              <Label htmlFor="document-type">文档类型</Label>
-              <Select
-                value={selectedType}
-                onValueChange={setSelectedType}
-                disabled={isLoading}
-              >
-                <SelectTrigger id="document-type" className="h-10">
-                  <SelectValue placeholder="选择文档类型" />
-                </SelectTrigger>
-                <SelectContent>
-                  {documentTypes.map((type) => (
-                    <SelectItem key={type.name} value={type.name}>
-                      {type.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {isLoading ? (
+            <div className="flex items-center justify-center p-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-
-            {/* 目标字段选择 */}
-            <div className="space-y-2">
-              <Label htmlFor="target-field">目标字段</Label>
-              <Select
-                value={selectedField}
-                onValueChange={setSelectedField}
-                disabled={isLoading || !selectedType}
-              >
-                <SelectTrigger id="target-field" className="h-10">
-                  <SelectValue placeholder="选择字段" />
-                </SelectTrigger>
-                <SelectContent>
-                  {portableTextFields.map((field) => (
-                    <SelectItem key={field.name} value={field.name}>
-                      {field.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* 具体文档选择 */}
-            <div className="flex-1 space-y-2">
-              <DocumentSelector
-                documentType={selectedType}
-                value={selectedDocument}
-                onValueChange={setSelectedDocument}
-                disabled={isLoading || !selectedType}
-                placeholder="目标文档"
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          {/* 右侧：同步按钮 */}
-          <div className="flex items-end ml-4">
-            {renderSyncButton &&
-              renderSyncButton(
-                <Button
-                  onClick={handleSync}
-                  disabled={
-                    !markdownContent ||
-                    !selectedType ||
-                    !selectedDocument ||
-                    !selectedField ||
-                    isPending
-                  }
-                  className="min-w-[120px] h-10"
+          ) : error ? (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                {error} - 你可以尝试刷新页面或检查 Sanity 配置。
+              </AlertDescription>
+            </Alert>
+          ) : isConnected ? (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="document-type" className="text-right">
+                  文档类型
+                </Label>
+                <Select
+                  value={selectedType}
+                  onValueChange={setSelectedType}
+                  disabled={isLoading}
                 >
-                  {isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      同步中...
-                    </>
-                  ) : (
-                    <>
-                      <Database className="h-4 w-4 mr-2" />
-                      同步到 Sanity
-                    </>
-                  )}
-                </Button>
+                  <SelectTrigger id="document-type" className="col-span-3">
+                    <SelectValue placeholder="选择文档类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {documentTypes.map(type => (
+                      <SelectItem key={type.name} value={type.name}>
+                        {type.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="target-field" className="text-right">
+                  目标字段
+                </Label>
+                <Select
+                  value={selectedField}
+                  onValueChange={setSelectedField}
+                  disabled={isLoading || !selectedType}
+                >
+                  <SelectTrigger id="target-field" className="col-span-3">
+                    <SelectValue placeholder="选择字段" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {portableTextFields.map(field => (
+                      <SelectItem key={field.name} value={field.name}>
+                        {field.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">目标文档</Label>
+                <div className="col-span-3">
+                  <DocumentSelector
+                    documentType={selectedType}
+                    value={selectedDocument}
+                    onValueChange={setSelectedDocument}
+                    disabled={isLoading || !selectedType}
+                    placeholder="选择或搜索目标文档"
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button
+              onClick={handleSync}
+              disabled={
+                !markdownContent ||
+                !selectedType ||
+                !selectedDocument ||
+                !selectedField ||
+                isPending
+              }
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  同步中...
+                </>
+              ) : (
+                '确认同步'
               )}
-          </div>
-        </div>
-      )}
-
-      {/* 状态提示 */}
-      {(isLoading || isTestingConnection) && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          {isLoading ? '加载文档类型中...' : '测试Sanity连接中...'}
-        </div>
-      )}
-
-      {/* 同步状态详情 */}
-      {isPending && (
-        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
-            <RefreshCw className="h-4 w-4 animate-spin" />
-            正在将 Markdown 转换为 Portable Text 并同步到 Sanity...
-          </div>
-        </div>
-      )}
-
-      {/* 第三层：消息提示区域 */}
-      <div className="mt-4">
-        {successMessage && (
-          <Alert variant="default" className="max-w-md">
-            <CheckCircle className="h-4 w-4" />
-            <AlertDescription>{successMessage}</AlertDescription>
-          </Alert>
-        )}
-        {error && (
-          <Alert variant="destructive" className="max-w-md">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-      </div>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

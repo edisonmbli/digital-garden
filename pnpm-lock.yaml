@@ -98,6 +98,9 @@ importers:
       '@types/prismjs':
         specifier: ^1.26.5
         version: 1.26.5
+      '@types/react-scroll-sync':
+        specifier: ^0.9.0
+        version: 0.9.0
       '@vercel/analytics':
         specifier: ^1.5.0
         version: 1.5.0(next@15.3.5(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
@@ -3368,6 +3371,9 @@ packages:
 
   '@types/react-is@19.0.0':
     resolution: {integrity: sha512-71dSZeeJ0t3aoPyY9x6i+JNSvg5m9EF2i2OlSZI5QoJuI8Ocgor610i+4A10TQmURR+0vLwcVCEYFpXdzM1Biw==}
+
+  '@types/react-scroll-sync@0.9.0':
+    resolution: {integrity: sha512-DFJzqtF0lMUNxsKZ9aoFS+LGieGLXWQVWvCMTZWKm/qcGz+GCNTqwdHsnyWW3yy/aNSUxlXCAWdHaemGaES6lQ==}
 
   '@types/react@19.1.8':
     resolution: {integrity: sha512-AwAfQ2Wa5bCx9WP8nZL2uMZWod7J7/JSplxbTmBQ5ms6QpqNYm672H0Vu9ZVKVngQ+ii4R/byguVEUZQyeg44g==}
@@ -11919,6 +11925,10 @@ snapshots:
       '@types/react': 19.1.8
 
   '@types/react-is@19.0.0':
+    dependencies:
+      '@types/react': 19.1.8
+
+  '@types/react-scroll-sync@0.9.0':
     dependencies:
       '@types/react': 19.1.8
 

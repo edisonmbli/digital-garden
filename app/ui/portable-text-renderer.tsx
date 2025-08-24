@@ -13,6 +13,7 @@ import {
 import '@/app/ui/code-block-theme.css'
 import { Highlight, themes } from 'prism-react-renderer'
 import { useTheme } from 'next-themes'
+import { PortableTextElement } from '@/lib/markdown-to-portable-text'
 
 // Hook to get code theme based on current theme
 function useCodeTheme() {
@@ -21,7 +22,7 @@ function useCodeTheme() {
 }
 
 interface PortableTextRendererProps {
-  content: PortableTextBlock[]
+  content: PortableTextElement[] | PortableTextBlock[]
   onHeadingsExtracted?: (headings: HeadingItem[]) => void
 }
 
@@ -262,46 +263,51 @@ const components: PortableTextComponents = {
     table: ({
       value,
     }: {
-      value: { rows?: Array<{ cells?: PortableTextBlock[] }> }
+      value: {
+        rows?: Array<{
+          _key: string
+          cells?: Array<{
+            _key: string
+            content: PortableTextBlock[]
+          }>
+        }>
+      }
     }) => (
       <div className="my-8 overflow-x-auto">
         <table className="min-w-full border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
           <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
-              {value.rows?.[0]?.cells?.map(
-                (cell: PortableTextBlock, index: number) => (
-                  <th
-                    key={index}
-                    className="px-4 py-3 text-left text-body-sm font-semibold text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-700"
-                  >
-                    <PortableText value={[cell]} />
-                  </th>
-                )
-              )}
+              {value.rows?.[0]?.cells?.map((cell, index: number) => (
+                <th
+                  key={cell._key || index}
+                  className="px-4 py-3 text-left text-body-sm font-semibold text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-700"
+                >
+                  <PortableText value={cell.content} components={components} />
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-700">
             {value.rows
               ?.slice(1)
-              ?.map(
-                (row: { cells?: PortableTextBlock[] }, rowIndex: number) => (
-                  <tr
-                    key={rowIndex}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                  >
-                    {row.cells?.map(
-                      (cell: PortableTextBlock, cellIndex: number) => (
-                        <td
-                          key={cellIndex}
-                          className="px-4 py-3 text-body-sm text-slate-700 dark:text-slate-300"
-                        >
-                          <PortableText value={[cell]} />
-                        </td>
-                      )
-                    )}
-                  </tr>
-                )
-              )}
+              ?.map((row, rowIndex: number) => (
+                <tr
+                  key={row._key || rowIndex}
+                  className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  {row.cells?.map((cell, cellIndex: number) => (
+                    <td
+                      key={cell._key || cellIndex}
+                      className="px-4 py-3 text-body-sm text-slate-700 dark:text-slate-300"
+                    >
+                      <PortableText
+                        value={cell.content}
+                        components={components}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>
@@ -467,20 +473,23 @@ function generateHeadingId(value: unknown): string {
 }
 
 // 提取标题的工具函数
-export function extractHeadings(content: PortableTextBlock[]): HeadingItem[] {
+export function extractHeadings(content: PortableTextElement[]): HeadingItem[] {
   if (!content || !Array.isArray(content)) return []
 
   const headings: HeadingItem[] = []
 
-  content.forEach((block) => {
+  content.forEach(block => {
     if (
       block._type === 'block' &&
+      'style' in block &&
       block.style &&
-      ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(block.style)
+      ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(block.style) &&
+      'children' in block &&
+      Array.isArray(block.children)
     ) {
       const text =
         (block.children as Array<{ text?: string }>)
-          ?.map((child) => child.text || '')
+          ?.map(child => child.text || '')
           .join('') || ''
 
       if (text.trim()) {
@@ -504,8 +513,18 @@ export function PortableTextRenderer({
 
   useEffect(() => {
     if (onHeadingsExtracted && content) {
-      const headings = extractHeadings(content)
-      onHeadingsExtracted(headings)
+      // Only extract headings if content is PortableTextElement[] type
+      // Check if the first item has the custom properties that indicate PortableTextElement
+      const isPortableTextElement = content.length > 0 && 
+        content[0] && 
+        typeof content[0] === 'object' && 
+        '_type' in content[0] && 
+        (content[0]._type === 'block' || content[0]._type === 'codeBlock' || content[0]._type === 'highlightBlock')
+      
+      if (isPortableTextElement) {
+        const headings = extractHeadings(content as PortableTextElement[])
+        onHeadingsExtracted(headings)
+      }
     }
   }, [content, onHeadingsExtracted])
 
@@ -572,7 +591,7 @@ export function PortableTextRenderer({
 
   return (
     <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert prose-slate">
-      <PortableText value={content} components={themedComponents} />
+      <PortableText value={content as PortableTextBlock[]} components={themedComponents} />
     </div>
   )
 }

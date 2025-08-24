@@ -16,7 +16,6 @@ import { Upload, FileText, CheckCircle, AlertCircle, Download, Eye } from 'lucid
 import { PortableTextRenderer } from './portable-text-renderer'
 import { uploadAndConvertMarkdown } from '@/lib/markdown-actions'
 import { PortableTextElement } from '@/lib/markdown-to-portable-text'
-import { PortableTextBlock } from '@portabletext/types'
 
 interface ConversionResult {
   filename: string
@@ -239,7 +238,7 @@ export function MarkdownUploader() {
               
               <TabsContent value="preview" className="mt-4">
                 <ScrollArea className="h-96 w-full border rounded-md p-4">
-                  <PortableTextRenderer content={uploadState.result.portableText as PortableTextBlock[]} />
+                  <PortableTextRenderer content={uploadState.result.portableText} />
                 </ScrollArea>
               </TabsContent>
               

@@ -1,9 +1,19 @@
 import { CommentStatus } from '@prisma/client'
+import { PortableTextBlock } from '@portabletext/types'
 
 export type NavItem = {
   label: string
   href: string
   disabled?: boolean
+}
+
+// ================================================= //
+//              PortableText 类型定义                //
+// ================================================= //
+
+// 扩展的 PortableText 块类型，包含行号信息用于同步滚动
+export interface PortableTextBlockWithLineNumber extends PortableTextBlock {
+  dataLine?: number
 }
 
 // ================================================= //

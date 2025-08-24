@@ -1,28 +1,28 @@
-// app/[lang]/admin/markdown-converter/page.tsx
-// Markdown转换器管理页面
+// app/[lang]/admin/markdown-converter-v2/page.tsx
+// Markdown转换器管理页面 v2
 
 import { Metadata } from 'next'
 import { FileText, Upload, Zap, Database } from 'lucide-react'
-import { MarkdownConverterClient } from '@/app/ui/markdown-converter-client'
+import { MarkdownConverterClientV2 } from '@/app/ui/admin/markdown-converter-client-v2'
 
 export const metadata: Metadata = {
-  title: 'Markdown转换器 | 管理后台',
+  title: 'Markdown转换器 v2 | 管理后台',
   description: '将Markdown文件转换为Sanity Portable Text格式并同步到Sanity',
 }
 
-export default function MarkdownConverterPage() {
+export default function MarkdownConverterPageV2() {
   return (
-    <div className="container mx-auto py-4 space-y-4 min-h-[calc(100vh-8rem)] flex flex-col">
+    <div className="container mx-auto py-4 space-y-4">
       {/* 页面标题 - 紧凑布局 */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-display-sm flex items-center gap-2">
             <FileText className="h-6 w-6 text-primary" />
-            Markdown 转换器
+            Markdown 转换器 v2
           </h1>
-          {/* <p className="text-muted-foreground text-sm">
-            编辑 Markdown 内容，实时预览渲染效果，一键同步到 Sanity
-          </p> */}
+          <p className="text-muted-foreground text-sm">
+            精准同步滚动，优化编辑体验
+          </p>
         </div>
 
         {/* 功能标签 - 水平紧凑布局 */}
@@ -46,9 +46,9 @@ export default function MarkdownConverterPage() {
         </div>
       </div>
 
-      {/* 主要功能区域 - 占据剩余空间 */}
-      <div className="flex-1 min-h-0">
-        <MarkdownConverterClient />
+      {/* 主要功能区域 */}
+      <div>
+        <MarkdownConverterClientV2 />
       </div>
     </div>
   )

@@ -17,6 +17,7 @@ interface PortableTextBlockExtended extends Omit<PortableTextBlock, 'children'> 
   level?: number
   listItem?: string
   children: PortableTextSpan[]
+  dataLine?: number;
 }
 
 // 代码块类型
@@ -26,6 +27,7 @@ interface CodeBlock {
   language?: string
   filename?: string
   code: string
+  dataLine?: number;
 }
 
 // 高亮块类型
@@ -35,6 +37,7 @@ interface HighlightBlock {
   type: 'info' | 'warning' | 'error' | 'success' | 'note'
   title?: string
   content: PortableTextBlockExtended[]
+  dataLine?: number;
 }
 
 // 图片块类型
@@ -47,6 +50,7 @@ interface ImageBlock {
   }
   alt?: string
   caption?: string
+  dataLine?: number;
 }
 
 // 表格块类型
@@ -62,11 +66,13 @@ interface TableBlock {
       content: PortableTextBlockExtended[]
     }>
   }>
+  dataLine?: number;
 }
 
 interface SeparatorBlock {
   _type: 'separator'
   _key: string
+  dataLine?: number;
 }
 
 export type PortableTextElement = PortableTextBlockExtended | CodeBlock | HighlightBlock | ImageBlock | TableBlock | SeparatorBlock
@@ -177,7 +183,8 @@ function convertParagraphNode(node: Paragraph): PortableTextBlockExtended {
     _type: 'block',
     _key: generateKey(),
     style: 'normal',
-    children
+    children,
+    dataLine: node.position?.start.line,
   }
 }
 
@@ -196,7 +203,8 @@ function convertHeadingNode(node: Heading): PortableTextBlockExtended {
     _key: generateKey(),
     style: `h${node.depth}`,
     level: node.depth,
-    children
+    children,
+    dataLine: node.position?.start.line,
   }
 }
 
@@ -208,7 +216,8 @@ function convertCodeBlockNode(node: Code): CodeBlock {
     _type: 'codeBlock',
     _key: generateKey(),
     language: node.lang || undefined,
-    code: node.value
+    code: node.value,
+    dataLine: node.position?.start.line,
   }
 }
 
@@ -230,7 +239,8 @@ function convertBlockquoteNode(node: Blockquote): PortableTextBlockExtended {
     _type: 'block',
     _key: generateKey(),
     style: 'blockquote',
-    children
+    children,
+    dataLine: node.position?.start.line,
   }
 }
 
@@ -256,7 +266,8 @@ function convertListNode(node: List): PortableTextBlockExtended[] {
       _key: generateKey(),
       style: 'normal',
       listItem: listType,
-      children
+      children,
+      dataLine: listItem.position?.start.line,
     }
   }) || []
 }
@@ -277,7 +288,8 @@ function convertTableNode(node: Table): TableBlock {
            _type: 'block',
            _key: generateKey(),
            style: 'normal',
-           children: convertInlineNode(child)
+           children: convertInlineNode(child),
+           dataLine: cell.position?.start.line,
          }
        }) || []
     })) || []
@@ -286,7 +298,8 @@ function convertTableNode(node: Table): TableBlock {
   return {
     _type: 'table',
     _key: generateKey(),
-    rows
+    rows,
+    dataLine: node.position?.start.line,
   }
 }
 
@@ -310,7 +323,8 @@ function detectHighlightBlock(node: Blockquote): HighlightBlock | null {
         _key: generateKey(),
         type: type.toLowerCase() as 'info' | 'warning' | 'error' | 'success' | 'note',
         title: title || undefined,
-        content: [convertBlockquoteNode(node)]
+        content: [convertBlockquoteNode(node)],
+        dataLine: node.position?.start.line,
       }
     }
   }
@@ -349,7 +363,8 @@ function convertNode(node: Root['children'][0]): PortableTextElement[] {
     case 'thematicBreak':
       return [{
         _type: 'separator',
-        _key: generateKey()
+        _key: generateKey(),
+        dataLine: node.position?.start.line,
       } as SeparatorBlock]
     
     default:
