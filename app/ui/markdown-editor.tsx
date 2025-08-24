@@ -111,7 +111,7 @@ export const MarkdownEditor = forwardRef<
         {!value ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
             <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">上传 Markdown 文件</h3>
+            <h3 className="text-display-sm mb-2">上传 Markdown 文件</h3>
             <p className="text-muted-foreground mb-4">
               拖拽文件到此处，或点击选择文件
             </p>
@@ -141,7 +141,7 @@ export const MarkdownEditor = forwardRef<
               onChange={e => onChange(e.target.value)}
               onScroll={handleInternalScroll}
               placeholder="在此编辑 Markdown 内容..."
-              className="flex-1 font-mono text-sm resize-none w-full h-full border-0 focus-visible:ring-0"
+              className="flex-1 text-code text-sm resize-none w-full h-full border-0 focus-visible:ring-0"
             />
             <div className="flex justify-end items-center flex-shrink-0">
               <Button variant="ghost" onClick={clearContent}>

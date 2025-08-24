@@ -40,13 +40,13 @@ export const MarkdownPreview = forwardRef<HTMLDivElement, MarkdownPreviewProps>(
       <div className={cn('h-full flex flex-col', className)}>
         {!content ? (
           <div className="flex h-full flex-col items-center justify-center p-8 text-center text-muted-foreground">
-            <div className="text-lg font-medium mb-2">实时预览</div>
+            <div className="text-display-sm mb-2">实时预览</div>
             <div className="text-sm">在左侧编辑器中输入 Markdown 内容</div>
           </div>
         ) : (
           <div
             ref={ref}
-            className="prose dark:prose-invert max-w-none h-full overflow-y-auto p-4 pt-2"
+            className="prose dark:prose-invert max-w-none h-full overflow-y-auto p-4 pt-2 font-sans"
           >
             {isConverting ? (
               <div className="flex items-center justify-center">

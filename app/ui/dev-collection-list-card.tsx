@@ -127,7 +127,7 @@ export function DevCollectionListCard({
                   <div className="flex items-start gap-3 p-1 rounded-md hover:bg-background/80 dark:hover:bg-background/60 transition-colors border border-transparent hover:border-border/50">
                     <div className="w-1.5 h-1.5 bg-blue-500/70 rounded-full flex-shrink-0 mt-2" />
                     <div className="flex-1 min-w-0 max-w-prose">
-                      <p className="text-body-base font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                      <p className="text-body-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
                         {log.title}
                       </p>
                       {/* {log.excerpt && (
