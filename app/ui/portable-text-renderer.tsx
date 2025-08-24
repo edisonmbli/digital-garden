@@ -116,7 +116,7 @@ const components: PortableTextComponents = {
     },
     normal: ({ children }) => {
       return (
-        <p className="text-body-sm leading-6 [&:not(:first-child)]:mt-1">
+        <p className="text-body-md sm:text-body-sm leading-6 [&:not(:first-child)]:mt-1">
           {children}
         </p>
       )
@@ -146,12 +146,12 @@ const components: PortableTextComponents = {
   },
   listItem: {
     bullet: ({ children }) => (
-      <li className="text-body-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
+      <li className="text-body-md sm:text-body-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
         {children}
       </li>
     ),
     number: ({ children }) => (
-      <li className="text-body-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
+      <li className="text-body-md sm:text-body-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
         {children}
       </li>
     ),
