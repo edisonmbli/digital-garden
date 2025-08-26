@@ -126,7 +126,7 @@ const components: PortableTextComponents = {
         <div className="absolute top-2 left-2 text-slate-400 dark:text-slate-500 text-body-lg leading-none">
           &ldquo;
         </div>
-        <div className="italic text-slate-700 dark:text-slate-300 font-light text-body-base lg:text-body-sm">
+        <div className="italic text-slate-700 dark:text-slate-300 font-light text-body-sm">
           {children}
         </div>
       </blockquote>
@@ -172,7 +172,7 @@ const components: PortableTextComponents = {
       <s className="line-through">{children}</s>
     ),
 
-    // 自定义高亮装饰器
+    // 自定义高亮标记
     highlight: ({ children }) => (
       <mark className="bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30  dark:text-yellow-200 px-1.5 py-0.5 rounded-md font-medium">
         {children}
@@ -260,56 +260,233 @@ const components: PortableTextComponents = {
   },
   types: {
     // 表格
-    table: ({
+    markdownTable: ({
       value,
     }: {
       value: {
-        rows?: Array<{
-          _key: string
-          cells?: Array<{
-            _key: string
-            content: PortableTextBlock[]
-          }>
-        }>
+        markdownContent: string
       }
-    }) => (
-      <div className="my-8 overflow-x-auto">
-        <table className="min-w-full border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-          <thead className="bg-slate-50 dark:bg-slate-800">
-            <tr>
-              {value.rows?.[0]?.cells?.map((cell, index: number) => (
-                <th
-                  key={cell._key || index}
-                  className="px-4 py-3 text-left text-body-sm font-semibold text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-700"
-                >
-                  <PortableText value={cell.content} components={components} />
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-700">
-            {value.rows?.slice(1)?.map((row, rowIndex: number) => (
-              <tr
-                key={row._key || rowIndex}
-                className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-              >
-                {row.cells?.map((cell, cellIndex: number) => (
-                  <td
-                    key={cell._key || cellIndex}
-                    className="px-4 py-3 text-body-sm text-slate-700 dark:text-slate-300"
+    }) => {
+      // 解析表格单元格中的 Markdown 内容
+      const parseMarkdownCell = (cellContent: string): React.ReactNode => {
+        if (!cellContent) return cellContent
+
+        // 解析链接 [text](url)
+        const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+        const parts: React.ReactNode[] = []
+        let lastIndex = 0
+        let match
+
+        while ((match = linkRegex.exec(cellContent)) !== null) {
+          // 添加链接前的文本
+          if (match.index > lastIndex) {
+            const beforeText = cellContent.slice(lastIndex, match.index)
+            parts.push(parseInlineMarkdown(beforeText))
+          }
+
+          // 添加链接
+          parts.push(
+            <a
+              key={match.index}
+              href={match[2]}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
+            >
+              {parseInlineMarkdown(match[1])}
+            </a>
+          )
+
+          lastIndex = linkRegex.lastIndex
+        }
+
+        // 添加剩余文本
+        if (lastIndex < cellContent.length) {
+          parts.push(parseInlineMarkdown(cellContent.slice(lastIndex)))
+        }
+
+        return parts.length > 0 ? parts : parseInlineMarkdown(cellContent)
+      }
+
+      // 解析内联 Markdown 格式（粗体、斜体、代码等）
+      const parseInlineMarkdown = (text: string): React.ReactNode => {
+        if (!text) return text
+
+        // 解析粗体 **text**
+        const boldRegex = /\*\*([^*]+)\*\*/g
+        let result: React.ReactNode = text
+
+        if (boldRegex.test(text)) {
+          const parts: React.ReactNode[] = []
+          let lastIndex = 0
+          boldRegex.lastIndex = 0 // 重置正则表达式
+          let match
+
+          while ((match = boldRegex.exec(text)) !== null) {
+            if (match.index > lastIndex) {
+              parts.push(text.slice(lastIndex, match.index))
+            }
+            parts.push(
+              <strong key={match.index} className="font-semibold">
+                {match[1]}
+              </strong>
+            )
+            lastIndex = boldRegex.lastIndex
+          }
+
+          if (lastIndex < text.length) {
+            parts.push(text.slice(lastIndex))
+          }
+
+          result = parts
+        }
+
+        // 如果结果是数组，需要进一步处理斜体和代码
+        if (Array.isArray(result)) {
+          return result.map((part, index) => {
+            if (typeof part === 'string') {
+              return parseItalicAndCode(part, `${index}`)
+            }
+            return part
+          })
+        }
+
+        return parseItalicAndCode(result as string, '0')
+      }
+
+      // 解析斜体和代码
+      const parseItalicAndCode = (
+        text: string,
+        keyPrefix: string
+      ): React.ReactNode => {
+        if (!text) return text
+
+        // 解析代码 `code`
+        const codeRegex = /`([^`]+)`/g
+        const parts: React.ReactNode[] = []
+        let lastIndex = 0
+        let match
+
+        while ((match = codeRegex.exec(text)) !== null) {
+          if (match.index > lastIndex) {
+            const beforeText = text.slice(lastIndex, match.index)
+            parts.push(parseItalic(beforeText, `${keyPrefix}-${match.index}`))
+          }
+          parts.push(
+            <code
+              key={`${keyPrefix}-code-${match.index}`}
+              className="unified-inline-code px-[0.3rem] py-[0.2rem] font-mono text-code-sm font-semibold rounded border"
+            >
+              {match[1]}
+            </code>
+          )
+          lastIndex = codeRegex.lastIndex
+        }
+
+        if (lastIndex < text.length) {
+          parts.push(parseItalic(text.slice(lastIndex), `${keyPrefix}-end`))
+        }
+
+        return parts.length > 0 ? parts : parseItalic(text, keyPrefix)
+      }
+
+      // 解析斜体 *text*
+      const parseItalic = (
+        text: string,
+        keyPrefix: string
+      ): React.ReactNode => {
+        if (!text) return text
+
+        const italicRegex = /\*([^*]+)\*/g
+        const parts: React.ReactNode[] = []
+        let lastIndex = 0
+        let match
+
+        while ((match = italicRegex.exec(text)) !== null) {
+          if (match.index > lastIndex) {
+            parts.push(text.slice(lastIndex, match.index))
+          }
+          parts.push(
+            <em key={`${keyPrefix}-italic-${match.index}`} className="italic">
+              {match[1]}
+            </em>
+          )
+          lastIndex = italicRegex.lastIndex
+        }
+
+        if (lastIndex < text.length) {
+          parts.push(text.slice(lastIndex))
+        }
+
+        return parts.length > 0 ? parts : text
+      }
+
+      // 解析 markdown 表格并渲染为 HTML 表格
+      const lines = value.markdownContent.trim().split('\n')
+      const headerLine = lines[0]
+      const separatorLine = lines[1]
+      const dataLines = lines.slice(2)
+
+      if (!headerLine || !separatorLine) {
+        return (
+          <div className="my-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-700 dark:text-red-300">
+            表格格式错误
+          </div>
+        )
+      }
+
+      // 解析表头
+      const headers = headerLine
+        .split('|')
+        .map((cell) => cell.trim())
+        .filter((cell) => cell !== '')
+
+      // 解析数据行
+      const rows = dataLines
+        .map((line) =>
+          line
+            .split('|')
+            .map((cell) => cell.trim())
+            .filter((cell) => cell !== '')
+        )
+        .filter((row) => row.length > 0)
+
+      return (
+        <div className="my-2 overflow-x-auto">
+          <table className="min-w-full border border-slate-200 dark:border-zinc-700 rounded-sm overflow-hidden">
+            <thead className="bg-slate-50 dark:bg-zinc-800">
+              <tr>
+                {headers.map((header, index) => (
+                  <th
+                    key={index}
+                    className="px-4 py-3 text-left text-body-sm font-semibold text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-zinc-700"
                   >
-                    <PortableText
-                      value={cell.content}
-                      components={components}
-                    />
-                  </td>
+                    {parseMarkdownCell(header)}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    ),
+            </thead>
+            <tbody className="bg-white dark:bg-zinc-600/80 divide-y divide-slate-200 dark:divide-zinc-700">
+              {rows.map((row, rowIndex) => (
+                <tr
+                  key={rowIndex}
+                  className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors"
+                >
+                  {row.map((cell, cellIndex) => (
+                    <td
+                      key={cellIndex}
+                      className="px-4 py-3 text-body-sm text-slate-700 dark:text-slate-300"
+                    >
+                      {parseMarkdownCell(cell)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+    },
 
     // 图片
     image: ({ value }) => {
@@ -341,7 +518,7 @@ const components: PortableTextComponents = {
       }
 
       return (
-        <figure className="my-8 group">
+        <figure className="my-2 group">
           <div className="relative overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
             <Image
               src={imageUrl}

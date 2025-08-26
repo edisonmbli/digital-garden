@@ -10,29 +10,29 @@ export const baseBlockConfig = {
   type: 'block' as const,
   // 自定义样式
   styles: [
-    {title: 'Normal', value: 'normal'},
-    {title: 'H1', value: 'h1'},
-    {title: 'H2', value: 'h2'},
-    {title: 'H3', value: 'h3'},
-    {title: 'H4', value: 'h4'},
-    {title: 'H5', value: 'h5'},
-    {title: 'H6', value: 'h6'},
-    {title: 'Quote', value: 'blockquote'},
+    { title: 'Normal', value: 'normal' },
+    { title: 'H1', value: 'h1' },
+    { title: 'H2', value: 'h2' },
+    { title: 'H3', value: 'h3' },
+    { title: 'H4', value: 'h4' },
+    { title: 'H5', value: 'h5' },
+    { title: 'H6', value: 'h6' },
+    { title: 'Quote', value: 'blockquote' },
   ],
   // 列表类型
   lists: [
-    {title: 'Bullet', value: 'bullet'},
-    {title: 'Numbered', value: 'number'},
+    { title: 'Bullet', value: 'bullet' },
+    { title: 'Numbered', value: 'number' },
   ],
   // 文本装饰器（inline 样式）
   marks: {
     // 基础装饰器
     decorators: [
-      {title: 'Strong', value: 'strong'},
-      {title: 'Emphasis', value: 'em'},
-      {title: 'Code', value: 'code'},
-      {title: 'Underline', value: 'underline'},
-      {title: 'Strike', value: 'strike-through'},
+      { title: 'Strong', value: 'strong' },
+      { title: 'Emphasis', value: 'em' },
+      { title: 'Code', value: 'code' },
+      { title: 'Underline', value: 'underline' },
+      { title: 'Strike', value: 'strike-through' },
       // 自定义高亮装饰器
       {
         title: 'Highlight',
@@ -78,12 +78,12 @@ export const baseBlockConfig = {
             type: 'string',
             options: {
               list: [
-                {title: 'Red', value: 'red'},
-                {title: 'Blue', value: 'blue'},
-                {title: 'Green', value: 'green'},
-                {title: 'Orange', value: 'orange'},
-                {title: 'Purple', value: 'purple'},
-                {title: 'Gray', value: 'gray'},
+                { title: 'Red', value: 'red' },
+                { title: 'Blue', value: 'blue' },
+                { title: 'Green', value: 'green' },
+                { title: 'Orange', value: 'orange' },
+                { title: 'Purple', value: 'purple' },
+                { title: 'Gray', value: 'gray' },
               ],
             },
           },
@@ -102,10 +102,10 @@ export const baseBlockConfig = {
             type: 'string',
             options: {
               list: [
-                {title: 'Small', value: 'small'},
-                {title: 'Normal', value: 'normal'},
-                {title: 'Large', value: 'large'},
-                {title: 'Extra Large', value: 'xl'},
+                { title: 'Small', value: 'small' },
+                { title: 'Normal', value: 'normal' },
+                { title: 'Large', value: 'large' },
+                { title: 'Extra Large', value: 'xl' },
               ],
             },
           },
@@ -149,17 +149,17 @@ export const codeBlockConfig = {
       type: 'string',
       options: {
         list: [
-          {title: 'JavaScript', value: 'javascript'},
-          {title: 'TypeScript', value: 'typescript'},
-          {title: 'Python', value: 'python'},
-          {title: 'Java', value: 'java'},
-          {title: 'C++', value: 'cpp'},
-          {title: 'HTML', value: 'html'},
-          {title: 'CSS', value: 'css'},
-          {title: 'JSON', value: 'json'},
-          {title: 'Bash', value: 'bash'},
-          {title: 'SQL', value: 'sql'},
-          {title: 'Plain Text', value: 'text'},
+          { title: 'JavaScript', value: 'javascript' },
+          { title: 'TypeScript', value: 'typescript' },
+          { title: 'Python', value: 'python' },
+          { title: 'Java', value: 'java' },
+          { title: 'C++', value: 'cpp' },
+          { title: 'HTML', value: 'html' },
+          { title: 'CSS', value: 'css' },
+          { title: 'JSON', value: 'json' },
+          { title: 'Bash', value: 'bash' },
+          { title: 'SQL', value: 'sql' },
+          { title: 'Plain Text', value: 'text' },
         ],
       },
     },
@@ -180,7 +180,7 @@ export const codeBlockConfig = {
       title: 'filename',
       subtitle: 'language',
     },
-    prepare({title, subtitle}: {title?: string; subtitle?: string}) {
+    prepare({ title, subtitle }: { title?: string; subtitle?: string }) {
       return {
         title: title || 'Code Block',
         subtitle: subtitle || 'Plain Text',
@@ -203,11 +203,11 @@ export const highlightBlockConfig = {
       type: 'string',
       options: {
         list: [
-          {title: 'Info', value: 'info'},
-          {title: 'Warning', value: 'warning'},
-          {title: 'Error', value: 'error'},
-          {title: 'Success', value: 'success'},
-          {title: 'Note', value: 'note'},
+          { title: 'Info', value: 'info' },
+          { title: 'Warning', value: 'warning' },
+          { title: 'Error', value: 'error' },
+          { title: 'Success', value: 'success' },
+          { title: 'Note', value: 'note' },
         ],
       },
       initialValue: 'info',
@@ -224,12 +224,12 @@ export const highlightBlockConfig = {
       of: [
         {
           type: 'block',
-          styles: [{title: 'Normal', value: 'normal'}],
+          styles: [{ title: 'Normal', value: 'normal' }],
           marks: {
             decorators: [
-              {title: 'Strong', value: 'strong'},
-              {title: 'Emphasis', value: 'em'},
-              {title: 'Code', value: 'code'},
+              { title: 'Strong', value: 'strong' },
+              { title: 'Emphasis', value: 'em' },
+              { title: 'Code', value: 'code' },
             ],
           },
         },
@@ -241,7 +241,7 @@ export const highlightBlockConfig = {
       title: 'title',
       type: 'type',
     },
-    prepare({title, type}: {title?: string; type?: string}) {
+    prepare({ title, type }: { title?: string; type?: string }) {
       const icons: Record<string, string> = {
         info: 'ℹ️',
         warning: '⚠️',
@@ -253,6 +253,51 @@ export const highlightBlockConfig = {
         title: title || `${type?.toUpperCase()} Block`,
         subtitle: type,
         media: () => icons[type || 'info'] || '✨',
+      }
+    },
+  },
+}
+
+// 表格配置 - 使用 Sanity 原生 @sanity/table 插件
+export const tableConfig = {
+  type: 'table',
+  name: 'table',
+  title: 'Table',
+  icon: () => '📊',
+}
+
+// Markdown 表格配置 - 用于直接渲染 Markdown 表格
+export const markdownTableConfig = {
+  type: 'object' as const,
+  name: 'markdownTable',
+  title: 'Markdown Table',
+  icon: () => '📊',
+  fields: [
+    {
+      name: 'markdownContent',
+      title: 'Markdown Table Content',
+      type: 'text',
+      description: 'Raw markdown table content',
+      rows: 8,
+    },
+    {
+      name: 'dataLine',
+      title: 'Data Line',
+      type: 'number',
+      description: 'Line number in the original markdown',
+      readOnly: true,
+    },
+  ],
+  preview: {
+    select: {
+      markdownContent: 'markdownContent',
+    },
+    prepare({ markdownContent }: { markdownContent?: string }) {
+      const lines = markdownContent?.split('\n') || []
+      const firstLine = lines[0] || 'Empty table'
+      return {
+        title: 'Markdown Table',
+        subtitle: firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine,
       }
     },
   },
@@ -271,9 +316,9 @@ export const separatorConfig = {
       type: 'string',
       options: {
         list: [
-          {title: 'Default', value: 'default'},
-          {title: 'Dashed', value: 'dashed'},
-          {title: 'Dotted', value: 'dotted'},
+          { title: 'Default', value: 'default' },
+          { title: 'Dashed', value: 'dashed' },
+          { title: 'Dotted', value: 'dotted' },
         ],
       },
       initialValue: 'default',
@@ -295,13 +340,20 @@ export const fullPortableTextConfig = [
   imageConfig,
   codeBlockConfig,
   highlightBlockConfig,
+  tableConfig,
+  markdownTableConfig,
   separatorConfig,
 ]
 
 // 简化的富文本配置（用于 author.bio，不包含代码块和高亮块）
-export const simplePortableTextConfig = [
+export const simplePortableTextConfig = [baseBlockConfig, imageConfig]
+
+// 带表格的富文本配置（用于需要表格但不需要代码块的场景）
+export const tablePortableTextConfig = [
   baseBlockConfig,
   imageConfig,
+  tableConfig,
+  separatorConfig,
 ]
 
 // 基础富文本配置（仅文本，用于更简单的场景）
@@ -310,17 +362,17 @@ export const basicPortableTextConfig = [
     ...baseBlockConfig,
     // 简化的样式选项
     styles: [
-      {title: 'Normal', value: 'normal'},
-      {title: 'H2', value: 'h2'},
-      {title: 'H3', value: 'h3'},
-      {title: 'Quote', value: 'blockquote'},
+      { title: 'Normal', value: 'normal' },
+      { title: 'H2', value: 'h2' },
+      { title: 'H3', value: 'h3' },
+      { title: 'Quote', value: 'blockquote' },
     ],
     // 保留基础的 marks 配置
     marks: {
       decorators: [
-        {title: 'Strong', value: 'strong'},
-        {title: 'Emphasis', value: 'em'},
-        {title: 'Code', value: 'code'},
+        { title: 'Strong', value: 'strong' },
+        { title: 'Emphasis', value: 'em' },
+        { title: 'Code', value: 'code' },
       ],
       annotations: [
         // 仅保留链接

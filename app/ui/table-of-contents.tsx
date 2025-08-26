@@ -133,14 +133,16 @@ export function TableOfContents({
 
   return (
     <nav className={cn('space-y-2', className)}>
-      <h4 className="text-body-md font-semibold text-foreground mb-3">{title}</h4>
+      <h4 className="text-body-md font-semibold text-foreground mb-3">
+        {title}
+      </h4>
       <ul className="space-y-1">
         {displayHeadings.map((heading) => (
           <li key={heading.id}>
             <button
               onClick={() => handleClick(heading.id)}
               className={cn(
-                'block w-full text-left text-sm transition-colors hover:text-foreground',
+                'block w-full text-left text-xs transition-colors hover:text-foreground',
                 'py-1 px-2 rounded-sm',
                 {
                   'text-foreground bg-muted bg-gray-200 dark:bg-gray-400/30':

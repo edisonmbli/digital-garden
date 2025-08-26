@@ -5,19 +5,31 @@
 import { unified } from 'unified'
 import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
-import type { Root, Paragraph, Heading, Code, Blockquote, List, Table, Text, ListItem, TableRow, TableCell, PhrasingContent } from 'mdast'
+import type {
+  Root,
+  Paragraph,
+  Heading,
+  Code,
+  Blockquote,
+  List,
+  Table,
+  Text,
+  ListItem,
+  PhrasingContent,
+} from 'mdast'
 import type { PortableTextBlock, PortableTextSpan } from '@portabletext/types'
 import { nanoid } from 'nanoid'
 
 // 扩展的Portable Text块类型
-interface PortableTextBlockExtended extends Omit<PortableTextBlock, 'children'> {
+interface PortableTextBlockExtended
+  extends Omit<PortableTextBlock, 'children'> {
   _type: string
   _key: string
   style?: string
   level?: number
   listItem?: string
   children: PortableTextSpan[]
-  dataLine?: number;
+  dataLine?: number
 }
 
 // 代码块类型
@@ -27,7 +39,7 @@ interface CodeBlock {
   language?: string
   filename?: string
   code: string
-  dataLine?: number;
+  dataLine?: number
 }
 
 // 高亮块类型
@@ -37,7 +49,7 @@ interface HighlightBlock {
   type: 'info' | 'warning' | 'error' | 'success' | 'note'
   title?: string
   content: PortableTextBlockExtended[]
-  dataLine?: number;
+  dataLine?: number
 }
 
 // 图片块类型
@@ -50,32 +62,30 @@ interface ImageBlock {
   }
   alt?: string
   caption?: string
-  dataLine?: number;
+  dataLine?: number
 }
 
-// 表格块类型
-interface TableBlock {
-  _type: 'table'
+// 表格块类型 - 保存原始 markdown 表格文本
+interface MarkdownTableBlock {
+  _type: 'markdownTable'
   _key: string
-  rows: Array<{
-    _key: string
-    _type: 'tableRow'
-    cells: Array<{
-      _key: string
-      _type: 'tableCell'
-      content: PortableTextBlockExtended[]
-    }>
-  }>
-  dataLine?: number;
+  markdownContent: string
+  dataLine?: number
 }
 
 interface SeparatorBlock {
   _type: 'separator'
   _key: string
-  dataLine?: number;
+  dataLine?: number
 }
 
-export type PortableTextElement = PortableTextBlockExtended | CodeBlock | HighlightBlock | ImageBlock | TableBlock | SeparatorBlock
+export type PortableTextElement =
+  | PortableTextBlockExtended
+  | CodeBlock
+  | HighlightBlock
+  | ImageBlock
+  | MarkdownTableBlock
+  | SeparatorBlock
 
 /**
  * 生成唯一的key
@@ -90,13 +100,15 @@ function generateKey(): string {
 function convertInlineNode(node: PhrasingContent): PortableTextSpan[] {
   switch (node.type) {
     case 'text':
-      return [{
-        _type: 'span',
-        _key: generateKey(),
-        text: node.value,
-        marks: []
-      }]
-    
+      return [
+        {
+          _type: 'span',
+          _key: generateKey(),
+          text: node.value,
+          marks: [],
+        },
+      ]
+
     case 'strong':
       const strongSpans: PortableTextSpan[] = []
       for (const child of node.children || []) {
@@ -104,12 +116,12 @@ function convertInlineNode(node: PhrasingContent): PortableTextSpan[] {
         for (const span of childSpans) {
           strongSpans.push({
             ...span,
-            marks: [...(span.marks || []), 'strong']
+            marks: [...(span.marks || []), 'strong'],
           })
         }
       }
       return strongSpans
-    
+
     case 'emphasis':
       const emSpans: PortableTextSpan[] = []
       for (const child of node.children || []) {
@@ -117,20 +129,22 @@ function convertInlineNode(node: PhrasingContent): PortableTextSpan[] {
         for (const span of childSpans) {
           emSpans.push({
             ...span,
-            marks: [...(span.marks || []), 'em']
+            marks: [...(span.marks || []), 'em'],
           })
         }
       }
       return emSpans
-    
+
     case 'inlineCode':
-      return [{
-        _type: 'span',
-        _key: generateKey(),
-        text: node.value,
-        marks: ['code']
-      }]
-    
+      return [
+        {
+          _type: 'span',
+          _key: generateKey(),
+          text: node.value,
+          marks: ['code'],
+        },
+      ]
+
     case 'delete':
       const deleteSpans: PortableTextSpan[] = []
       for (const child of node.children || []) {
@@ -138,12 +152,12 @@ function convertInlineNode(node: PhrasingContent): PortableTextSpan[] {
         for (const span of childSpans) {
           deleteSpans.push({
             ...span,
-            marks: [...(span.marks || []), 'strike-through']
+            marks: [...(span.marks || []), 'strike-through'],
           })
         }
       }
       return deleteSpans
-    
+
     case 'link':
       const linkSpans: PortableTextSpan[] = []
       for (const child of node.children || []) {
@@ -151,34 +165,36 @@ function convertInlineNode(node: PhrasingContent): PortableTextSpan[] {
         for (const span of childSpans) {
           linkSpans.push({
             ...span,
-            marks: [...(span.marks || []), 'link']
-          })
+            marks: [...(span.marks || []), 'link'],
+            // 将URL信息存储在自定义属性中
+            linkUrl: node.url
+          } as PortableTextSpan & { linkUrl?: string })
         }
       }
       return linkSpans
-    
+
     default:
-      return [{
-        _type: 'span',
-        _key: generateKey(),
-        text: '',
-        marks: []
-      }]
+      return [
+        {
+          _type: 'span',
+          _key: generateKey(),
+          text: '',
+          marks: [],
+        },
+      ]
   }
 }
-
-
 
 /**
  * 转换段落节点
  */
 function convertParagraphNode(node: Paragraph): PortableTextBlockExtended {
   const children: PortableTextSpan[] = []
-  
+
   for (const child of node.children || []) {
     children.push(...convertInlineNode(child))
   }
-  
+
   return {
     _type: 'block',
     _key: generateKey(),
@@ -193,11 +209,11 @@ function convertParagraphNode(node: Paragraph): PortableTextBlockExtended {
  */
 function convertHeadingNode(node: Heading): PortableTextBlockExtended {
   const children: PortableTextSpan[] = []
-  
+
   for (const child of node.children || []) {
     children.push(...convertInlineNode(child))
   }
-  
+
   return {
     _type: 'block',
     _key: generateKey(),
@@ -226,7 +242,7 @@ function convertCodeBlockNode(node: Code): CodeBlock {
  */
 function convertBlockquoteNode(node: Blockquote): PortableTextBlockExtended {
   const children: PortableTextSpan[] = []
-  
+
   for (const child of node.children || []) {
     if (child.type === 'paragraph') {
       for (const grandChild of child.children || []) {
@@ -234,7 +250,7 @@ function convertBlockquoteNode(node: Blockquote): PortableTextBlockExtended {
       }
     }
   }
-  
+
   return {
     _type: 'block',
     _key: generateKey(),
@@ -249,56 +265,52 @@ function convertBlockquoteNode(node: Blockquote): PortableTextBlockExtended {
  */
 function convertListNode(node: List): PortableTextBlockExtended[] {
   const listType = node.ordered ? 'number' : 'bullet'
-  
-  return node.children?.map((listItem: ListItem): PortableTextBlockExtended => {
-    const children: PortableTextSpan[] = []
-    
-    for (const child of listItem.children || []) {
-      if (child.type === 'paragraph') {
-        for (const grandChild of (child as Paragraph).children || []) {
-          children.push(...convertInlineNode(grandChild))
+
+  return (
+    node.children?.map((listItem: ListItem): PortableTextBlockExtended => {
+      const children: PortableTextSpan[] = []
+
+      for (const child of listItem.children || []) {
+        if (child.type === 'paragraph') {
+          for (const grandChild of (child as Paragraph).children || []) {
+            children.push(...convertInlineNode(grandChild))
+          }
         }
       }
-    }
-    
-    return {
-      _type: 'block',
-      _key: generateKey(),
-      style: 'normal',
-      listItem: listType,
-      children,
-      dataLine: listItem.position?.start.line,
-    }
-  }) || []
+
+      return {
+        _type: 'block',
+        _key: generateKey(),
+        style: 'normal',
+        listItem: listType,
+        children,
+        dataLine: listItem.position?.start.line,
+      }
+    }) || []
+  )
 }
 
 /**
- * 转换表格节点
+ * 转换表格节点 - 保存原始 markdown 表格文本
  */
-function convertTableNode(node: Table): TableBlock {
-  const rows = node.children?.map((row: TableRow) => ({
-    _key: generateKey(),
-    _type: 'tableRow' as const,
-    cells: row.children?.map((cell: TableCell) => ({
-      _key: generateKey(),
-      _type: 'tableCell' as const,
-      content: cell.children?.map((child): PortableTextBlockExtended => {
-         // TableCell的children都是PhrasingContent，需要包装成段落
-         return {
-           _type: 'block',
-           _key: generateKey(),
-           style: 'normal',
-           children: convertInlineNode(child),
-           dataLine: cell.position?.start.line,
-         }
-       }) || []
-    })) || []
-  })) || []
-  
+function convertTableNode(
+  node: Table,
+  originalMarkdown: string
+): MarkdownTableBlock {
+  // 从原始 markdown 中提取表格文本
+  let tableMarkdown = ''
+
+  if (node.position) {
+    const lines = originalMarkdown.split('\n')
+    const startLine = node.position.start.line - 1
+    const endLine = node.position.end.line - 1
+    tableMarkdown = lines.slice(startLine, endLine + 1).join('\n')
+  }
+
   return {
-    _type: 'table',
+    _type: 'markdownTable',
     _key: generateKey(),
-    rows,
+    markdownContent: tableMarkdown,
     dataLine: node.position?.start.line,
   }
 }
@@ -308,44 +320,56 @@ function convertTableNode(node: Table): TableBlock {
  */
 function detectHighlightBlock(node: Blockquote): HighlightBlock | null {
   if (node.type !== 'blockquote') return null
-  
+
   const firstChild = node.children?.[0]
   if (firstChild?.type === 'paragraph') {
-    const textContent = firstChild.children?.find((child): child is Text => child.type === 'text')?.value || ''
-    
+    const textContent =
+      firstChild.children?.find((child): child is Text => child.type === 'text')
+        ?.value || ''
+
     // 检测高亮块语法：> **类型**: 内容
-    const highlightMatch = textContent.match(/^\*\*(info|warning|error|success|note)\*\*:?\s*(.*)$/i)
+    const highlightMatch = textContent.match(
+      /^\*\*(info|warning|error|success|note)\*\*:?\s*(.*)$/i
+    )
     if (highlightMatch) {
       const [, type, title] = highlightMatch
-      
+
       return {
         _type: 'highlightBlock',
         _key: generateKey(),
-        type: type.toLowerCase() as 'info' | 'warning' | 'error' | 'success' | 'note',
+        type: type.toLowerCase() as
+          | 'info'
+          | 'warning'
+          | 'error'
+          | 'success'
+          | 'note',
         title: title || undefined,
         content: [convertBlockquoteNode(node)],
         dataLine: node.position?.start.line,
       }
     }
   }
-  
+
   return null
 }
 
 /**
  * 转换MDAST节点为Portable Text
  */
-function convertNode(node: Root['children'][0]): PortableTextElement[] {
+function convertNode(
+  node: Root['children'][0],
+  originalMarkdown: string
+): PortableTextElement[] {
   switch (node.type) {
     case 'paragraph':
       return [convertParagraphNode(node)]
-    
+
     case 'heading':
       return [convertHeadingNode(node)]
-    
+
     case 'code':
       return [convertCodeBlockNode(node)]
-    
+
     case 'blockquote':
       // 先检测是否为高亮块
       const highlightBlock = detectHighlightBlock(node)
@@ -353,52 +377,58 @@ function convertNode(node: Root['children'][0]): PortableTextElement[] {
         return [highlightBlock]
       }
       return [convertBlockquoteNode(node)]
-    
+
     case 'list':
       return convertListNode(node)
-    
+
     case 'table':
-      return [convertTableNode(node)]
-    
+      return [convertTableNode(node, originalMarkdown)]
+
     case 'thematicBreak':
-      return [{
-        _type: 'separator',
-        _key: generateKey(),
-        dataLine: node.position?.start.line,
-      } as SeparatorBlock]
-    
+      return [
+        {
+          _type: 'separator',
+          _key: generateKey(),
+          dataLine: node.position?.start.line,
+        } as SeparatorBlock,
+      ]
+
     default:
       // 处理未知节点类型
-      return [{
-        _type: 'block',
-        _key: generateKey(),
-        style: 'normal',
-        children: [{
-          _type: 'span',
+      return [
+        {
+          _type: 'block',
           _key: generateKey(),
-          text: '',
-          marks: []
-        }]
-      }]
+          style: 'normal',
+          children: [
+            {
+              _type: 'span',
+              _key: generateKey(),
+              text: '',
+              marks: [],
+            },
+          ],
+        },
+      ]
   }
 }
 
 /**
  * 主要转换函数：将Markdown转换为Portable Text
  */
-export async function markdownToPortableText(markdown: string): Promise<PortableTextElement[]> {
+export async function markdownToPortableText(
+  markdown: string
+): Promise<PortableTextElement[]> {
   try {
-    const processor = unified()
-      .use(remarkParse)
-      .use(remarkGfm)
-    
+    const processor = unified().use(remarkParse).use(remarkGfm)
+
     const tree = processor.parse(markdown) as Root
     const result: PortableTextElement[] = []
-    
+
     for (const node of tree.children) {
-      result.push(...convertNode(node))
+      result.push(...convertNode(node, markdown))
     }
-    
+
     return result
   } catch (error) {
     console.error('Markdown转换失败:', error)
@@ -409,21 +439,23 @@ export async function markdownToPortableText(markdown: string): Promise<Portable
 /**
  * 验证转换结果
  */
-export function validatePortableText(portableText: PortableTextElement[]): boolean {
+export function validatePortableText(
+  portableText: PortableTextElement[]
+): boolean {
   try {
     for (const block of portableText) {
       // 检查必需字段
       if (!block._type || !block._key) {
         return false
       }
-      
+
       // 检查块类型特定的字段
       if (block._type === 'block') {
         const blockElement = block as PortableTextBlockExtended
         if (!blockElement.children || !Array.isArray(blockElement.children)) {
           return false
         }
-        
+
         // 验证children
         for (const child of blockElement.children) {
           if (!child._type || !child._key || typeof child.text !== 'string') {
@@ -432,7 +464,7 @@ export function validatePortableText(portableText: PortableTextElement[]): boole
         }
       }
     }
-    
+
     return true
   } catch {
     return false
@@ -448,24 +480,23 @@ export function extractHeadings(portableText: PortableTextElement[]): Array<{
   level: number
 }> {
   const headings: Array<{ id: string; text: string; level: number }> = []
-  
+
   for (const block of portableText) {
     if (block._type === 'block') {
       const blockElement = block as PortableTextBlockExtended
       if (blockElement.style?.startsWith('h') && blockElement.level) {
-        const text = blockElement.children
-          ?.map(child => child.text)
-          .join('') || ''
-        
+        const text =
+          blockElement.children?.map((child) => child.text).join('') || ''
+
         headings.push({
           id: generateHeadingId(text),
           text,
-          level: blockElement.level
+          level: blockElement.level,
         })
       }
     }
   }
-  
+
   return headings
 }
 
@@ -496,13 +527,13 @@ export function getConversionStats(portableText: PortableTextElement[]): {
     headings: 0,
     codeBlocks: 0,
     images: 0,
-    tables: 0
+    tables: 0,
   }
-  
+
   for (const block of portableText) {
     // 统计块类型
     stats.blockTypes[block._type] = (stats.blockTypes[block._type] || 0) + 1
-    
+
     // 统计特定类型
     if (block._type === 'block') {
       const blockElement = block as PortableTextBlockExtended
@@ -513,10 +544,10 @@ export function getConversionStats(portableText: PortableTextElement[]): {
       stats.codeBlocks++
     } else if (block._type === 'image') {
       stats.images++
-    } else if (block._type === 'table') {
+    } else if (block._type === 'markdownTable') {
       stats.tables++
     }
   }
-  
+
   return stats
 }

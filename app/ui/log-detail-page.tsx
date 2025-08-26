@@ -190,7 +190,7 @@ export function LogDetailPage({
         </nav>
         {/* 合集名称 */}
         {collection && (
-          <div className="text-body-base pt-10 font-medium text-foreground">
+          <div className="text-body-base pt-6 font-medium text-foreground">
             {typeof collection.name === 'string'
               ? collection.name
               : (collection.name as Record<string, string>)?.[lang] ||
@@ -221,7 +221,7 @@ export function LogDetailPage({
                       }`}
                     >
                       <div
-                        className={`text-body-sm line-clamp-2 ${isCurrentLog ? 'font-medium' : 'font-base'}`}
+                        className={`text-body-xs line-clamp-2 ${isCurrentLog ? 'font-medium' : 'font-base'}`}
                       >
                         {log.title}
                       </div>
