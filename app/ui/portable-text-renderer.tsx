@@ -126,7 +126,7 @@ const components: PortableTextComponents = {
         <div className="absolute top-2 left-2 text-slate-400 dark:text-slate-500 text-body-lg leading-none">
           &ldquo;
         </div>
-        <div className="italic text-slate-700 dark:text-slate-300 font-light text-body-sm">
+        <div className="italic text-slate-700 dark:text-slate-300 font-light text-body-base lg:text-body-sm">
           {children}
         </div>
       </blockquote>
@@ -558,11 +558,14 @@ export function PortableTextRenderer({
               <Highlight theme={codeTheme} code={code} language={language}>
                 {({ style, tokens, getLineProps, getTokenProps }) => (
                   <pre
-                    className={cn(
-                      'unified-code-block overflow-x-auto p-2 text-code-xs font-mono border',
-                      value.filename ? 'rounded-b-lg' : 'rounded-lg',
-                      'scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
-                    )}
+                    className={
+                      'unified-code-block overflow-x-auto p-2 text-code-xs font-mono border,rounded-b-lg, scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
+                      // cn(
+                      //   'unified-code-block overflow-x-auto p-2 text-code-xs font-mono border',
+                      //   value.filename ? 'rounded-b-lg' : 'rounded-lg',
+                      //   'scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
+                      // )
+                    }
                     style={{
                       ...style,
                       margin: 0,
