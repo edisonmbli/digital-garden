@@ -116,7 +116,7 @@ const components: PortableTextComponents = {
     },
     normal: ({ children }) => {
       return (
-        <p className="text-md sm:text-body-sm leading-6 [&:not(:first-child)]:mt-1">
+        <p className="text-body-base leading-6 [&:not(:first-child)]:mt-1">
           {children}
         </p>
       )
@@ -146,12 +146,12 @@ const components: PortableTextComponents = {
   },
   listItem: {
     bullet: ({ children }) => (
-      <li className="text-md sm:text-body-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
+      <li className="text-body-base text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
         {children}
       </li>
     ),
     number: ({ children }) => (
-      <li className="text-md sm:text-body-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
+      <li className="text-body-base text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
         {children}
       </li>
     ),
@@ -559,7 +559,7 @@ export function PortableTextRenderer({
                 {({ style, tokens, getLineProps, getTokenProps }) => (
                   <pre
                     className={cn(
-                      'unified-code-block overflow-x-auto p-2 text-code-sm font-mono border',
+                      'unified-code-block overflow-x-auto p-2 text-code-xs font-mono border',
                       value.filename ? 'rounded-b-lg' : 'rounded-lg',
                       'scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
                     )}

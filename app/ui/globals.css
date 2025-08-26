@@ -101,7 +101,10 @@
 @layer base {
   /* 基础字体设置 */
   html {
-    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1,
+      'ss01' 1;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -110,17 +113,21 @@
   /* 标题层级 - 英文优先 */
   .text-display-2xl {
     @apply text-6xl font-display font-bold tracking-tight leading-none;
-    font-feature-settings: "ss01" 1, "cv01" 1;
+    font-feature-settings:
+      'ss01' 1,
+      'cv01' 1;
   }
 
   .text-display-xl {
     @apply text-5xl font-display font-bold tracking-tight leading-tight;
-    font-feature-settings: "ss01" 1, "cv01" 1;
+    font-feature-settings:
+      'ss01' 1,
+      'cv01' 1;
   }
 
   .text-display-lg {
     @apply text-4xl font-display font-semibold tracking-tight leading-tight;
-    font-feature-settings: "ss01" 1;
+    font-feature-settings: 'ss01' 1;
   }
 
   .text-display-md {
@@ -160,32 +167,44 @@
   /* 正文层级 */
   .text-body-xl {
     @apply text-xl font-sans font-normal leading-relaxed;
-    font-feature-settings: "kern" 1, "liga" 1;
+    font-feature-settings:
+      'kern' 1,
+      'liga' 1;
   }
 
   .text-body-lg {
     @apply text-lg font-sans font-normal leading-relaxed;
-    font-feature-settings: "kern" 1, "liga" 1;
+    font-feature-settings:
+      'kern' 1,
+      'liga' 1;
   }
 
   .text-body-base {
     @apply text-base font-sans font-normal leading-relaxed;
-    font-feature-settings: "kern" 1, "liga" 1;
+    font-feature-settings:
+      'kern' 1,
+      'liga' 1;
   }
 
   .text-body-md {
     @apply text-base font-sans font-normal leading-relaxed;
-    font-feature-settings: "kern" 1, "liga" 1;
+    font-feature-settings:
+      'kern' 1,
+      'liga' 1;
   }
 
   .text-body-sm {
     @apply text-sm font-sans font-normal leading-relaxed;
-    font-feature-settings: "kern" 1, "liga" 1;
+    font-feature-settings:
+      'kern' 1,
+      'liga' 1;
   }
 
   .text-body-xs {
     @apply text-xs font-sans font-normal leading-relaxed;
-    font-feature-settings: "kern" 1, "liga" 1;
+    font-feature-settings:
+      'kern' 1,
+      'liga' 1;
   }
 
   /* 正文层级 - 中文优化 */
@@ -233,12 +252,12 @@
   /* 特殊用途字体 */
   .text-caption {
     @apply text-sm font-sans font-normal leading-snug text-muted-foreground;
-    font-feature-settings: "tnum" 1;
+    font-feature-settings: 'tnum' 1;
   }
 
   .text-caption-xs {
     @apply text-xs font-sans font-normal leading-snug text-muted-foreground;
-    font-feature-settings: "tnum" 1;
+    font-feature-settings: 'tnum' 1;
   }
 
   .text-caption-cn {
@@ -248,24 +267,39 @@
 
   .text-code {
     @apply text-sm font-mono leading-relaxed;
-    font-feature-settings: "tnum" 1, "zero" 1;
+    font-feature-settings:
+      'tnum' 1,
+      'zero' 1;
   }
 
   .text-code-sm {
     @apply text-sm font-mono leading-relaxed;
-    font-feature-settings: "tnum" 1, "zero" 1;
+    font-feature-settings:
+      'tnum' 1,
+      'zero' 1;
+  }
+
+  .text-code-xs {
+    @apply text-xs font-mono leading-relaxed;
+    font-feature-settings:
+      'tnum' 1,
+      'zero' 1;
   }
 
   /* 数字和时间 */
   .text-numeric {
-    font-feature-settings: "tnum" 1, "zero" 1;
+    font-feature-settings:
+      'tnum' 1,
+      'zero' 1;
     font-variant-numeric: tabular-nums;
   }
 
   /* 引用文字 */
   .text-quote {
     @apply text-lg font-serif font-normal leading-relaxed italic;
-    font-feature-settings: "kern" 1, "liga" 1;
+    font-feature-settings:
+      'kern' 1,
+      'liga' 1;
   }
 
   .text-quote-cn {
