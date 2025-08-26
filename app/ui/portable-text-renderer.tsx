@@ -736,12 +736,12 @@ export function PortableTextRenderer({
                 {({ style, tokens, getLineProps, getTokenProps }) => (
                   <pre
                     className={
-                      'unified-code-block overflow-x-auto p-2 text-code-xs font-mono border,rounded-b-lg, scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
-                      // cn(
-                      //   'unified-code-block overflow-x-auto p-2 text-code-xs font-mono border',
-                      //   value.filename ? 'rounded-b-lg' : 'rounded-lg',
-                      //   'scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
-                      // )
+                      // 'unified-code-block overflow-x-auto p-2 text-code-xs font-mono border,rounded-b-lg, scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
+                      cn(
+                        'unified-code-block overflow-x-auto p-2 text-xs font-mono border',
+                        value.filename ? 'rounded-b-lg' : 'rounded-lg',
+                        'scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
+                      )
                     }
                     style={{
                       ...style,
