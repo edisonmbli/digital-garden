@@ -302,6 +302,7 @@ export function LogDetailPage({
               {/* 文章内容 */}
               <ProtectedContent showWatermark={true}>
                 <div className="prose prose-lg dark:prose-invert max-w-none">
+                  {/* <div className="max-w-none"> */}
                   <PortableTextRenderer
                     content={enrichedLogPost.content}
                     onHeadingsExtracted={handleHeadingsExtracted}

@@ -736,12 +736,12 @@ export function PortableTextRenderer({
                 {({ style, tokens, getLineProps, getTokenProps }) => (
                   <pre
                     className={
-                      // 'unified-code-block overflow-x-auto p-2 text-code-xs font-mono border,rounded-b-lg, scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
-                      cn(
-                        'unified-code-block overflow-x-auto p-2 text-xs font-mono border',
-                        value.filename ? 'rounded-b-lg' : 'rounded-lg',
-                        'scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
-                      )
+                      'unified-code-block overflow-x-auto p-2 text-code-xs font-mono border,rounded-b-lg, scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
+                      // cn(
+                      //   'unified-code-block overflow-x-auto p-2 text-sm font-mono border',
+                      //   value.filename ? 'rounded-b-lg' : 'rounded-lg',
+                      //   'scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600'
+                      // )
                     }
                     style={{
                       ...style,
@@ -771,7 +771,7 @@ export function PortableTextRenderer({
   }
 
   return (
-    <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert prose-slate">
+    <div className="prose prose-sm max-w-none dark:prose-invert prose-slate">
       <PortableText
         value={content as PortableTextBlock[]}
         components={themedComponents}
