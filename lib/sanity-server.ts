@@ -1,6 +1,6 @@
 // lib/sanity-server.ts
 // 服务端专用的 Sanity 客户端，不暴露敏感信息给客户端
-
+import 'server-only'
 import { createClient } from 'next-sanity'
 
 // 服务端环境变量（不使用 NEXT_PUBLIC_ 前缀）

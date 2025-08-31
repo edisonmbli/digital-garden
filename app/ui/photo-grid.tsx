@@ -285,6 +285,8 @@ export function PhotoGrid({
                 postId={photo.post?.id}
                 collectionId={collectionId}
                 hasWatermark={false}
+                priority={false}
+                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
               />
             </div>
           </FadeIn>
@@ -334,7 +336,7 @@ export function PhotoGrid({
                       width={selectedPhoto.metadata?.dimensions.width || 800}
                       height={selectedPhoto.metadata?.dimensions.height || 600}
                       className="max-w-full max-h-full object-contain"
-                      sizes="90vw"
+                      sizes="(max-width: 768px) 100vw, 90vw"
                       priority
                       showWatermark={true}
                       userId={user?.id}
@@ -538,7 +540,7 @@ export function PhotoGrid({
                           selectedPhoto.metadata?.dimensions.height || 600
                         }
                         className="rounded-lg"
-                        sizes="100vw"
+                        sizes="(max-width: 768px) 100vw, 90vw"
                         priority
                         showWatermark={true}
                         adaptiveContainer={true}
