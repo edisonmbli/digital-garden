@@ -1,6 +1,6 @@
 {
   "header": {
-    "title": "Code in Light",
+    "title": "Hackers & Albums",
     "gallery": "Gallery",
     "log": "Develop Log",
     "about": "About",
@@ -11,7 +11,7 @@
     "terms_of_use": "Terms of Use"
   },
   "homepage": {
-    "title": "Code in Light",
+    "title": "Hackers & Albums",
     "description": "A personal online photography gallery, and a transparent project built-in-public.",
     "enter_button": "View More",
     "featured_collection": "Featured Collection",
@@ -125,7 +125,7 @@
     "subtitle": "Content Usage Guidelines & Intellectual Property Protection Policy",
     "copyright": {
       "title": "Copyright Notice",
-      "notice": "All content on this site (including but not limited to photography works, technical tutorials, articles, code examples) is original content protected by the Copyright Law of the People's Republic of China and relevant international copyright laws."
+      "notice": "© 2025 Edison Li. All Rights Reserved. Source code and tutorial content are licensed under CC BY-NC-SA 4.0. Photographic works on this site may not be used for any commercial purposes without explicit permission."
     },
     "photography": {
       "title": "Photography Usage Guidelines",

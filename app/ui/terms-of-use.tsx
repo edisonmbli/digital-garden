@@ -65,7 +65,7 @@ export function TermsOfUse({ dictionary: dict, className }: TermsOfUseProps) {
               </h2>
             </div>
             <div className="space-y-4 text-muted-foreground">
-              <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="p-4 rounded-lg border border-green-200 dark:border-green-800">
                 <h3 className="font-semibold text-green-800 dark:text-green-200 mb-2">
                   {dict.terms.photography.allowed}
                 </h3>
@@ -75,7 +75,7 @@ export function TermsOfUse({ dictionary: dict, className }: TermsOfUseProps) {
                   ))}
                 </ul>
               </div>
-              <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
+              <div className="p-4 rounded-lg border border-red-200 dark:border-red-800">
                 <h3 className="font-semibold text-red-800 dark:text-red-200 mb-2">
                   {dict.terms.photography.prohibited}
                 </h3>
@@ -97,7 +97,7 @@ export function TermsOfUse({ dictionary: dict, className }: TermsOfUseProps) {
               </h2>
             </div>
             <div className="space-y-4 text-muted-foreground">
-              <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="p-4 rounded-lg border border-green-200 dark:border-green-800">
                 <h3 className="font-semibold text-green-800 dark:text-green-200 mb-2">
                   {dict.terms.tutorials.encouraged}
                 </h3>
@@ -107,7 +107,7 @@ export function TermsOfUse({ dictionary: dict, className }: TermsOfUseProps) {
                   ))}
                 </ul>
               </div>
-              <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
+              <div className="p-4 rounded-lg border border-red-200 dark:border-red-800">
                 <h3 className="font-semibold text-red-800 dark:text-red-200 mb-2">
                   {dict.terms.tutorials.prohibited}
                 </h3>
@@ -130,7 +130,7 @@ export function TermsOfUse({ dictionary: dict, className }: TermsOfUseProps) {
             </div>
             <div className="space-y-4 text-body-sm text-muted-foreground">
               <p>{dict.terms.authorization.description}</p>
-              <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                 <ul className="text-body-sm space-y-1 mb-3">
                   {dict.terms.authorization.purposes.map((purpose, index) => (
                     <li key={index}>• {purpose}</li>
