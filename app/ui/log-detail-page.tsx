@@ -48,6 +48,10 @@ interface LogDetailPageProps {
     common?: {
       tableOfContents?: string
     }
+    comments?: {
+      noComments?: string
+      commentSubmitted?: string
+    }
   }
   lang: Locale
   translationMap: Record<string, string>
@@ -300,7 +304,7 @@ export function LogDetailPage({
               </header> */}
 
               {/* 文章内容 */}
-              <HybridProtectedContent 
+              <HybridProtectedContent
                 showWatermark={true}
                 enableCopy={false}
                 enableSelect={true}
@@ -354,7 +358,8 @@ export function LogDetailPage({
                 {/* 评论提交成功提示 */}
                 {showCommentSubmittedMessage && (
                   <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 text-body-sm text-center rounded-md">
-                    评论已提交，审核后可对外展示
+                    {dictionary.comments?.commentSubmitted ||
+                      '评论已提交，审核后可对外展示'}
                   </div>
                 )}
 
@@ -404,7 +409,10 @@ export function LogDetailPage({
                   enrichedLogPost.post.commentsCount === 0 &&
                   !showCommentForm && (
                     <div className="flex items-center justify-center py-8 text-center text-muted-foreground">
-                      <p className="text-body-sm">还没有评论，来说点什么吧</p>
+                      <p className="text-body-sm">
+                        {dictionary.comments?.noComments ||
+                          '还没有评论，来说点什么吧'}
+                      </p>
                     </div>
                   )}
               </section>

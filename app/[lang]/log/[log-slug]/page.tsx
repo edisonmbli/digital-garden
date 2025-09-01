@@ -152,6 +152,10 @@ export default async function LogPostPage({
             common: {
               tableOfContents: dictionary.common.tableOfContents,
             },
+            comments: {
+              noComments: dictionary.comments.noComments,
+              commentSubmitted: dictionary.comments.commentSubmitted,
+            },
           }}
           translationMap={translationMap}
           copyrightData={copyrightData}
