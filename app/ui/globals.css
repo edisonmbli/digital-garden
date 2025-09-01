@@ -1,6 +1,7 @@
 /* app/globals.css */
 /* Import component-specific styles */
 @import './hero-animations.css';
+@import './content-protection.css';
 
 @tailwind base;
 @tailwind components;

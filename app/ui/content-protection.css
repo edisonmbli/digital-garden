@@ -1,0 +1,144 @@
+/* 全局内容保护样式 */
+/* 这些样式提供额外的保护层，防止内容被轻易复制 */
+
+/* 基础保护 - 禁用选择和复制 */
+.content-protected {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* 禁用图片拖拽 */
+.content-protected img {
+  -webkit-user-drag: none !important;
+  -khtml-user-drag: none !important;
+  -moz-user-drag: none !important;
+  -o-user-drag: none !important;
+  user-drag: none !important;
+  pointer-events: none !important;
+}
+
+/* 禁用文本选择高亮 */
+.content-protected::selection {
+  background: transparent !important;
+}
+
+.content-protected::-moz-selection {
+  background: transparent !important;
+}
+
+.content-protected *::selection {
+  background: transparent !important;
+}
+
+.content-protected *::-moz-selection {
+  background: transparent !important;
+}
+
+/* 增强保护 - 额外的CSS技巧 */
+.content-protected-enhanced {
+  position: relative;
+}
+
+.content-protected-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: transparent;
+}
+
+/* 最大保护级别 */
+.content-protected-maximum {
+  pointer-events: none !important;
+}
+
+.content-protected-maximum * {
+  pointer-events: none !important;
+}
+
+/* 防止打印样式 */
+@media print {
+  .content-protected,
+  .content-protected-enhanced,
+  .content-protected-maximum {
+    display: none !important;
+  }
+  
+  .content-protected::after {
+    content: '此内容受版权保护，不允许打印' !important;
+    display: block !important;
+    text-align: center !important;
+    font-size: 24px !important;
+    color: #000 !important;
+    margin: 50px 0 !important;
+  }
+}
+
+/* 移动端特殊保护 */
+@media (max-width: 768px) {
+  .content-protected {
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
+  }
+  
+  /* 禁用长按菜单 */
+  .content-protected * {
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+  }
+}
+
+/* 防止通过CSS检查器查看内容 */
+.content-protected[data-content]::before {
+  content: attr(data-content);
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+}
+
+/* 隐藏滚动条以防截图 */
+.content-protected-maximum {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.content-protected-maximum::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* 防止通过伪元素复制内容 */
+.content-protected *::before,
+.content-protected *::after {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+/* 防止通过表格复制 */
+.content-protected table,
+.content-protected td,
+.content-protected th {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+/* 防止通过代码块复制 */
+.content-protected pre,
+.content-protected code {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}

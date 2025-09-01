@@ -157,8 +157,8 @@ export function HeroSection({ collections, lang }: HeroSectionProps) {
 
   return (
     <>
-      {/* 桌面端：三图布局 */}
-      <div className="hidden md:flex w-full h-[calc(100vh-3.5rem-6rem)] items-center justify-center bg-gradient-to-b from-background via-background/95 to-background/90 relative overflow-hidden hero-container">
+      {/* 桌面端：三图布局 - 仅在大屏设备（1024px+）显示 */}
+      <div className="hidden lg:flex w-full h-[calc(100vh-3.5rem-6rem)] items-center justify-center bg-gradient-to-b from-background via-background/95 to-background/90 relative overflow-hidden hero-container">
         {/* 背景渐变层 */}
         <div className="absolute inset-0 bg-gradient-radial from-background/20 via-background/60 to-background/90" />
 
@@ -317,8 +317,8 @@ export function HeroSection({ collections, lang }: HeroSectionProps) {
         )}
       </div>
 
-      {/* 移动端保持原有设计 */}
-      <div className="md:hidden w-full min-h-screen bg-background">
+      {/* 移动端和iPad竖屏：多行排列布局 */}
+      <div className="lg:hidden w-full min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8 space-y-8">
           {collections.map((collection, index) => (
             <div

@@ -13,7 +13,7 @@ import { CommentList } from '@/app/ui/comment-list'
 import AuthModal from '@/app/ui/auth-modal'
 import { FloatingActionMenu } from '@/app/ui/floating-action-menu'
 import { SelfPromotionCard } from '@/app/ui/self-promotion-card'
-import { ProtectedContent } from '@/app/ui/protected-content'
+import { HybridProtectedContent } from '@/app/ui/hybrid-protected-content'
 import { CopyrightNotice } from '@/app/ui/copyright-notice'
 import { analytics } from '@/lib/analytics-logger'
 import * as Sentry from '@sentry/nextjs'
@@ -300,15 +300,21 @@ export function LogDetailPage({
               </header> */}
 
               {/* 文章内容 */}
-              <ProtectedContent showWatermark={true}>
+              <HybridProtectedContent 
+                showWatermark={true}
+                enableCopy={false}
+                enableSelect={true}
+                protectionLevel="enhanced"
+                postId={enrichedLogPost.post?.id}
+                developCollectionId={enrichedLogPost.collection?._id}
+              >
                 <div className="prose prose-lg dark:prose-invert max-w-none">
-                  {/* <div className="max-w-none"> */}
                   <PortableTextRenderer
                     content={enrichedLogPost.content}
                     onHeadingsExtracted={handleHeadingsExtracted}
                   />
                 </div>
-              </ProtectedContent>
+              </HybridProtectedContent>
 
               {/* 版权声明 */}
               <div className="mt-16">
