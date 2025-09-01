@@ -421,9 +421,9 @@ export function LogDetailPage({
 
           {/* 右侧目录 - 桌面端 */}
           <aside className="hidden xl:block w-64 shrink-0">
-            <div className="sticky top-8">
+            <div className="sticky top-8 h-[calc(100vh-4rem)]">
               {/* 偏移对齐：*/}
-              <div className="pt-20 pb-8">
+              <div className="pt-20 pb-8 h-full overflow-y-auto">
                 <TableOfContentsContent />
               </div>
               {/* 推广卡片放在sticky容器内的底部 */}

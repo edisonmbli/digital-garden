@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { HeadingItem } from './portable-text-renderer'
 
@@ -20,6 +20,7 @@ export function TableOfContents({
   excludeH1 = false,
 }: TableOfContentsProps) {
   const [activeId, setActiveId] = useState<string>('')
+  const tocContainerRef = useRef<HTMLDivElement>(null)
   const displayHeadings = excludeH1
     ? headings.filter((h) => h.level !== 1)
     : headings
@@ -106,6 +107,65 @@ export function TableOfContents({
     }
   }, [displayHeadings, activeId])
 
+  // 当activeId变化时，自动滚动到对应的目录项
+  useEffect(() => {
+    if (!activeId || !tocContainerRef.current) {
+      return
+    }
+
+    // 添加小延迟，避免频繁滚动
+    const timeoutId = setTimeout(() => {
+      const activeButton = tocContainerRef.current?.querySelector(
+        `button[data-heading-id="${activeId}"]`
+      ) as HTMLElement
+
+      if (activeButton) {
+        // 找到实际的滚动容器（向上查找带有overflow-y-auto的元素）
+        let scrollContainer = tocContainerRef.current?.parentElement
+        while (scrollContainer) {
+          const styles = window.getComputedStyle(scrollContainer)
+          if (styles.overflowY === 'auto' || styles.overflowY === 'scroll') {
+            break
+          }
+          scrollContainer = scrollContainer.parentElement
+        }
+        
+        if (!scrollContainer) {
+          return
+        }
+
+        const containerRect = scrollContainer.getBoundingClientRect()
+        const buttonRect = activeButton.getBoundingClientRect()
+        
+        // 检查按钮是否已经在容器的可视区域内
+        const isVisible = 
+          buttonRect.top >= containerRect.top &&
+          buttonRect.bottom <= containerRect.bottom
+        
+        // 只有当按钮不在可视区域时才滚动
+        if (!isVisible) {
+          // 计算相对于滚动容器的位置
+          const containerTop = scrollContainer.getBoundingClientRect().top
+          const buttonTop = activeButton.getBoundingClientRect().top
+          const relativeButtonTop = buttonTop - containerTop + scrollContainer.scrollTop
+          
+          const buttonHeight = activeButton.offsetHeight
+          const containerHeight = scrollContainer.clientHeight
+          
+          const targetScrollTop = relativeButtonTop - (containerHeight / 2) + (buttonHeight / 2)
+          
+          // 平滑滚动到目标位置
+          scrollContainer.scrollTo({
+            top: targetScrollTop,
+            behavior: 'smooth'
+          })
+        }
+      }
+    }, 100)
+
+    return () => clearTimeout(timeoutId)
+  }, [activeId])
+
   const handleClick = (id: string) => {
     const element = document.getElementById(id)
     if (element) {
@@ -136,10 +196,11 @@ export function TableOfContents({
       <h4 className="text-body-md font-semibold text-foreground mb-3">
         {title}
       </h4>
-      <ul className="space-y-1">
+      <div ref={tocContainerRef} className="space-y-1">
         {displayHeadings.map((heading) => (
-          <li key={heading.id}>
+          <div key={heading.id}>
             <button
+              data-heading-id={heading.id}
               onClick={() => handleClick(heading.id)}
               className={cn(
                 'block w-full text-left text-xs transition-colors hover:text-foreground',
@@ -159,9 +220,9 @@ export function TableOfContents({
             >
               {heading.text}
             </button>
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     </nav>
   )
 }
