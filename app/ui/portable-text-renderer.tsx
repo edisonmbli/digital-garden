@@ -17,8 +17,8 @@ import { PortableTextElement } from '@/lib/markdown-to-portable-text'
 
 // Hook to get code theme based on current theme
 function useCodeTheme() {
-  const { theme } = useTheme()
-  return theme === 'dark' ? themes.vsDark : themes.jettwaveLight
+  const { resolvedTheme } = useTheme()
+  return resolvedTheme === 'dark' ? themes.vsDark : themes.jettwaveLight
 }
 
 interface PortableTextRendererProps {
