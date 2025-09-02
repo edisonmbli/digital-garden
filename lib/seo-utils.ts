@@ -1,7 +1,10 @@
 import { type Metadata } from 'next'
 import { type Locale } from '@/i18n-config'
 import { urlFor } from '@/sanity/image'
-import { generateSecureImageUrl, extractSanityImageId } from './secure-image-loader'
+import {
+  generateSecureImageUrl,
+  extractSanityImageId,
+} from './secure-image-loader'
 import type { Author } from '@/types/sanity'
 
 // SEO相关类型定义
@@ -49,9 +52,9 @@ interface PortableTextBlock {
 
 // SEO配置常量
 export const SEO_CONFIG = {
-  siteName: 'Code In Light',
+  siteName: 'Hackers & Albums',
   siteDescription: {
-    en: 'A digital garden showcasing photography collections and development tutorials. Explore visual stories and learn web development through practical guides.',
+    en: 'Hackers & Albums - A digital garden showcasing photography collections and development tutorials. Explore visual stories and learn web development through practical guides.',
     zh: '黑客与画册 - 展示摄影作品集和开发教程的创意空间。探索视觉故事，通过实战学习Nextjs项目开发。',
   },
   siteUrl: process.env.NEXT_PUBLIC_BASE_URL || 'https://edisonmbli.com',
@@ -320,10 +323,17 @@ export function generateCollectionSEO({
 
   const ogImage = socialImage
     ? generateSecureImageUrl(
-            typeof socialImage === 'object' && socialImage && 'asset' in socialImage && socialImage.asset && typeof socialImage.asset === 'object' && '_ref' in socialImage.asset
-              ? socialImage.asset._ref as string
-              : extractSanityImageId(urlFor(socialImage).width(1200).height(630).url())
-          )
+        typeof socialImage === 'object' &&
+          socialImage &&
+          'asset' in socialImage &&
+          socialImage.asset &&
+          typeof socialImage.asset === 'object' &&
+          '_ref' in socialImage.asset
+          ? (socialImage.asset._ref as string)
+          : extractSanityImageId(
+              urlFor(socialImage).width(1200).height(630).url()
+            )
+      )
     : '/og-image.jpg'
 
   // 规范URL处理
@@ -420,9 +430,16 @@ export function generateLogSEO({
     ? typeof socialImage === 'string'
       ? socialImage
       : generateSecureImageUrl(
-          typeof socialImage === 'object' && socialImage && 'asset' in socialImage && socialImage.asset && typeof socialImage.asset === 'object' && '_ref' in socialImage.asset
-            ? socialImage.asset._ref as string
-            : extractSanityImageId(urlFor(socialImage).width(1200).height(630).url())
+          typeof socialImage === 'object' &&
+            socialImage &&
+            'asset' in socialImage &&
+            socialImage.asset &&
+            typeof socialImage.asset === 'object' &&
+            '_ref' in socialImage.asset
+            ? (socialImage.asset._ref as string)
+            : extractSanityImageId(
+                urlFor(socialImage).width(1200).height(630).url()
+              )
         )
     : '/og-image.jpg'
 

@@ -63,3 +63,6 @@ ngrok*
 
 # gallery photos
 /gallery/*
+
+# sanity studio config
+/sanity_studio_config/*
