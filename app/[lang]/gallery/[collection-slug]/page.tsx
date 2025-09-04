@@ -8,8 +8,8 @@ import { notFound } from 'next/navigation'
 import { sanityServerClient } from '@/lib/sanity-server'
 import { groq } from 'next-sanity'
 import { InfinitePhotoGrid } from '@/app/ui/infinite-photo-grid'
-import { CopyrightNotice } from '@/app/ui/copyright-notice'
-import { getDictionary } from '@/lib/dictionary'
+// import { CopyrightNotice } from '@/app/ui/copyright-notice'
+// import { getDictionary } from '@/lib/dictionary'
 
 // --- 静态路径生成 ---
 export async function generateStaticParams() {
@@ -35,15 +35,18 @@ export async function generateMetadata({
   params: Promise<{ 'collection-slug': string; lang: Locale }>
 }): Promise<Metadata> {
   const { 'collection-slug': collectionSlug, lang } = await params
-  const collectionData = await getCollectionAndPhotosBySlug(collectionSlug, lang)
-  
+  const collectionData = await getCollectionAndPhotosBySlug(
+    collectionSlug,
+    lang
+  )
+
   if (!collectionData) {
     return {
       title: 'Collection Not Found',
       description: 'The requested photo collection could not be found.',
     }
   }
-  
+
   // 使用智能的多层级SEO内容生成策略
   return generateCollectionSEO({
     collection: collectionData,
@@ -71,13 +74,15 @@ export default async function CollectionPage({
   }
 
   // 获取字典数据
-  const dict = await getDictionary(lang)
+  // const dict = await getDictionary(lang)
 
   // 生成结构化数据
   const structuredData = generateStructuredData({
     type: 'ImageGallery',
     title: initialGroupData.name || 'Photo Collection',
-    description: initialGroupData.description || `Explore the ${initialGroupData.name} photo collection`,
+    description:
+      initialGroupData.description ||
+      `Explore the ${initialGroupData.name} photo collection`,
     url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/gallery/${collectionSlug}`,
     image: initialGroupData.photos?.[0]?.imageUrl,
   })
@@ -107,7 +112,7 @@ export default async function CollectionPage({
               lang={lang}
             />
             {/* 版权声明 */}
-            <CopyrightNotice 
+            {/* <CopyrightNotice 
               contentType="photo" 
               className="mt-16"
               copyrightData={{
@@ -115,7 +120,7 @@ export default async function CollectionPage({
                 content: dict.copyright?.photo?.content,
                 minimal: dict.copyright?.photo?.minimal,
               }}
-            />
+            /> */}
           </main>
         </div>
       </div>
