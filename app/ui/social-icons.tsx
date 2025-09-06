@@ -119,7 +119,7 @@ export function SocialIcons({
           <button
             key={index}
             onClick={() => handleSocialClick(link)}
-            className="w-10 h-10 bg-slate-200/80 dark:bg-slate-800  rounded-lg flex items-center justify-center transition-colors duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+            className="w-10 h-10 bg-slate-200/80 dark:bg-zinc-600/40  rounded-lg flex items-center justify-center transition-colors duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
             aria-label={`${link.platform} link`}
           >
             <SocialIcon platform={link.platform} url={link.url} />
